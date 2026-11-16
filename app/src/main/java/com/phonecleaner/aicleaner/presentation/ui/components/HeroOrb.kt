@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -59,10 +60,10 @@ fun HeroOrb(
     val breathe by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(2800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
     val progress by animateFloatAsState(usedFraction.coerceIn(0f, 1f), tween(1000, easing = FastOutSlowInEasing), label = "usedProgress")
 
-    Box(modifier = modifier.size(190.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.size(200.dp), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val c = Offset(size.width / 2, size.height / 2)
-            val halo = 3.dp.toPx() * breathe
+            val halo = 6.dp.toPx() * breathe
 
             // Two filled outer halos that breathe slowly (the "hover").
             drawCircle(Color.White.copy(alpha = 0.10f), radius = 92.dp.toPx() + halo, center = c)
@@ -74,17 +75,22 @@ fun HeroOrb(
             drawCircle(Color.White.copy(alpha = 0.92f), radius = ringR, center = c, style = Stroke(3.dp.toPx()))
 
             // Four short arcs travelling round just inside the ring.
-            val arcR = 63.dp.toPx()
+            val arcR = 62.dp.toPx()
+            val segments = 8
+            val arcSweep = 28f
             repeat(4) { i ->
-                drawArc(
-                    color = Color.White.copy(alpha = 0.95f),
-                    startAngle = spin + i * 90f,
-                    sweepAngle = 13f,
-                    useCenter = false,
-                    topLeft = Offset(c.x - arcR, c.y - arcR),
-                    size = Size(arcR * 2, arcR * 2),
-                    style = Stroke(5.dp.toPx(), cap = StrokeCap.Butt)
-                )
+                repeat(segments) { s ->
+                    val t = (s + 1) / segments.toFloat()
+                    drawArc(
+                        color = androidx.compose.ui.graphics.lerp(Color(0xFF8FE3FF), Color.White, t).copy(alpha = 0.55f + 0.45f * t),
+                        startAngle = spin + i * 90f + s * (arcSweep / segments),
+                        sweepAngle = arcSweep / segments + 0.8f,
+                        useCenter = false,
+                        topLeft = Offset(c.x - arcR, c.y - arcR),
+                        size = Size(arcR * 2, arcR * 2),
+                        style = Stroke(7.dp.toPx(), cap = StrokeCap.Butt)
+                    )
+                }
             }
         }
 
@@ -97,16 +103,16 @@ fun HeroOrb(
             Spacer(Modifier.height(10.dp))
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
-                    .background(Color.White.copy(alpha = 0.22f))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
+                    .shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Color(0xFF051A5E), spotColor = Color(0xFF051A5E))
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Brush.verticalGradient(listOf(Color.White, Color(0xFFDCEBFF))))
                     .clickable(onClick = onClean)
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                    .padding(horizontal = 22.dp, vertical = 7.dp)
             ) {
                 Text(
                     stringResource(R.string.home_clean),
-                    color = Color.White,
-                    style = TextStyle(fontSize = 16.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_semi)), fontWeight = FontWeight.SemiBold)
+                    color = Brand.BlueDark,
+                    style = TextStyle(fontSize = 16.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
                 )
             }
         }
