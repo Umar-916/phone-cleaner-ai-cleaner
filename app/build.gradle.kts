@@ -64,6 +64,8 @@ android {
     lint {
         checkReleaseBuilds = true
         abortOnError = true
+        // AdActivity ships with the Google Mobile Ads SDK at runtime; the Scaffold padding is applied by the nav host.
+        disable += setOf("MissingClass", "UnusedMaterial3ScaffoldPaddingParameter")
     }
 
 

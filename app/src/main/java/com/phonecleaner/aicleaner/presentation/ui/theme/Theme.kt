@@ -16,6 +16,7 @@ import com.phonecleaner.aicleaner.presentation.dialogues.theme.ThemeKeys
 
 private val DarkColorScheme = darkColorScheme(
     primary = colorPrimaryBoth,
+    onPrimary = Color.White,
     background = backGroundColorDark,
     secondary = secondaryColorDark,
     tertiary = tertiaryColorDark,
@@ -33,6 +34,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = colorPrimaryBoth,
+    onPrimary = Color.White,
     background = backGroundColorLight,
     secondary = secondaryColorLight,
     tertiary = tertiaryColorLight,

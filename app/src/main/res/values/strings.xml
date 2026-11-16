@@ -444,7 +444,7 @@ GO PREMIUM</string>
     <string name="process_boost_action">Free up memory</string>
     <string name="process_boosting">Working…</string>
     <string name="process_boost_done_title">Memory check complete</string>
-    <string name="process_boost_done_freed">%1$s freed after stopping background processes of %2$d apps.</string>
+    <string name="process_boost_done_freed">About %1$s was freed after stopping background processes of %2$d apps. Android may use it again right away.</string>
     <string name="process_boost_done_none">No extra memory could be freed. Android had already stopped the background processes of %1$d apps.</string>
     <string name="process_boost_again">Done</string>
     <string name="process_recent_title">Recently used apps</string>
