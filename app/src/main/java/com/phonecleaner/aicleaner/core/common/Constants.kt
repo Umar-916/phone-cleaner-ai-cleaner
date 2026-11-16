@@ -18,7 +18,7 @@ object Constants {
     const val WEEKLY_SUBSCRIPTION = "weekly"
     const val WEEKLY_TRIAL_SUBSCRIPTION = "weekly-trial-3"
     const val USER_PREMIUM = "user_premium"
-    const val PREF_KEY = "prank_hub_prefs"
+    const val PREF_KEY = "phone_cleaner_prefs"
     const val APP_FLYER_DEV_KEY = "APP_FLYER_DEV_KEY"
 
     var currentScreenName = ""
@@ -31,6 +31,8 @@ object Constants {
     var currencyThreshold3: Double = 0.1
     var currencyThreshold4: Double = 0.12
     var adsCountThreshold: Int = 2
+
+    const val SUPPORT_EMAIL = "support@example.com"
 
     const val TERMS_URL = "https://example.com/phone-cleaner-pro/terms"
 

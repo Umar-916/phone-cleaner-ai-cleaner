@@ -661,4 +661,5 @@ Clean junk, manage apps, free memory and keep your phone healthy.</string>
     <string name="apps_filter_user_plain">User</string>
     <string name="apps_filter_system_plain">System</string>
     <string name="apps_filter_all_plain">All</string>
+    <string name="share_via">Share via</string>
 </resources>

@@ -273,11 +273,11 @@ fun Context.shareAppLink() {
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         putExtra(
             Intent.EXTRA_TEXT,
-            "https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
+            "Clean junk, free memory and manage your files with Phone Cleaner AI Cleaner Pro: https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
         )
         type = "text/plain"
     }
-    startActivity(Intent.createChooser(sendIntent, "Share via"))
+    startActivity(Intent.createChooser(sendIntent, getString(R.string.share_via)))
 }
 
 private const val SHARE_DOWNLOAD_LIMIT = 15L * 1024 * 1024
@@ -303,7 +303,7 @@ private fun Context.startSoundShare(file: java.io.File?, mimeType: String, displ
             type = "text/plain"
         }
     }
-    startActivity(Intent.createChooser(sendIntent, "Share via"))
+    startActivity(Intent.createChooser(sendIntent, getString(R.string.share_via)))
 }
 
 /** An empty, cleaned share folder plus a safe file name for [displayName]. */

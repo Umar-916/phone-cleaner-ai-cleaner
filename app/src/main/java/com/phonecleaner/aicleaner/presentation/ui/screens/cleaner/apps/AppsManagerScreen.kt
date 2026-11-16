@@ -80,6 +80,7 @@ import com.phonecleaner.aicleaner.domain.model.AppSort
 import com.phonecleaner.aicleaner.domain.model.InstalledApp
 import com.phonecleaner.aicleaner.presentation.navigation.getBannerOverlayHeight
 import com.phonecleaner.aicleaner.presentation.ui.components.AppIcon
+import com.phonecleaner.aicleaner.presentation.ui.components.FloatingSheet
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBar
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBarTitle
 import kotlinx.coroutines.Dispatchers
@@ -222,11 +223,7 @@ fun AppsManagerScreen(
     }
 
     selected?.let { app ->
-        ModalBottomSheet(
-            onDismissRequest = { selected = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.background
-        ) {
+        FloatingSheet(onDismiss = { selected = null }) {
             AppDetailsSheet(app = app, onDone = { selected = null })
         }
     }

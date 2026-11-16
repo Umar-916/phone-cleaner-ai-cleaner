@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.FloatingSheet
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 
 /** What the sheet needs to know about a file, so it works for MediaStore entries and plain paths alike. */
@@ -71,13 +72,8 @@ fun FileItemSheet(
     val context = LocalContext.current
     var showDetails by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.secondary,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp)) {
+    FloatingSheet(onDismiss = onDismiss) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 file.name,
                 maxLines = 2,

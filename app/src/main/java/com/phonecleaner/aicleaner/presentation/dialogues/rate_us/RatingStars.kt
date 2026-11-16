@@ -1,3 +1,4 @@
+import com.phonecleaner.aicleaner.BuildConfig
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -47,7 +48,7 @@ fun RatingStars(
                         if (index + 1 == 5) {
                             val intent = Intent(
                                 Intent.ACTION_VIEW,
-                                "market://details?id=pranksound.airhorn.haircut.fart.funnysounds".toUri()
+                                "market://details?id=${BuildConfig.APPLICATION_ID}".toUri()
                             )
                             context.startActivity(intent)
                         }

@@ -59,7 +59,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.AppProgressBar
+import android.content.Intent
+import android.provider.Settings
+import androidx.core.net.toUri
+import com.phonecleaner.aicleaner.core.common.MediaAccess
 import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.domain.FilesViewModel
 import com.phonecleaner.aicleaner.domain.model.FileCategory
@@ -102,13 +107,19 @@ fun FilesScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
-    var promptDismissed by rememberSaveable { mutableStateOf(false) }
+    var accessTick by remember { mutableStateOf(0) }
+    var pendingCategory by remember { mutableStateOf<FileCategory?>(null) }
     var promptVisible by rememberSaveable { mutableStateOf(false) }
+    var mediaPromptFor by remember { mutableStateOf<FileCategory?>(null) }
+    var mediaDeniedOnce by rememberSaveable { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = StoragePermission.isGranted(context)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                granted = StoragePermission.isGranted(context)
+                accessTick++
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -120,14 +131,23 @@ fun FilesScreen(
     val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         granted = StoragePermission.isGranted(context)
     }
+    val mediaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        accessTick++
+        val target = mediaPromptFor
+        if (result.values.all { it } && target != null) {
+            mediaPromptFor = null
+            onOpenCategory(target)
+        } else {
+            mediaDeniedOnce = true
+        }
+    }
     val requestAccess = {
         if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
         else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
     }
 
-    LaunchedEffect(granted) {
-        viewModel.refresh(withCategories = granted)
-        if (!granted && !promptDismissed) promptVisible = true
+    LaunchedEffect(granted, accessTick) {
+        viewModel.refresh(withCategories = true)
         if (granted) promptVisible = false
     }
     LaunchedEffect(Unit) { context.postAnalytic("files_tab_display") }
@@ -174,11 +194,18 @@ fun FilesScreen(
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { category ->
                     val summary = state.summaries[category]
+                    val allowed = MediaAccess.isGranted(context, category)
                     CategoryCard(
                         category = category,
-                        subtitle = if (granted && summary != null) Formatter.formatShortFileSize(context, summary.bytes) else "—",
+                        subtitle = if (allowed && summary != null) Formatter.formatShortFileSize(context, summary.bytes) else "—",
                         modifier = Modifier.weight(1f),
-                        onClick = guarded { onOpenCategory(category) }
+                        onClick = {
+                            when {
+                                allowed -> onOpenCategory(category)
+                                MediaAccess.permissionsFor(category) != null -> mediaPromptFor = category
+                                else -> promptVisible = true
+                            }
+                        }
                     )
                 }
             }
@@ -190,10 +217,25 @@ fun FilesScreen(
         StoragePermissionPrompt(
             onDismiss = {
                 promptVisible = false
-                promptDismissed = true
             },
             accent = Brand.Blue,
             onAllow = requestAccess
+        )
+    }
+
+    mediaPromptFor?.let { target ->
+        MediaPermissionPrompt(
+            showSettings = mediaDeniedOnce,
+            onDismiss = { mediaPromptFor = null },
+            onAllow = {
+                if (mediaDeniedOnce) {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
+                    runCatching { context.startActivity(intent) }
+                    mediaPromptFor = null
+                } else {
+                    mediaLauncher.launch(MediaAccess.permissionsFor(target) ?: emptyArray())
+                }
+            }
         )
     }
 }

@@ -86,14 +86,9 @@ fun PermissionPrompt(
     accent: Color = MaterialTheme.colorScheme.primary
 ) {
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.secondary,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    ) {
+    FloatingSheet(onDismiss = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(

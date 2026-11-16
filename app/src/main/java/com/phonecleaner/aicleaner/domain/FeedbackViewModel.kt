@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.domain
 
+import com.phonecleaner.aicleaner.core.common.Constants
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -131,8 +132,8 @@ class FeedbackViewModel : ViewModel() {
             }
 
             val uriText =
-                StringBuilder().append("mailto:appsresort5@gmail.com?subject=")
-                    .append(Uri.encode("Funny Sounds Feedback")).append("&body=")
+                StringBuilder().append("mailto:${Constants.SUPPORT_EMAIL}?subject=")
+                    .append(Uri.encode("Phone Cleaner AI Cleaner Pro Feedback")).append("&body=")
                     .append(Uri.encode(responseText)).toString()
 
             responseText.debug("FeedbackTesting")

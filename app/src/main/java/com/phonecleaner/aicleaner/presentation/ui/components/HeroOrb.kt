@@ -107,8 +107,8 @@ fun HeroOrb(
             val innerRadius = 67.dp.toPx()
             val innerTopLeft = Offset(floatCenter.x - innerRadius, floatCenter.y - innerRadius)
             val innerSize = Size(innerRadius * 2, innerRadius * 2)
-            drawArc(Color.White.copy(alpha = 0.28f), 0f, 360f, false, innerTopLeft, innerSize, style = Stroke(3.dp.toPx(), pathEffect = dashed))
-            drawArc(Color.White, -90f, 360f * progress, false, innerTopLeft, innerSize, style = Stroke(3.dp.toPx(), pathEffect = dashed))
+            drawArc(Color.White.copy(alpha = 0.16f), 0f, 360f, false, innerTopLeft, innerSize, style = Stroke(2.dp.toPx(), pathEffect = dashed))
+            drawArc(Color.White.copy(alpha = 0.5f), -90f, 360f * progress, false, innerTopLeft, innerSize, style = Stroke(2.dp.toPx(), pathEffect = dashed))
             drawArc(Color.White.copy(alpha = 0.18f), 0f, 360f, false, topLeft, ringSize, style = Stroke(2.dp.toPx()))
             drawArc(Color.White.copy(alpha = 0.85f), spin, 60f, false, topLeft, ringSize, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
         }

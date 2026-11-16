@@ -75,7 +75,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
+import android.content.Intent
+import android.provider.Settings
+import androidx.core.net.toUri
+import com.phonecleaner.aicleaner.core.common.MediaAccess
 import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FileViewMode
 import com.phonecleaner.aicleaner.domain.model.DocumentType
@@ -104,20 +109,22 @@ fun FileCategoryScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
+    var mediaDenied by remember { mutableStateOf(false) }
+    var granted by remember { mutableStateOf(MediaAccess.isGranted(context, category)) }
     var sheetEntry by remember { mutableStateOf<FileEntry?>(null) }
     var deleteTargets by remember { mutableStateOf<List<FileEntry>>(emptyList()) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = StoragePermission.isGranted(context)
+            if (event == Lifecycle.Event.ON_RESUME) granted = MediaAccess.isGranted(context, category)
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = StoragePermission.isGranted(context) }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { granted = StoragePermission.isGranted(context) }
+    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = MediaAccess.isGranted(context, category) }
+    val mediaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted = MediaAccess.isGranted(context, category) }
+    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { granted = MediaAccess.isGranted(context, category) }
 
     LaunchedEffect(category, granted) {
         if (granted) {
@@ -184,12 +191,29 @@ fun FileCategoryScreen(
     }
 
     if (!granted) {
-        StoragePermissionPrompt(
-            onDismiss = onBack,
-            accent = (category ?: FileCategory.IMAGES).tint()
-        ) {
-            if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
-            else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
+        val mediaPermissions = MediaAccess.permissionsFor(category)
+        if (mediaPermissions != null) {
+            MediaPermissionPrompt(
+                showSettings = mediaDenied,
+                onDismiss = onBack,
+                onAllow = {
+                    if (mediaDenied) {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
+                        runCatching { context.startActivity(intent) }
+                    } else {
+                        mediaDenied = true
+                        mediaLauncher.launch(mediaPermissions)
+                    }
+                }
+            )
+        } else {
+            StoragePermissionPrompt(
+                onDismiss = onBack,
+                accent = (category ?: FileCategory.IMAGES).tint()
+            ) {
+                if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
+                else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
+            }
         }
     }
 
