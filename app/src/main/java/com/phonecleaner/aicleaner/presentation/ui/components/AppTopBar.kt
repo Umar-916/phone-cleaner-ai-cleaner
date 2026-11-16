@@ -141,8 +141,8 @@ fun PremiumTopBarAction(
                 .width(62.sdp)
                 .height(28.sdp)
                 .clip(pillShape)
-                .background(Color.White.copy(alpha = 0.18f))
-                .border(1.sdp, Color.White.copy(alpha = 0.28f), pillShape)
+                .background(Brush.verticalGradient(listOf(Brand.Gold.copy(alpha = 0.55f), Brand.GoldDeep.copy(alpha = 0.45f))))
+                .border(1.sdp, Brand.Gold.copy(alpha = 0.85f), pillShape)
                 .semantics { contentDescription = premDescription }
                 .debounceClickable(onClick = onClick),
             verticalAlignment = Alignment.CenterVertically,

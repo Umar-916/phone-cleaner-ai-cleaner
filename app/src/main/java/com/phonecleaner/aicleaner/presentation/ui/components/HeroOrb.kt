@@ -63,48 +63,59 @@ fun HeroOrb(
             val c = Offset(size.width / 2, size.height / 2)
             val halo = 3.dp.toPx() * breathe
 
-            // Soft shadow under and around the whole orb.
+            // Soft shadow only outside the rings, so the centre of the disc stays clean.
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0x40051A5E), Color(0x1A051A5E), Color.Transparent),
-                    center = Offset(c.x, c.y + 8.dp.toPx()),
-                    radius = 96.dp.toPx()
+                    0.70f to Color.Transparent,
+                    0.84f to Color(0x2E051A5E),
+                    1.0f to Color.Transparent,
+                    center = Offset(c.x, c.y + 6.dp.toPx()),
+                    radius = 100.dp.toPx()
                 ),
-                radius = 96.dp.toPx(),
-                center = Offset(c.x, c.y + 8.dp.toPx())
+                radius = 100.dp.toPx(),
+                center = Offset(c.x, c.y + 6.dp.toPx())
             )
 
-            // Outer halos.
-            drawCircle(Color.White.copy(alpha = 0.10f), radius = 90.dp.toPx() + halo)
-            drawCircle(Color.White.copy(alpha = 0.16f), radius = 80.dp.toPx() + halo / 2)
+            // Two outer rings with a clear gap before the thin white ring; they breathe slowly.
+            val outerR = 84.dp.toPx() + halo
+            drawCircle(Color.White.copy(alpha = 0.16f), radius = outerR, center = c, style = Stroke(9.dp.toPx()))
+            val midR = 72.dp.toPx() + halo / 2
+            drawCircle(Color.White.copy(alpha = 0.24f), radius = midR, center = c, style = Stroke(7.dp.toPx()))
 
-            // One short arc travelling round the outer halo.
-            val arcRadius = 85.dp.toPx() + halo
-            drawArc(
-                color = Color.White.copy(alpha = 0.55f),
-                startAngle = spin,
-                sweepAngle = 70f,
-                useCenter = false,
-                topLeft = Offset(c.x - arcRadius, c.y - arcRadius),
-                size = Size(arcRadius * 2, arcRadius * 2),
-                style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round)
-            )
+            // A snake-like arc travelling round the outer ring: thin tail growing into a bright head.
+            val segments = 28
+            val snakeSweep = 150f
+            val segSweep = snakeSweep / segments
+            val snakeTopLeft = Offset(c.x - outerR, c.y - outerR)
+            val snakeSize = Size(outerR * 2, outerR * 2)
+            for (i in 0 until segments) {
+                val t = (i + 1) / segments.toFloat()
+                drawArc(
+                    color = Color.White.copy(alpha = 0.15f + 0.80f * t),
+                    startAngle = spin - snakeSweep + i * segSweep,
+                    sweepAngle = segSweep + 1.2f,
+                    useCenter = false,
+                    topLeft = snakeTopLeft,
+                    size = snakeSize,
+                    style = Stroke((1.5f + 3.5f * t).dp.toPx(), cap = StrokeCap.Round)
+                )
+            }
 
-            // Thick white ring and the glossy disc.
-            drawCircle(Color.White.copy(alpha = 0.95f), radius = 71.dp.toPx(), center = c)
-            val disc = 65.dp.toPx()
+            // Thin white ring and the glossy disc.
+            drawCircle(Color.White.copy(alpha = 0.95f), radius = 61.dp.toPx(), center = c, style = Stroke(4.dp.toPx()))
+            val disc = 57.dp.toPx()
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF5CB6FF), Color(0xFF1B66E8)),
-                    center = Offset(c.x - 14.dp.toPx(), c.y - 20.dp.toPx()),
-                    radius = disc * 1.5f
+                    colors = listOf(Color(0xFF4FA9FF), Color(0xFF1B66E8)),
+                    center = Offset(c.x - 10.dp.toPx(), c.y - 14.dp.toPx()),
+                    radius = disc * 1.6f
                 ),
                 radius = disc,
                 center = c
             )
 
             // Faint dashed storage ring inside the white ring.
-            val inner = 58.dp.toPx()
+            val inner = 50.dp.toPx()
             val dashed = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 5.dp.toPx()))
             val innerTopLeft = Offset(c.x - inner, c.y - inner)
             val innerSize = Size(inner * 2, inner * 2)
@@ -124,7 +135,7 @@ fun HeroOrb(
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
                     .background(Color.White)
                     .clickable(onClick = onClean)
-                    .padding(horizontal = 26.dp, vertical = 7.dp)
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
             ) {
                 Text(
                     stringResource(R.string.home_clean),

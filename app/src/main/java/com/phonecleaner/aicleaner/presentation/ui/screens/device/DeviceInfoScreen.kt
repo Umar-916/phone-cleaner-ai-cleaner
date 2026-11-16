@@ -263,7 +263,7 @@ private fun UsageCard(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.secondary).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(accent).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (ringFirst) {
@@ -281,7 +281,7 @@ private fun UsageCard(
 @Composable
 private fun CpuCard(usage: UsageSummary) {
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.secondary).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(Brand.Photo).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
@@ -313,7 +313,7 @@ private fun CpuCard(usage: UsageSummary) {
 @Composable
 private fun BatteryCard(battery: BatteryInfo) {
     Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.secondary).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(Brand.Blue).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(stringResource(R.string.info_battery_info), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
@@ -384,3 +384,9 @@ private fun Section(section: InfoSection) {
         }
     }
 }
+
+/** Card surface with a soft tint fading from the top, so the cards have a little depth without shouting. */
+@Composable
+private fun Modifier.tintedCard(tint: Color): Modifier = this
+    .background(MaterialTheme.colorScheme.secondary)
+    .background(Brush.verticalGradient(listOf(tint.copy(alpha = 0.16f), Color.Transparent)))

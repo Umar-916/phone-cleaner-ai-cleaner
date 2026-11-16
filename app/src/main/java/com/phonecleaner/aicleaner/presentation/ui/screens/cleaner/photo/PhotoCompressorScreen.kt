@@ -234,7 +234,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
@@ -247,7 +247,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                 item {
                     Box(
                         modifier = Modifier
-                            .size(72.dp)
+                            .size(60.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                             .clickable(onClick = onAdd),
@@ -300,11 +300,6 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                             style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                         )
                     }
-                    Text(
-                        stringResource(R.string.pc_quality_hint),
-                        color = MaterialTheme.colorScheme.surface,
-                        style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                    )
                 } else {
                     Text(
                         stringResource(R.string.pc_png_lossless),
@@ -370,9 +365,9 @@ private fun Section(title: String, icon: androidx.compose.ui.graphics.vector.Ima
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.secondary)
-            .padding(16.dp)
+            .padding(14.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
             Box(
                 modifier = Modifier.size(34.dp).clip(CircleShape).background(Brand.Photo.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center
@@ -428,7 +423,7 @@ private fun Thumb(photo: PhotoInfo, selected: Boolean, viewModel: PhotoCompresso
     }
     Box(
         modifier = Modifier
-            .size(72.dp)
+            .size(60.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .then(if (selected) Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), RoundedCornerShape(14.dp)) else Modifier)
@@ -501,7 +496,7 @@ private fun PreviewCard(
         modifier = modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.secondary).padding(10.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(10.dp))
+            modifier = Modifier.fillMaxWidth().aspectRatio(1.35f).clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
             contentAlignment = Alignment.Center
         ) {
