@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,7 @@ fun HeroOrb(
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "heroOrb")
-    val spin by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(8000, easing = LinearEasing)), label = "spin")
+    val spin by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(6000, easing = LinearEasing)), label = "spin")
     val breathe by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(2800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
     val progress by animateFloatAsState(usedFraction.coerceIn(0f, 1f), tween(1000, easing = FastOutSlowInEasing), label = "usedProgress")
 
@@ -63,84 +64,49 @@ fun HeroOrb(
             val c = Offset(size.width / 2, size.height / 2)
             val halo = 3.dp.toPx() * breathe
 
-            // Soft shadow only outside the rings, so the centre of the disc stays clean.
-            drawCircle(
-                brush = Brush.radialGradient(
-                    0.70f to Color.Transparent,
-                    0.84f to Color(0x2E051A5E),
-                    1.0f to Color.Transparent,
-                    center = Offset(c.x, c.y + 6.dp.toPx()),
-                    radius = 100.dp.toPx()
-                ),
-                radius = 100.dp.toPx(),
-                center = Offset(c.x, c.y + 6.dp.toPx())
-            )
+            // Two filled outer halos that breathe slowly (the "hover").
+            drawCircle(Color.White.copy(alpha = 0.10f), radius = 92.dp.toPx() + halo, center = c)
+            drawCircle(Color.White.copy(alpha = 0.17f), radius = 82.dp.toPx() + halo / 2, center = c)
 
-            // Two outer rings with a clear gap before the thin white ring; they breathe slowly.
-            val outerR = 84.dp.toPx() + halo
-            drawCircle(Color.White.copy(alpha = 0.16f), radius = outerR, center = c, style = Stroke(9.dp.toPx()))
-            val midR = 72.dp.toPx() + halo / 2
-            drawCircle(Color.White.copy(alpha = 0.24f), radius = midR, center = c, style = Stroke(7.dp.toPx()))
+            // Flat disc with one thin white ring.
+            val ringR = 72.dp.toPx()
+            drawCircle(Color(0xFF1B7AFF), radius = ringR, center = c)
+            drawCircle(Color.White.copy(alpha = 0.92f), radius = ringR, center = c, style = Stroke(3.dp.toPx()))
 
-            // A snake-like arc travelling round the outer ring: thin tail growing into a bright head.
-            val segments = 28
-            val snakeSweep = 150f
-            val segSweep = snakeSweep / segments
-            val snakeTopLeft = Offset(c.x - outerR, c.y - outerR)
-            val snakeSize = Size(outerR * 2, outerR * 2)
-            for (i in 0 until segments) {
-                val t = (i + 1) / segments.toFloat()
+            // Four short arcs travelling round just inside the ring.
+            val arcR = 63.dp.toPx()
+            repeat(4) { i ->
                 drawArc(
-                    color = Color.White.copy(alpha = 0.15f + 0.80f * t),
-                    startAngle = spin - snakeSweep + i * segSweep,
-                    sweepAngle = segSweep + 1.2f,
+                    color = Color.White.copy(alpha = 0.95f),
+                    startAngle = spin + i * 90f,
+                    sweepAngle = 13f,
                     useCenter = false,
-                    topLeft = snakeTopLeft,
-                    size = snakeSize,
-                    style = Stroke((1.5f + 3.5f * t).dp.toPx(), cap = StrokeCap.Round)
+                    topLeft = Offset(c.x - arcR, c.y - arcR),
+                    size = Size(arcR * 2, arcR * 2),
+                    style = Stroke(5.dp.toPx(), cap = StrokeCap.Butt)
                 )
             }
-
-            // Thin white ring and the glossy disc.
-            drawCircle(Color.White.copy(alpha = 0.95f), radius = 61.dp.toPx(), center = c, style = Stroke(4.dp.toPx()))
-            val disc = 57.dp.toPx()
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF4FA9FF), Color(0xFF1B66E8)),
-                    center = Offset(c.x - 10.dp.toPx(), c.y - 14.dp.toPx()),
-                    radius = disc * 1.6f
-                ),
-                radius = disc,
-                center = c
-            )
-
-            // Faint dashed storage ring inside the white ring.
-            val inner = 50.dp.toPx()
-            val dashed = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 5.dp.toPx()))
-            val innerTopLeft = Offset(c.x - inner, c.y - inner)
-            val innerSize = Size(inner * 2, inner * 2)
-            drawArc(Color.White.copy(alpha = 0.14f), 0f, 360f, false, innerTopLeft, innerSize, style = Stroke(1.5.dp.toPx(), pathEffect = dashed))
-            drawArc(Color.White.copy(alpha = 0.55f), -90f, 360f * progress, false, innerTopLeft, innerSize, style = Stroke(1.5.dp.toPx(), pathEffect = dashed))
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 stringResource(R.string.home_junk_files),
                 color = Color.White,
-                style = TextStyle(fontSize = 17.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 20.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
             )
             Spacer(Modifier.height(10.dp))
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
-                    .background(Color.White)
+                    .background(Color.White.copy(alpha = 0.22f))
+                    .border(1.5.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
                     .clickable(onClick = onClean)
                     .padding(horizontal = 20.dp, vertical = 6.dp)
             ) {
                 Text(
                     stringResource(R.string.home_clean),
-                    color = Brand.BlueDark,
-                    style = TextStyle(fontSize = 15.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_semi)), fontWeight = FontWeight.SemiBold)
+                    color = Color.White,
+                    style = TextStyle(fontSize = 16.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_semi)), fontWeight = FontWeight.SemiBold)
                 )
             }
         }
