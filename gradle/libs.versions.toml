@@ -1,0 +1,145 @@
+[versions]
+agp = "9.1.1"
+coreKtx = "1.19.0"
+funnotifySdk = "v1.0.1"
+gson = "2.14.0"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+ktorSerializationGson = "3.5.2"
+lifecycleRuntimeKtx = "2.11.0"
+activityCompose = "1.13.0"
+kotlin = "2.4.20"
+composeBom = "2026.09.00"
+
+appUpdateKtx = "2.1.0"
+coilCompose = "2.7.0"
+koinAndroidxCompose = "4.2.2"
+kotlinSerialization = "2.4.20"
+ksp = "2.3.11"
+androidx-lifecycle = "2.11.0"
+koinCore = "4.2.2"
+coil3 = "3.6.2"
+coroutine = "1.11.0"
+purchaseConnector = "2.3.0"
+adrevenue = "6.9.1"
+afAndroidSdk = "7.0.1"
+room = "2.8.5"
+datastore = "1.2.1"
+work = "2.10.0"
+lottie = "6.7.1"
+adsMobileSdk = "1.5.0"
+userMessagingPlatform = "4.0.0"
+
+navigation3Ui = "1.1.7"
+lifecycleViewmodelNavigation3 = "2.11.0"
+kotlinxSerializationCore = "1.11.0"
+
+funsolBillingHelper = "v2.1.0"
+billing = "9.1.0"
+sdpSspComposeMultiplatform = "1.0.7"
+mintegral = "17.1.81.1"
+fyber = "8.5.0.0"
+facebook = "6.22.0.1"
+applovin = "13.6.4.2"
+inmobi = "11.5.0.1"
+ironsource = "9.6.1.0"
+pangle = "8.3.0.4.0"
+unity = "4.21.0.0"
+unityAds = "4.21.0"
+vungle = "7.7.8.1"
+yandex = "8.5.0.0"
+firebaseBom = "35.0.2"
+bidmachine = "3.8.0.1"
+google-services = "4.5.0"
+
+
+[libraries]
+adrevenue = { module = "com.appsflyer:adrevenue", version.ref = "adrevenue" }
+af-android-sdk = { module = "com.appsflyer:af-android-sdk", version.ref = "afAndroidSdk" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version = "1.3.7" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+funnotify-sdk = { module = "com.github.Funsol-Projects:FunNotify-SDK", version.ref = "funnotifySdk" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3Ui" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3Ui" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNavigation3" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
+
+app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdateKtx" }
+
+applovin = { module = "com.google.ads.mediation:applovin", version.ref = "applovin" }
+bidmachine = { module = "com.google.ads.mediation:bidmachine", version.ref = "bidmachine" }
+coil-kt-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+facebook = { module = "com.google.ads.mediation:facebook", version.ref = "facebook" }
+fyber = { module = "com.google.ads.mediation:fyber", version.ref = "fyber" }
+inmobi = { module = "com.google.ads.mediation:inmobi", version.ref = "inmobi" }
+ironsource = { module = "com.google.ads.mediation:ironsource", version.ref = "ironsource" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
+
+androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinCore" }
+koin-androidd = { module = "io.insert-koin:koin-android", version.ref = "koinCore" }
+jetbrains-kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutine" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3" }
+coil-mp = { module = "io.coil-kt.coil3:coil", version.ref = "coil3" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil3" }
+coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil3" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+ktor-serialization-gson = { module = "io.ktor:ktor-serialization-gson", version.ref = "ktorSerializationGson" }
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+firebase-config = { group = "com.google.firebase", name = "firebase-config" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+mintegral = { module = "com.google.ads.mediation:mintegral", version.ref = "mintegral" }
+pangle = { module = "com.google.ads.mediation:pangle", version.ref = "pangle" }
+ads-mobile-sdk = { module = "com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk", version.ref = "adsMobileSdk" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
+
+funsol-billing-helper = { module = "com.github.Funsol-Projects:Funsol-Billing-Helper", version.ref = "funsolBillingHelper" }
+billing = { module = "com.android.billingclient:billing", version.ref = "billing" }
+purchase-connector = { module = "com.appsflyer:purchase-connector", version.ref = "purchaseConnector" }
+sdp-ssp-compose-multiplatform = { module = "network.chaintech:sdp-ssp-compose-multiplatform", version.ref = "sdpSspComposeMultiplatform" }
+unity = { module = "com.google.ads.mediation:unity", version.ref = "unity" }
+unity-ads = { module = "com.unity3d.ads:unity-ads", version.ref = "unityAds" }
+vungle = { module = "com.google.ads.mediation:vungle", version.ref = "vungle" }
+yandex = { module = "com.yandex.ads.adapter:admob-mobileads", version.ref = "yandex" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+# Optional plugins
+jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization"}
+devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.8" }
+
+[bundles]
+coil = [
+    "coil-compose",
+    "coil-mp",
+    "coil-svg"
+]
