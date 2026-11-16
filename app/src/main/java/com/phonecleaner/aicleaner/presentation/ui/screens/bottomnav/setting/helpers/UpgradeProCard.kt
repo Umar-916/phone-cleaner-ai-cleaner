@@ -73,8 +73,7 @@ fun UpgradeProCard(
                     modifier = Modifier
                         .size(46.sdp)
                         .clip(RoundedCornerShape(14.sdp))
-                        .background(Brand.Gold.copy(alpha = 0.30f))
-                        .border(width = 1.sdp, color = Brand.Gold.copy(alpha = 0.6f), shape = RoundedCornerShape(14.sdp)),
+                        .background(Color.White.copy(alpha = 0.22f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -115,8 +114,7 @@ fun UpgradeProCard(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(Brand.Gold.copy(alpha = 0.34f))
-                        .border(width = 1.sdp, color = Brand.Gold.copy(alpha = 0.7f), shape = CircleShape)
+                        .background(Color.White.copy(alpha = 0.22f))
                         .padding(
                             horizontal = 16.sdp,
                             vertical = 7.sdp

@@ -391,7 +391,7 @@ object InitializationHelper {
 
             if (!mobileAdsInitialized) {
 
-                if (!BillingUtilsIAP.isPurchased.value/* && context.isNetworkAvailable()*/ /*&& isRealInternetAvailable*/) {
+                if (Constants.ADS_ENABLED && !BillingUtilsIAP.isPurchased.value) {
 
                     "Initializing Mobile Ads".debug(initTag)
 
@@ -759,7 +759,7 @@ object InitializationHelper {
 
     private fun getConsent(activity: Activity, callback: () -> Unit) {
 
-        if (BillingUtilsIAP.isPurchased.value) {
+        if (!Constants.ADS_ENABLED || BillingUtilsIAP.isPurchased.value) {
 
             callback.invoke()
 

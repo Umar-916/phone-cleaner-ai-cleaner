@@ -13,6 +13,13 @@ object Constants {
     // Basically used to avoid launching a new parent scope each time.
     val myAppCoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + commonCoroutineExceptionHandler)
 
+    /**
+     * Master ad switch for this build. false: no ad SDK initialisation, consent form, ad request or ad UI anywhere
+     * (banner, native, interstitial, app-open, rect banner, language and exit-dialog ads all go through
+     * canRequestAds()). Set to true to turn every ad back on with the configured remote-config behaviour.
+     */
+    const val ADS_ENABLED = false
+
     /** in-App Purchases */
     const val WEEKLY_PRODUCT_ID = "premium"
     const val WEEKLY_SUBSCRIPTION = "weekly"

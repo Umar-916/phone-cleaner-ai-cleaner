@@ -72,7 +72,7 @@ fun isPremiumUser(): Boolean {
 }
 
 fun Context.canRequestAds(): Boolean {
-    if (isPremiumUser() || !isNetworkAvailable() || !InitializationHelper.mobileAdsInitialized) {
+    if (!Constants.ADS_ENABLED || isPremiumUser() || !isNetworkAvailable() || !InitializationHelper.mobileAdsInitialized) {
         return false
     }
     return (this as? Activity)?.isValidContext() ?: true

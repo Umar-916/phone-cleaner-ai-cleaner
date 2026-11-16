@@ -190,13 +190,13 @@ fun HomeScreen(
                         Box(
                             modifier = Modifier
                                 .padding(end = 8.dp)
-                                .size(38.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.18f))
+                                .background(Color.White)
                                 .clickable(onClick = openDeviceInfo),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Brand.Blue, modifier = Modifier.size(24.dp))
                         }
             }
 

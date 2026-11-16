@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -75,20 +76,21 @@ fun HeroOrb(
             drawCircle(Color.White.copy(alpha = 0.92f), radius = ringR, center = c, style = Stroke(3.dp.toPx()))
 
             // Four short arcs travelling round just inside the ring.
-            val arcR = 62.dp.toPx()
-            val segments = 8
-            val arcSweep = 28f
+            val arcR = 64.dp.toPx()
+            // Four comet-like trails: a rounded bright head that thins out and fades into a long tail.
+            val tail = 64f
+            val pieces = 22
             repeat(4) { i ->
-                repeat(segments) { s ->
-                    val t = (s + 1) / segments.toFloat()
+                for (s in 0 until pieces) {
+                    val t = (s + 1) / pieces.toFloat()
                     drawArc(
-                        color = androidx.compose.ui.graphics.lerp(Color(0xFF8FE3FF), Color.White, t).copy(alpha = 0.55f + 0.45f * t),
-                        startAngle = spin + i * 90f + s * (arcSweep / segments),
-                        sweepAngle = arcSweep / segments + 0.8f,
+                        color = androidx.compose.ui.graphics.lerp(Color(0xFF8FE3FF), Color.White, t).copy(alpha = 0.12f + 0.88f * t),
+                        startAngle = spin + i * 90f - tail + s * (tail / pieces),
+                        sweepAngle = tail / pieces + 1.5f,
                         useCenter = false,
                         topLeft = Offset(c.x - arcR, c.y - arcR),
                         size = Size(arcR * 2, arcR * 2),
-                        style = Stroke(7.dp.toPx(), cap = StrokeCap.Butt)
+                        style = Stroke((0.8f + 4.7f * t).dp.toPx(), cap = StrokeCap.Round)
                     )
                 }
             }
@@ -98,7 +100,7 @@ fun HeroOrb(
             Text(
                 stringResource(R.string.home_junk_files),
                 color = Color.White,
-                style = TextStyle(fontSize = 20.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 18.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
             )
             Spacer(Modifier.height(10.dp))
             Box(

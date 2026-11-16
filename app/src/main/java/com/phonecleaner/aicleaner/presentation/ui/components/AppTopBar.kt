@@ -138,11 +138,19 @@ fun PremiumTopBarAction(
         Row(
             modifier = Modifier
                 .padding(end = 6.sdp)
-                .width(62.sdp)
-                .height(28.sdp)
+                .dropShadow(
+                    shape = pillShape,
+                    shadow = Shadow(
+                        color = Brand.GoldDeep.copy(alpha = 0.45f),
+                        radius = 8.sdp,
+                        spread = 0.sdp,
+                        offset = DpOffset(0.sdp, 4.sdp)
+                    )
+                )
+                .width(66.sdp)
+                .height(30.sdp)
                 .clip(pillShape)
-                .background(Brush.verticalGradient(listOf(Brand.Gold.copy(alpha = 0.55f), Brand.GoldDeep.copy(alpha = 0.45f))))
-                .border(1.sdp, Brand.Gold.copy(alpha = 0.85f), pillShape)
+                .background(brush = Brush.verticalGradient(colors = listOf(Brand.Gold, Brand.GoldDeep)))
                 .semantics { contentDescription = premDescription }
                 .debounceClickable(onClick = onClick),
             verticalAlignment = Alignment.CenterVertically,
@@ -152,7 +160,7 @@ fun PremiumTopBarAction(
                 modifier = Modifier
                     .size(22.sdp)
                     .clip(CircleShape)
-                    .background(Brand.Gold.copy(alpha = 0.85f)),
+                    .background(Color.White.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -167,7 +175,7 @@ fun PremiumTopBarAction(
                     fontSize = 13.sp,
                     fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)),
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color(0xFF4A2A00)
                 )
             )
         }
