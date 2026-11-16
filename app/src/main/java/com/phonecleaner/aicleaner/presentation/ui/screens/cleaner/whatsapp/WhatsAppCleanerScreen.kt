@@ -83,6 +83,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.PillChip
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
 import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
@@ -386,24 +387,7 @@ private fun CategoryDetail(data: WaData, viewModel: WhatsAppViewModel) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             WaFilter.entries.forEach { filter ->
-                val primary = MaterialTheme.colorScheme.primary
-                FilterChip(
-                    selected = data.filter == filter,
-                    onClick = { viewModel.setFilter(filter) },
-                    label = { Text(stringResource(filter.label)) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondary,
-                        labelColor = MaterialTheme.colorScheme.tertiary,
-                        selectedContainerColor = primary.copy(alpha = 0.15f),
-                        selectedLabelColor = primary
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = data.filter == filter,
-                        borderColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-                        selectedBorderColor = primary
-                    )
-                )
+                PillChip(stringResource(filter.label), data.filter == filter, { viewModel.setFilter(filter) })
             }
         }
         Row(

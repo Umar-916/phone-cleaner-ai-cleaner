@@ -15,7 +15,7 @@ import com.phonecleaner.aicleaner.core.common.SetStatusBarIconsDarkWithReset
 import com.phonecleaner.aicleaner.presentation.dialogues.theme.ThemeKeys
 
 private val DarkColorScheme = darkColorScheme(
-    primary = colorPrimaryBoth,
+    primary = colorPrimaryDark,
     onPrimary = Color.White,
     background = backGroundColorDark,
     secondary = secondaryColorDark,

@@ -54,7 +54,7 @@ fun SettingItem(
                     else -> Modifier
                 }
             )
-            .padding(horizontal = 16.dp, vertical = 13.dp),
+            .padding(horizontal = 16.dp, vertical = if (switchChecked != null) 9.dp else 13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(

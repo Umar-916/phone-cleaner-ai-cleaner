@@ -206,21 +206,21 @@ private fun MemoryGauge(memory: MemoryStats) {
     val track = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(modifier = Modifier.padding(top = 8.dp).size(210.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.padding(top = 4.dp).size(160.dp), contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 12.dp.toPx()
+                val stroke = 10.dp.toPx()
                 val arcSize = Size(size.width - stroke, size.height - stroke)
                 val topLeft = Offset(stroke / 2, stroke / 2)
                 drawArc(track, 135f, 270f, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
-                rotate(0f) {
-                    drawArc(Brush.sweepGradient(listOf(accent.copy(alpha = 0.55f), accent, Color(0xFF43B0FF)), center), 135f, 270f * progress, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+                rotate(135f) {
+                    drawArc(Brush.sweepGradient(0f to accent.copy(alpha = 0.6f), 0.75f to Color(0xFF43B0FF), 1f to Color(0xFF43B0FF), center = center), 0f, 270f * progress, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     "$percent%",
                     color = accent,
-                    style = TextStyle(fontSize = 44.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                    style = TextStyle(fontSize = 36.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
                 Text(
                     stringResource(R.string.process_used_memory),
@@ -229,7 +229,7 @@ private fun MemoryGauge(memory: MemoryStats) {
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly

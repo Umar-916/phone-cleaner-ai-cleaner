@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppSwitch
 import com.phonecleaner.aicleaner.presentation.ui.components.AppSlider
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
@@ -258,11 +259,11 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
             }
 
             Section(stringResource(R.string.pc_format)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutputFormat.entries.forEach { format ->
-                        OptionChip(settings.format == format, format.label) { viewModel.setFormat(format) }
-                    }
-                }
+                SegmentedTabs(
+                    options = OutputFormat.entries.map { it.label },
+                    selectedIndex = OutputFormat.entries.indexOf(settings.format),
+                    onSelect = { viewModel.setFormat(OutputFormat.entries[it]) }
+                )
             }
 
             Section(stringResource(R.string.pc_quality)) {
@@ -291,10 +292,11 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
             }
 
             Section(stringResource(R.string.pc_size)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OptionChip(!settings.custom, stringResource(R.string.pc_size_original)) { viewModel.setCustomSize(false) }
-                    OptionChip(settings.custom, stringResource(R.string.pc_size_custom)) { viewModel.setCustomSize(true) }
-                }
+                SegmentedTabs(
+                    options = listOf(stringResource(R.string.pc_size_original), stringResource(R.string.pc_size_custom)),
+                    selectedIndex = if (settings.custom) 1 else 0,
+                    onSelect = { viewModel.setCustomSize(it == 1) }
+                )
                 if (settings.custom) {
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -350,27 +352,6 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
-@Composable
-private fun OptionChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            labelColor = MaterialTheme.colorScheme.tertiary,
-            selectedContainerColor = primary.copy(alpha = 0.15f),
-            selectedLabelColor = primary
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-            selectedBorderColor = primary
-        )
-    )
-}
 
 @Composable
 private fun DimensionField(label: String, value: String, modifier: Modifier, onChange: (String) -> Unit) {

@@ -3,6 +3,7 @@ package com.phonecleaner.aicleaner.presentation.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val colorPrimaryBoth = Color(0xFF1F6FEB)
+val colorPrimaryDark = Color(0xFF4F95FF)
 
 val backGroundColorLight = Color(0xFFF1F5FC)
 val backGroundColorDark = Color(0xFF0B1424)

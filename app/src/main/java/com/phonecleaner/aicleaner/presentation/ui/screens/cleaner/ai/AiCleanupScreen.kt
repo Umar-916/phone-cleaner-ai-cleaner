@@ -305,8 +305,8 @@ private fun GroupCard(
             }
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(group.kind.title()), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
-                Text(stringResource(group.kind.reason()), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontFamily = medium))
+                Text(stringResource(group.kind.title()), maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                Text(stringResource(group.kind.reason()), maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontFamily = medium))
                 Text(
                     stringResource(R.string.wa_category_summary, group.files.size, Formatter.formatShortFileSize(context, group.bytes)),
                     color = tint,

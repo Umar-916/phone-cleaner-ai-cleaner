@@ -77,6 +77,7 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.battery.Batter
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.completed.TaskCompletedScreen
 import com.phonecleaner.aicleaner.domain.MainTask
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FilesScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.device.DeviceInfoScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.StorageBrowserScreen
 import com.phonecleaner.aicleaner.domain.model.FileCategory
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.photo.PhotoCompressorScreen
@@ -284,7 +285,8 @@ fun AppNavigator(
                                     onNavigateToWhatsApp = { navigateTo(AppDestination.WhatsAppCleaner) },
                                     onNavigateToPhotoCompressor = { navigateTo(AppDestination.PhotoCompressor) },
                                     onNavigateToAiCleanup = { navigateTo(AppDestination.AiCleanup) },
-                                    onNavigateToBattery = { navigateTo(AppDestination.BatteryManager) }
+                                    onNavigateToBattery = { navigateTo(AppDestination.BatteryManager) },
+                                    onNavigateToDeviceInfo = { navigateTo(AppDestination.DeviceInfo) }
                                 )
                             }
 
@@ -371,6 +373,10 @@ fun AppNavigator(
                                         )
                                     }
                                 )
+                            }
+
+                            is AppDestination.DeviceInfo -> NavEntry(route) {
+                                DeviceInfoScreen(onBack = { navigateBack() })
                             }
 
                             is AppDestination.Feedback -> NavEntry(route) {

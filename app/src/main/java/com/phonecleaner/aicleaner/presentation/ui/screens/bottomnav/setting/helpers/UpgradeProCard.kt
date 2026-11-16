@@ -79,22 +79,14 @@ fun UpgradeProCard(
                             spotColor = Color(0xFFFFD588)
                         )
                         .clip(RoundedCornerShape(14.sdp))
-                        .background(Color.White)
-                        .border(
-                            width = 1.5.sdp,
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFFFFC84A),
-                                    Color(0xFFFFA000)
-                                )
-                            ),
-                            shape = RoundedCornerShape(14.sdp)
-                        ),
+                        .background(Brand.ProBadge)
+                        .border(width = 1.5.sdp, color = Color.White.copy(alpha = 0.55f), shape = RoundedCornerShape(14.sdp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(R.drawable.crown_icon),
-                        contentDescription = null
+                        contentDescription = null,
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF4A2A00))
                     )
                 }
 
@@ -129,17 +121,8 @@ fun UpgradeProCard(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(color = Color.White)
-                        .border(
-                            width = 1.5.sdp,
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFFFFD588),
-                                    Color(0xFFFFD588)
-                                )
-                            ),
-                            shape = CircleShape
-                        )
+                        .background(Brand.ProBadge)
+                        .border(width = 1.5.sdp, color = Color.White.copy(alpha = 0.55f), shape = CircleShape)
                         .padding(
                             horizontal = 16.sdp,
                             vertical = 7.sdp
@@ -152,7 +135,7 @@ fun UpgradeProCard(
                             fontSize = 10.ssp,
                             fontFamily = FontFamily(Font(R.font.google_sans_flex_semi)),
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
+                            color = Color(0xFF4A2A00)
                         )
                     )
                 }

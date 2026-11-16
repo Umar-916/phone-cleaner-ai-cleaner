@@ -8,6 +8,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material3.Icon
@@ -105,6 +107,7 @@ fun HomeScreen(
     onNavigateToPhotoCompressor: () -> Unit = {},
     onNavigateToAiCleanup: () -> Unit = {},
     onNavigateToBattery: () -> Unit = {},
+    onNavigateToDeviceInfo: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current as ComponentActivity
@@ -164,6 +167,7 @@ fun HomeScreen(
         FeatureTile(R.string.feature_photo_compressor, R.string.hint_photo, Icons.Rounded.PhotoSizeSelectLarge, Brand.Photo, "home_photo_click", gated("home_photo_click", "HomePhoto", onNavigateToPhotoCompressor)),
         FeatureTile(R.string.feature_battery, R.string.hint_battery, Icons.Rounded.BatteryChargingFull, Brand.Battery, "home_battery_click", gated("home_battery_click", "HomeBattery", onNavigateToBattery))
     )
+    val openDeviceInfo = gated("home_device_info_click", "HomeDeviceInfo", onNavigateToDeviceInfo)
     val openJunk = gated("home_junk_click", "HomeJunk", onNavigateToJunk)
     val homeScroll = rememberScrollState()
 
@@ -182,6 +186,17 @@ fun HomeScreen(
                             style = TextStyle(fontSize = 22.sp, fontFamily = boldFont, fontWeight = FontWeight.Bold)
                         )
                         PremiumTopBarAction { onNavigateToPremium() }
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.18f))
+                                .clickable(onClick = openDeviceInfo),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.PhoneAndroid, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
+                        }
             }
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(homeScroll)) {
@@ -255,7 +270,7 @@ private fun FeatureCard(tile: FeatureTile, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(tile.tint.copy(alpha = 0.10f))
+            .background(tile.tint.copy(alpha = if (isSystemInDarkTheme()) 0.18f else 0.10f))
             .clickable(onClick = tile.action)
             .padding(horizontal = 10.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally

@@ -74,6 +74,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.PillChip
+import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import android.content.Intent
 import android.provider.Settings
@@ -165,15 +167,17 @@ fun FileCategoryScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 DocumentType.entries.forEach { type ->
-                    ChoiceChip(state.documentType == type, stringResource(type.label)) { viewModel.setDocumentType(type) }
+                    PillChip(stringResource(type.label), state.documentType == type, { viewModel.setDocumentType(type) })
                 }
             }
         }
         if (!state.global && (category == FileCategory.IMAGES || category == FileCategory.VIDEO) && !inAlbum) {
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ChoiceChip(state.viewMode == FileViewMode.ALL, stringResource(R.string.files_tab_all)) { viewModel.setViewMode(FileViewMode.ALL) }
-                ChoiceChip(state.viewMode == FileViewMode.ALBUM, stringResource(R.string.files_tab_album)) { viewModel.setViewMode(FileViewMode.ALBUM) }
-            }
+            SegmentedTabs(
+                options = listOf(stringResource(R.string.files_tab_all), stringResource(R.string.files_tab_album)),
+                selectedIndex = if (state.viewMode == FileViewMode.ALL) 0 else 1,
+                onSelect = { viewModel.setViewMode(if (it == 0) FileViewMode.ALL else FileViewMode.ALBUM) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            )
         }
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -321,27 +325,6 @@ private fun IconAction(icon: androidx.compose.ui.graphics.vector.ImageVector, on
     ) { Icon(icon, null, tint = tint) }
 }
 
-@Composable
-private fun ChoiceChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label, maxLines = 1, softWrap = false) },
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            labelColor = MaterialTheme.colorScheme.tertiary,
-            selectedContainerColor = primary.copy(alpha = 0.15f),
-            selectedLabelColor = primary
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-            selectedBorderColor = primary
-        )
-    )
-}
 
 @Composable
 private fun EmptyState(searching: Boolean) {

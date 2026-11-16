@@ -72,6 +72,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tryCatch
 import com.phonecleaner.aicleaner.domain.AppsViewModel
@@ -148,55 +149,25 @@ fun AppsManagerScreen(
                 )
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AppChip(
-                    selected = state.filter == AppFilter.USER,
-                    onClick = { viewModel.setFilter(AppFilter.USER) },
-                    label = { Text(if (state.isLoading) stringResource(R.string.apps_filter_user_plain) else stringResource(R.string.apps_filter_user, state.userCount)) }
-                )
-                AppChip(
-                    selected = state.filter == AppFilter.SYSTEM,
-                    onClick = { viewModel.setFilter(AppFilter.SYSTEM) },
-                    label = { Text(if (state.isLoading) stringResource(R.string.apps_filter_system_plain) else stringResource(R.string.apps_filter_system, state.systemCount)) }
-                )
-                AppChip(
-                    selected = state.filter == AppFilter.ALL,
-                    onClick = { viewModel.setFilter(AppFilter.ALL) },
-                    label = { Text(if (state.isLoading) stringResource(R.string.apps_filter_all_plain) else stringResource(R.string.apps_filter_all, state.totalCount)) }
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.apps_sort_by),
-                    color = MaterialTheme.colorScheme.surface,
-                    style = TextStyle(fontSize = 13.sp, fontFamily = medium)
-                )
-                AppSort.entries.forEach { sort ->
-                    AppChip(
-                        selected = state.sort == sort,
-                        onClick = { viewModel.setSort(sort) },
-                        label = {
-                            Text(
-                                stringResource(
-                                    when (sort) {
-                                        AppSort.NAME -> R.string.apps_sort_name
-                                        AppSort.SIZE -> R.string.apps_sort_size
-                                        AppSort.RECENT -> R.string.apps_sort_recent
-                                    }
-                                )
-                            )
-                        }
-                    )
-                }
-            }
+            val filters = listOf(AppFilter.USER, AppFilter.SYSTEM, AppFilter.ALL)
+            val filterLabels = listOf(
+                if (state.isLoading) stringResource(R.string.apps_filter_user_plain) else stringResource(R.string.apps_filter_user, state.userCount),
+                if (state.isLoading) stringResource(R.string.apps_filter_system_plain) else stringResource(R.string.apps_filter_system, state.systemCount),
+                if (state.isLoading) stringResource(R.string.apps_filter_all_plain) else stringResource(R.string.apps_filter_all, state.totalCount)
+            )
+            SegmentedTabs(
+                options = filterLabels,
+                selectedIndex = filters.indexOf(state.filter),
+                onSelect = { viewModel.setFilter(filters[it]) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            val sorts = AppSort.entries.toList()
+            SegmentedTabs(
+                options = listOf(stringResource(R.string.apps_sort_name), stringResource(R.string.apps_sort_size), stringResource(R.string.apps_sort_recent)),
+                selectedIndex = sorts.indexOf(state.sort),
+                onSelect = { viewModel.setSort(sorts[it]) },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 when {
@@ -402,24 +373,3 @@ private fun ActionButton(
     }
 }
 
-@Composable
-private fun AppChip(selected: Boolean, onClick: () -> Unit, label: @Composable () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = label,
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            labelColor = MaterialTheme.colorScheme.tertiary,
-            selectedContainerColor = primary.copy(alpha = 0.15f),
-            selectedLabelColor = primary
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-            selectedBorderColor = primary
-        )
-    )
-}

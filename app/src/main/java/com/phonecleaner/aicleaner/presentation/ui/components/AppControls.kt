@@ -41,13 +41,13 @@ fun AppSwitch(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier
 ) {
-    val offset by animateDpAsState(if (checked) 22.dp else 0.dp, tween(200), label = "switchThumb")
+    val offset by animateDpAsState(if (checked) 20.dp else 0.dp, tween(200), label = "switchThumb")
     val off = MaterialTheme.colorScheme.surface.copy(alpha = 0.28f)
     val offBorder by animateColorAsState(if (checked) Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha = 0.45f), tween(200), label = "switchBorder")
     Box(
         modifier = modifier
-            .width(52.dp)
-            .height(30.dp)
+            .width(46.dp)
+            .height(26.dp)
             .clip(CircleShape)
             .background(if (checked) Brand.Primary else androidx.compose.ui.graphics.SolidColor(off))
             .border(1.dp, offBorder, CircleShape)
@@ -61,7 +61,7 @@ fun AppSwitch(
         Box(
             modifier = Modifier
                 .offset(x = offset)
-                .size(24.dp)
+                .size(20.dp)
                 .shadow(3.dp, CircleShape)
                 .background(Color.White, CircleShape)
         )

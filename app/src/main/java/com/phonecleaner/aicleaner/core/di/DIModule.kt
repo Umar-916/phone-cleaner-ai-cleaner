@@ -6,6 +6,7 @@ import com.phonecleaner.aicleaner.data.media.DuplicateScanner
 import com.phonecleaner.aicleaner.data.image.PhotoCompressor
 import com.phonecleaner.aicleaner.data.ai.AiCleanupScanner
 import com.phonecleaner.aicleaner.data.battery.BatteryRepository
+import com.phonecleaner.aicleaner.data.device.DeviceInfoRepository
 import com.phonecleaner.aicleaner.data.files.FilesRepository
 import com.phonecleaner.aicleaner.data.whatsapp.WhatsAppScanner
 import com.phonecleaner.aicleaner.data.process.ProcessRepository
@@ -49,6 +50,7 @@ val databaseModule = module {
     single { PhotoCompressor(androidContext()) }
     single { FilesRepository(androidContext()) }
     single { BatteryRepository(androidContext()) }
+    single { DeviceInfoRepository(androidContext()) }
     single { AiCleanupScanner(androidContext(), get()) }
 }
 

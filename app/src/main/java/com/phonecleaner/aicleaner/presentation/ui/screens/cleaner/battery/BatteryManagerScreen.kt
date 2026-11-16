@@ -26,6 +26,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.BatteryFull
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Power
+import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.PowerSettingsNew
@@ -55,10 +61,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +77,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppSlider
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tryCatch
@@ -131,12 +140,13 @@ fun BatteryManagerScreen(
             BatteryHero(state.battery)
 
             ControlCard(Icons.Rounded.Timer, stringResource(R.string.battery_timeout), Brand.Blue) {
-                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    timeoutOptions.forEach { option ->
-                        BatteryChip(state.screenTimeoutMs == option, timeoutLabel(option)) {
-                            if (!viewModel.setScreenTimeout(option)) needsPermission = true
-                        }
-                    }
+                timeoutOptions.chunked(3).forEachIndexed { rowIndex, row ->
+                    if (rowIndex > 0) Spacer(Modifier.height(8.dp))
+                    SegmentedTabs(
+                        options = row.map { timeoutLabel(it) },
+                        selectedIndex = row.indexOf(state.screenTimeoutMs),
+                        onSelect = { if (!viewModel.setScreenTimeout(row[it])) needsPermission = true }
+                    )
                 }
             }
 
@@ -234,31 +244,35 @@ private fun BatteryHero(info: BatteryInfo) {
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.secondary).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(modifier = Modifier.size(170.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(150.dp), contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 11.dp.toPx()
+                val stroke = 10.dp.toPx()
                 val arc = Size(size.width - stroke, size.height - stroke)
                 val topLeft = Offset(stroke / 2, stroke / 2)
                 drawArc(track, 135f, 270f, false, topLeft, arc, style = Stroke(stroke, cap = StrokeCap.Round))
-                drawArc(Brush.sweepGradient(listOf(accent.copy(alpha = 0.6f), accent, Color(0xFF7BE0A6)), center), 135f, 270f * animated, false, topLeft, arc, style = Stroke(stroke, cap = StrokeCap.Round))
+                rotate(135f) {
+                    drawArc(Brush.sweepGradient(0f to accent.copy(alpha = 0.55f), 0.75f to Color(0xFF7BE0A6), 1f to Color(0xFF7BE0A6), center = center), 0f, 270f * animated, false, topLeft, arc, style = Stroke(stroke, cap = StrokeCap.Round))
+                }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (info.isCharging) Icon(Icons.Rounded.BatteryChargingFull, null, tint = accent, modifier = Modifier.size(24.dp))
-                Text("${info.level}%", color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 40.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                Text("${info.level}%", color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 34.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
                 Text(statusLabel(info), color = accent, style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            InfoStat(stringResource(R.string.battery_health), healthLabel(info.health))
-            InfoStat(stringResource(R.string.battery_temperature), "%.1f °C".format(info.temperatureC))
-            InfoStat(stringResource(R.string.battery_voltage), "%.2f V".format(info.voltageMv / 1000f))
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            InfoStat(stringResource(R.string.battery_technology), info.technology.ifBlank { "—" })
-            InfoStat(stringResource(R.string.battery_capacity), info.estimatedCapacityMah?.let { "~$it mAh" } ?: "—")
-            InfoStat(stringResource(R.string.battery_source), sourceLabel(info.plugged))
+        Spacer(Modifier.height(16.dp))
+        val tiles = listOf(
+            Triple(Icons.Rounded.Favorite, stringResource(R.string.battery_health) to healthLabel(info.health), Brand.Good),
+            Triple(Icons.Rounded.Thermostat, stringResource(R.string.battery_temperature) to "%.1f °C".format(info.temperatureC), Brand.Junk),
+            Triple(Icons.Rounded.Bolt, stringResource(R.string.battery_voltage) to "%.2f V".format(info.voltageMv / 1000f), Brand.Gold),
+            Triple(Icons.Rounded.Memory, stringResource(R.string.battery_technology) to info.technology.ifBlank { "—" }, Brand.Photo),
+            Triple(Icons.Rounded.BatteryFull, stringResource(R.string.battery_capacity) to (info.estimatedCapacityMah?.let { "$it mAh" } ?: "—"), Brand.Blue),
+            Triple(Icons.Rounded.Power, stringResource(R.string.battery_source) to sourceLabel(info.plugged), Brand.Apps)
+        )
+        tiles.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { (icon, pair, tint) -> InfoTile(icon, pair.first, pair.second, tint, Modifier.weight(1f)) }
+            }
         }
     }
 }
@@ -290,10 +304,19 @@ private fun sourceLabel(plugged: Int): String = when (plugged) {
 }
 
 @Composable
-private fun InfoStat(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
-        Text(label, color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 11.sp, fontFamily = medium))
+private fun InfoTile(icon: ImageVector, label: String, value: String, tint: Color, modifier: Modifier) {
+    Row(
+        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(tint.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(34.dp).clip(CircleShape).background(tint.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(19.dp))
+        }
+        Spacer(Modifier.size(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(label, maxLines = 1, color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 11.sp, fontFamily = medium))
+            Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
+        }
     }
 }
 
@@ -313,25 +336,6 @@ private fun ControlCard(icon: ImageVector, title: String, tint: Color, content: 
     }
 }
 
-@Composable
-private fun BatteryChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            labelColor = MaterialTheme.colorScheme.tertiary,
-            selectedContainerColor = primary.copy(alpha = 0.15f),
-            selectedLabelColor = primary
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true, selected = selected,
-            borderColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f), selectedBorderColor = primary
-        )
-    )
-}
 
 @Composable
 private fun LinkText(text: String, onClick: () -> Unit) {

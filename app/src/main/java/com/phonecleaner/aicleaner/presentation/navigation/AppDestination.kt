@@ -50,6 +50,9 @@ sealed class AppDestination : NavKey {
     data object BatteryManager : AppDestination()
 
     @Serializable
+    data object DeviceInfo : AppDestination()
+
+    @Serializable
     data class TaskCompleted(val summary: String) : AppDestination()
 
     @Serializable

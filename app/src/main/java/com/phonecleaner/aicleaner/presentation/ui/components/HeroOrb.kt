@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -44,8 +43,9 @@ import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 
 /**
- * Hero control of the Home screen: a glossy disc with the Clean tab. The disc floats gently over a soft
- * shadow, one slow arc travels around it, and the outer ring shows how full the storage is.
+ * Hero control of the Home screen. A glossy disc sits inside a thick white ring and two faint halo rings,
+ * all concentric around one centre, over a soft shadow. One short arc travels round the outer halo as a
+ * true circle, the halos breathe slowly, and a faint dashed ring shows how full the storage is.
  */
 @Composable
 fun HeroOrb(
@@ -54,73 +54,69 @@ fun HeroOrb(
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "heroOrb")
-    val spin by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(9000, easing = LinearEasing)), label = "spin")
-    val hover by transition.animateFloat(-4f, 4f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "hover")
+    val spin by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(8000, easing = LinearEasing)), label = "spin")
+    val breathe by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(2800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
     val progress by animateFloatAsState(usedFraction.coerceIn(0f, 1f), tween(1000, easing = FastOutSlowInEasing), label = "usedProgress")
 
-    Box(modifier = modifier.size(176.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.size(190.dp), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val center = Offset(size.width / 2, size.height / 2)
-            val discRadius = 62.dp.toPx()
+            val c = Offset(size.width / 2, size.height / 2)
+            val halo = 3.dp.toPx() * breathe
 
-            drawCircle(Color.White.copy(alpha = 0.10f), radius = size.minDimension / 2)
-            val glowCenter = Offset(center.x, center.y + hover.dp.toPx())
+            // Soft shadow under and around the whole orb.
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0x55081F66), Color(0x22081F66), Color.Transparent),
-                    center = glowCenter,
-                    radius = 92.dp.toPx()
+                    colors = listOf(Color(0x40051A5E), Color(0x1A051A5E), Color.Transparent),
+                    center = Offset(c.x, c.y + 8.dp.toPx()),
+                    radius = 96.dp.toPx()
                 ),
-                radius = 92.dp.toPx(),
-                center = glowCenter
+                radius = 96.dp.toPx(),
+                center = Offset(c.x, c.y + 8.dp.toPx())
             )
 
-            // Shadow stays on the ground while the disc floats: it softens as the disc rises.
-            val lift = (hover + 4f) / 8f
-            val shadowCenter = Offset(center.x, center.y + 74.dp.toPx())
+            // Outer halos.
+            drawCircle(Color.White.copy(alpha = 0.10f), radius = 90.dp.toPx() + halo)
+            drawCircle(Color.White.copy(alpha = 0.16f), radius = 80.dp.toPx() + halo / 2)
+
+            // One short arc travelling round the outer halo.
+            val arcRadius = 85.dp.toPx() + halo
+            drawArc(
+                color = Color.White.copy(alpha = 0.55f),
+                startAngle = spin,
+                sweepAngle = 70f,
+                useCenter = false,
+                topLeft = Offset(c.x - arcRadius, c.y - arcRadius),
+                size = Size(arcRadius * 2, arcRadius * 2),
+                style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            // Thick white ring and the glossy disc.
+            drawCircle(Color.White.copy(alpha = 0.95f), radius = 71.dp.toPx(), center = c)
+            val disc = 65.dp.toPx()
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color.Black.copy(alpha = 0.26f - 0.10f * lift), Color.Transparent),
-                    center = shadowCenter,
-                    radius = (46.dp.toPx() * (1f - 0.10f * lift))
+                    colors = listOf(Color(0xFF5CB6FF), Color(0xFF1B66E8)),
+                    center = Offset(c.x - 14.dp.toPx(), c.y - 20.dp.toPx()),
+                    radius = disc * 1.5f
                 ),
-                radius = 46.dp.toPx(),
-                center = shadowCenter
+                radius = disc,
+                center = c
             )
 
-            val floatCenter = Offset(center.x, center.y + hover.dp.toPx())
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF59B4FF), Color(0xFF1B66E8)),
-                    center = Offset(floatCenter.x - 14.dp.toPx(), floatCenter.y - 18.dp.toPx()),
-                    radius = discRadius * 1.5f
-                ),
-                radius = discRadius,
-                center = floatCenter
-            )
-            drawCircle(Color.White.copy(alpha = 0.85f), radius = discRadius, center = floatCenter, style = Stroke(3.dp.toPx()))
-
-            val ringRadius = 72.dp.toPx()
-            val topLeft = Offset(floatCenter.x - ringRadius, floatCenter.y - ringRadius)
-            val ringSize = Size(ringRadius * 2, ringRadius * 2)
-            val dashed = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 6.dp.toPx()))
-            val innerRadius = 67.dp.toPx()
-            val innerTopLeft = Offset(floatCenter.x - innerRadius, floatCenter.y - innerRadius)
-            val innerSize = Size(innerRadius * 2, innerRadius * 2)
-            drawArc(Color.White.copy(alpha = 0.16f), 0f, 360f, false, innerTopLeft, innerSize, style = Stroke(2.dp.toPx(), pathEffect = dashed))
-            drawArc(Color.White.copy(alpha = 0.5f), -90f, 360f * progress, false, innerTopLeft, innerSize, style = Stroke(2.dp.toPx(), pathEffect = dashed))
-            drawArc(Color.White.copy(alpha = 0.18f), 0f, 360f, false, topLeft, ringSize, style = Stroke(2.dp.toPx()))
-            drawArc(Color.White.copy(alpha = 0.85f), spin, 60f, false, topLeft, ringSize, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+            // Faint dashed storage ring inside the white ring.
+            val inner = 58.dp.toPx()
+            val dashed = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 5.dp.toPx()))
+            val innerTopLeft = Offset(c.x - inner, c.y - inner)
+            val innerSize = Size(inner * 2, inner * 2)
+            drawArc(Color.White.copy(alpha = 0.14f), 0f, 360f, false, innerTopLeft, innerSize, style = Stroke(1.5.dp.toPx(), pathEffect = dashed))
+            drawArc(Color.White.copy(alpha = 0.55f), -90f, 360f * progress, false, innerTopLeft, innerSize, style = Stroke(1.5.dp.toPx(), pathEffect = dashed))
         }
 
-        Column(
-            modifier = Modifier.graphicsLayer { translationY = hover.dp.toPx() },
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 stringResource(R.string.home_junk_files),
                 color = Color.White,
-                style = TextStyle(fontSize = 19.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 17.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
             )
             Spacer(Modifier.height(10.dp))
             Box(

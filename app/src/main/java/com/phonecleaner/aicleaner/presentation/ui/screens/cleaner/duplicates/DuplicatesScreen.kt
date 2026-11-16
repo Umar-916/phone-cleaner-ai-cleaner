@@ -80,6 +80,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
 import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
@@ -284,19 +285,12 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
     val groups = data.activeGroups
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            DupChip(
-                selected = data.tab == DuplicateTab.PHOTOS,
-                label = stringResource(R.string.dup_tab_photos, data.photoGroups.size)
-            ) { viewModel.setTab(DuplicateTab.PHOTOS) }
-            DupChip(
-                selected = data.tab == DuplicateTab.VIDEOS,
-                label = stringResource(R.string.dup_tab_videos, data.videoGroups.size)
-            ) { viewModel.setTab(DuplicateTab.VIDEOS) }
-        }
+        SegmentedTabs(
+            options = listOf(stringResource(R.string.dup_tab_photos, data.photoGroups.size), stringResource(R.string.dup_tab_videos, data.videoGroups.size)),
+            selectedIndex = if (data.tab == DuplicateTab.PHOTOS) 0 else 1,
+            onSelect = { viewModel.setTab(if (it == 0) DuplicateTab.PHOTOS else DuplicateTab.VIDEOS) },
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -353,27 +347,6 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
     }
 }
 
-@Composable
-private fun DupChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            labelColor = MaterialTheme.colorScheme.tertiary,
-            selectedContainerColor = primary.copy(alpha = 0.15f),
-            selectedLabelColor = primary
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
-            selectedBorderColor = primary
-        )
-    )
-}
 
 @Composable
 private fun GroupCard(group: DuplicateGroup, data: DuplicatesData, viewModel: DuplicatesViewModel) {
