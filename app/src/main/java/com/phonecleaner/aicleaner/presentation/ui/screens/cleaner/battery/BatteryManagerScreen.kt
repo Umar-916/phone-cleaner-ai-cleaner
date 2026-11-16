@@ -38,7 +38,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -53,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,6 +69,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppSlider
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tryCatch
 import com.phonecleaner.aicleaner.data.battery.BatteryInfo
@@ -140,7 +141,7 @@ fun BatteryManagerScreen(
             }
 
             ControlCard(Icons.Rounded.BrightnessMedium, stringResource(R.string.battery_brightness), Brand.Gold) {
-                Slider(
+                AppSlider(
                     value = state.brightness.toFloat(),
                     onValueChange = { if (!viewModel.setBrightness(it.roundToInt())) needsPermission = true },
                     valueRange = 1f..255f
@@ -235,11 +236,11 @@ private fun BatteryHero(info: BatteryInfo) {
     ) {
         Box(modifier = Modifier.size(170.dp), contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 16.dp.toPx()
+                val stroke = 11.dp.toPx()
                 val arc = Size(size.width - stroke, size.height - stroke)
                 val topLeft = Offset(stroke / 2, stroke / 2)
                 drawArc(track, 135f, 270f, false, topLeft, arc, style = Stroke(stroke, cap = StrokeCap.Round))
-                drawArc(accent, 135f, 270f * animated, false, topLeft, arc, style = Stroke(stroke, cap = StrokeCap.Round))
+                drawArc(Brush.sweepGradient(listOf(accent.copy(alpha = 0.6f), accent, Color(0xFF7BE0A6)), center), 135f, 270f * animated, false, topLeft, arc, style = Stroke(stroke, cap = StrokeCap.Round))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (info.isCharging) Icon(Icons.Rounded.BatteryChargingFull, null, tint = accent, modifier = Modifier.size(24.dp))
@@ -352,7 +353,7 @@ private fun VolumeRow(level: VolumeLevel, onChange: (Int) -> Unit) {
     }
     Column {
         Text(stringResource(label), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 13.sp, fontFamily = medium))
-        Slider(
+        AppSlider(
             value = level.current.toFloat(),
             onValueChange = { onChange(it.roundToInt()) },
             valueRange = 0f..level.max.toFloat().coerceAtLeast(1f)

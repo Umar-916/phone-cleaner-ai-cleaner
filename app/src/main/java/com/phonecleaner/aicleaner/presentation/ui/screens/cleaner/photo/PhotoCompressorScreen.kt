@@ -50,8 +50,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -80,6 +78,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppSwitch
+import com.phonecleaner.aicleaner.presentation.ui.components.AppSlider
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import com.phonecleaner.aicleaner.core.common.postAnalytic
@@ -268,7 +268,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
             Section(stringResource(R.string.pc_quality)) {
                 if (settings.usesQuality) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Slider(
+                        AppSlider(
                             value = settings.quality.toFloat(),
                             onValueChange = { viewModel.setQuality(it.roundToInt()) },
                             valueRange = 10f..100f,
@@ -309,7 +309,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                             color = MaterialTheme.colorScheme.tertiary,
                             style = TextStyle(fontSize = 14.sp, fontFamily = medium)
                         )
-                        Switch(checked = settings.keepAspect, onCheckedChange = viewModel::setKeepAspect)
+                        AppSwitch(checked = settings.keepAspect, onCheckedChange = viewModel::setKeepAspect)
                     }
                     if (settings.keepAspect && state.photos.size > 1) {
                         Text(

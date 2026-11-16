@@ -565,7 +565,7 @@ GO PREMIUM</string>
     <string name="files_action_details">File info</string>
     <string name="files_action_delete">Delete</string>
     <string name="setting_show_hidden">Show hidden files</string>
-    <string name="setting_show_hidden_sub">Include files and folders that start with a dot</string>
+    <string name="setting_show_hidden_sub">Include dot-prefixed items</string>
     <string name="feature_ai_cleanup">AI Cleanup</string>
     <string name="feature_battery">Battery Manager</string>
     <string name="hint_process">Free up memory</string>

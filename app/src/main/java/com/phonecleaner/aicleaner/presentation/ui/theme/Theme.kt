@@ -28,7 +28,7 @@ private val DarkColorScheme = darkColorScheme(
     onSecondaryFixed = onSecondaryFixedDark,
     onSecondaryFixedVariant = onSecondaryFixedVariantDark,
     onTertiaryFixed = onTertiaryFixedDark,
-    secondaryContainer = Color(0xFF1D3358),
+    secondaryContainer = Color(0xFF28426E),
     onSecondaryContainer = Color(0xFFBFD7FF),
 )
 

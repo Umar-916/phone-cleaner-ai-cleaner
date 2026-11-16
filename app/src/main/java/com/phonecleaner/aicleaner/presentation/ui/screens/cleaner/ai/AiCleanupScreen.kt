@@ -35,7 +35,6 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Screenshot
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,6 +69,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.core.common.StoragePermission
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.data.ai.AiGroup
@@ -314,7 +314,7 @@ private fun GroupCard(
                     style = TextStyle(fontSize = 12.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
                 )
             }
-            Checkbox(checked = allSelected, onCheckedChange = { onToggleGroup() })
+            AppCheckbox(checked = allSelected, onCheckedChange = { onToggleGroup() })
             Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = MaterialTheme.colorScheme.surface)
         }
         AnimatedVisibility(visible = expanded) {
@@ -333,7 +333,7 @@ private fun GroupCard(
                                     Icon(group.kind.icon(), null, tint = tint, modifier = Modifier.size(34.dp))
                                 }
                             }
-                            Checkbox(checked = isSelected, onCheckedChange = { onToggle(entry) }, modifier = Modifier.align(Alignment.TopStart).size(36.dp))
+                            AppCheckbox(checked = isSelected, onCheckedChange = { onToggle(entry) }, modifier = Modifier.align(Alignment.TopStart).size(36.dp))
                         }
                         Text(entry.name, maxLines = 1, overflow = TextOverflow.MiddleEllipsis, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 11.sp, fontFamily = medium))
                         Text(Formatter.formatShortFileSize(context, entry.sizeBytes), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 10.sp, fontFamily = medium))

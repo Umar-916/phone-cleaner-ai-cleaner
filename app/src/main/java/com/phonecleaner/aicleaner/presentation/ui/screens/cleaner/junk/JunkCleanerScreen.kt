@@ -38,7 +38,6 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -78,6 +77,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
 import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
 import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
@@ -319,7 +319,7 @@ private fun CategoryCard(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onToggleExpand).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(checked = selectedCount == items.size, onCheckedChange = { onToggleCategory() })
+            AppCheckbox(checked = selectedCount == items.size, onCheckedChange = { onToggleCategory() })
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     stringResource(category.label),
@@ -345,7 +345,7 @@ private fun CategoryCard(
                         modifier = Modifier.fillMaxWidth().clickable { onToggleItem(item) }.padding(start = 22.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Checkbox(checked = item.path in selected, onCheckedChange = { onToggleItem(item) })
+                        AppCheckbox(checked = item.path in selected, onCheckedChange = { onToggleItem(item) })
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 item.name,

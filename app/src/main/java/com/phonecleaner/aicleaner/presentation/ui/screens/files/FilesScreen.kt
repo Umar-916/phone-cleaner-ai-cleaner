@@ -30,7 +30,6 @@ import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +58,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppProgressBar
 import com.phonecleaner.aicleaner.core.common.StoragePermission
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.domain.FilesViewModel
@@ -236,11 +236,11 @@ private fun StorageCard(fraction: Float, used: Long, total: Long, onClick: () ->
             }
         }
         Spacer(Modifier.height(14.dp))
-        LinearProgressIndicator(
-            progress = { fraction },
-            modifier = Modifier.fillMaxWidth().height(7.dp).clip(CircleShape),
-            color = Color.White,
-            trackColor = Color.White.copy(alpha = 0.3f)
+        AppProgressBar(
+            fraction = fraction,
+            height = 8.dp,
+            trackColor = Color.White.copy(alpha = 0.25f),
+            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color.White, Color(0xFFBFE3FF)))
         )
     }
 }

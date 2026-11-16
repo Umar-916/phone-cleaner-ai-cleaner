@@ -16,7 +16,6 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppSwitch
 
 /** One row of a settings card: tinted icon, title, optional value, then an arrow or a switch. */
 @Composable
@@ -87,7 +87,7 @@ fun SettingItem(
             Spacer(Modifier.width(6.dp))
         }
         if (switchChecked != null) {
-            Switch(checked = switchChecked, onCheckedChange = onSwitchChange)
+            AppSwitch(checked = switchChecked, onCheckedChange = onSwitchChange)
         } else {
             Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.surface)
         }

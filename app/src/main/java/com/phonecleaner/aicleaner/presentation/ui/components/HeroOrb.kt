@@ -29,6 +29,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -63,6 +64,16 @@ fun HeroOrb(
             val discRadius = 62.dp.toPx()
 
             drawCircle(Color.White.copy(alpha = 0.10f), radius = size.minDimension / 2)
+            val glowCenter = Offset(center.x, center.y + hover.dp.toPx())
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x55081F66), Color(0x22081F66), Color.Transparent),
+                    center = glowCenter,
+                    radius = 92.dp.toPx()
+                ),
+                radius = 92.dp.toPx(),
+                center = glowCenter
+            )
 
             // Shadow stays on the ground while the disc floats: it softens as the disc rises.
             val lift = (hover + 4f) / 8f
@@ -92,9 +103,14 @@ fun HeroOrb(
             val ringRadius = 72.dp.toPx()
             val topLeft = Offset(floatCenter.x - ringRadius, floatCenter.y - ringRadius)
             val ringSize = Size(ringRadius * 2, ringRadius * 2)
-            drawArc(Color.White.copy(alpha = 0.22f), 0f, 360f, false, topLeft, ringSize, style = Stroke(3.dp.toPx()))
-            drawArc(Color.White, -90f, 360f * progress, false, topLeft, ringSize, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
-            drawArc(Color.White.copy(alpha = 0.55f), spin, 40f, false, topLeft, ringSize, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+            val dashed = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 6.dp.toPx()))
+            val innerRadius = 67.dp.toPx()
+            val innerTopLeft = Offset(floatCenter.x - innerRadius, floatCenter.y - innerRadius)
+            val innerSize = Size(innerRadius * 2, innerRadius * 2)
+            drawArc(Color.White.copy(alpha = 0.28f), 0f, 360f, false, innerTopLeft, innerSize, style = Stroke(3.dp.toPx(), pathEffect = dashed))
+            drawArc(Color.White, -90f, 360f * progress, false, innerTopLeft, innerSize, style = Stroke(3.dp.toPx(), pathEffect = dashed))
+            drawArc(Color.White.copy(alpha = 0.18f), 0f, 360f, false, topLeft, ringSize, style = Stroke(2.dp.toPx()))
+            drawArc(Color.White.copy(alpha = 0.85f), spin, 60f, false, topLeft, ringSize, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
         }
 
         Column(

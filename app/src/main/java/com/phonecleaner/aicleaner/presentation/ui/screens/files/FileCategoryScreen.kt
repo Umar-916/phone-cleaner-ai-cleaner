@@ -40,7 +40,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -75,6 +74,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.core.common.StoragePermission
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FileViewMode
@@ -360,7 +360,7 @@ private fun MediaGrid(entries: List<FileEntry>, selected: Set<String>, selecting
                 ) {
                     MediaThumbnail(entry.asMediaFile(), Modifier.fillMaxSize())
                     if (selecting) {
-                        Checkbox(checked = isSelected, onCheckedChange = { onToggle(entry) }, modifier = Modifier.align(Alignment.TopStart).size(36.dp))
+                        AppCheckbox(checked = isSelected, onCheckedChange = { onToggle(entry) }, modifier = Modifier.align(Alignment.TopStart).size(36.dp))
                     }
                 }
             }
@@ -424,7 +424,7 @@ private fun EntryList(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (selecting) Checkbox(checked = entry.path in selected, onCheckedChange = { onToggle(entry) }, modifier = Modifier.size(40.dp))
+                    if (selecting) AppCheckbox(checked = entry.path in selected, onCheckedChange = { onToggle(entry) }, modifier = Modifier.size(40.dp))
                     EntryLeading(entry)
                     Spacer(Modifier.size(12.dp))
                     Column(Modifier.weight(1f)) {

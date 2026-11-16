@@ -41,7 +41,6 @@ import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -84,6 +83,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
 import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
 import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
@@ -355,7 +355,7 @@ private fun Overview(data: WaData, viewModel: WhatsAppViewModel) {
                         Icon(category.icon(), null, tint = category.tint(), modifier = Modifier.size(24.dp))
                     }
                     Spacer(Modifier.weight(1f))
-                    Checkbox(
+                    AppCheckbox(
                         checked = selectedCount == files.size,
                         onCheckedChange = { viewModel.toggleCategory(category) },
                         modifier = Modifier.size(32.dp)
@@ -488,7 +488,7 @@ private fun FileCell(file: WaFile, selected: Boolean, viewModel: WhatsAppViewMod
                 )
             }
         }
-        Checkbox(
+        AppCheckbox(
             checked = selected,
             onCheckedChange = { onToggle() },
             modifier = Modifier.align(Alignment.TopStart).size(36.dp)
