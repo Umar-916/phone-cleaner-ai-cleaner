@@ -33,7 +33,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Forum
-import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material3.Icon
@@ -167,7 +167,8 @@ fun HomeScreen(
         FeatureTile(R.string.feature_photo_compressor, R.string.hint_photo, Icons.Rounded.PhotoSizeSelectLarge, Brand.Photo, "home_photo_click", gated("home_photo_click", "HomePhoto", onNavigateToPhotoCompressor)),
         FeatureTile(R.string.feature_battery, R.string.hint_battery, Icons.Rounded.BatteryChargingFull, Brand.Battery, "home_battery_click", gated("home_battery_click", "HomeBattery", onNavigateToBattery))
     )
-    val openDeviceInfo = gated("home_device_info_click", "HomeDeviceInfo", onNavigateToDeviceInfo)
+    // Device info opens directly: no interstitial in front of it.
+    val openDeviceInfo = { context.postAnalytic("home_device_info_click"); onNavigateToDeviceInfo() }
     val openJunk = gated("home_junk_click", "HomeJunk", onNavigateToJunk)
     val homeScroll = rememberScrollState()
 
@@ -195,7 +196,7 @@ fun HomeScreen(
                                 .clickable(onClick = openDeviceInfo),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Rounded.PhoneAndroid, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
                         }
             }
 

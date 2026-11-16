@@ -72,21 +72,14 @@ fun UpgradeProCard(
                 Box(
                     modifier = Modifier
                         .size(46.sdp)
-                        .shadow(
-                            elevation = 3.sdp,
-                            shape = RoundedCornerShape(14.sdp),
-                            ambientColor = Color(0xFFFFD588),
-                            spotColor = Color(0xFFFFD588)
-                        )
                         .clip(RoundedCornerShape(14.sdp))
-                        .background(Brand.ProBadge)
-                        .border(width = 1.5.sdp, color = Color.White.copy(alpha = 0.55f), shape = RoundedCornerShape(14.sdp)),
+                        .background(Color.White.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(R.drawable.crown_icon),
                         contentDescription = null,
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF4A2A00))
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFFFD27A))
                     )
                 }
 
@@ -121,8 +114,7 @@ fun UpgradeProCard(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(Brand.ProBadge)
-                        .border(width = 1.5.sdp, color = Color.White.copy(alpha = 0.55f), shape = CircleShape)
+                        .background(Color.White.copy(alpha = 0.15f))
                         .padding(
                             horizontal = 16.sdp,
                             vertical = 7.sdp
@@ -135,7 +127,7 @@ fun UpgradeProCard(
                             fontSize = 10.ssp,
                             fontFamily = FontFamily(Font(R.font.google_sans_flex_semi)),
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF4A2A00)
+                            color = Color.White
                         )
                     )
                 }

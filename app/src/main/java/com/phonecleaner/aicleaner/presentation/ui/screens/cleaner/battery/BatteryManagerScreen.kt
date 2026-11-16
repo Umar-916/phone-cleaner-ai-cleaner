@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Power
@@ -177,18 +178,18 @@ fun BatteryManagerScreen(
                     color = MaterialTheme.colorScheme.surface,
                     style = TextStyle(fontSize = 13.sp, fontFamily = medium)
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 6.dp)) {
-                    if (state.hasVibrator) LinkText(stringResource(R.string.battery_vibration_test)) { viewModel.testVibration() }
-                    LinkText(stringResource(R.string.battery_vibration_settings)) { openSettings(Settings.ACTION_SOUND_SETTINGS) }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
+                    if (state.hasVibrator) ActionRow(Icons.Rounded.Vibration, stringResource(R.string.battery_vibration_test), Brand.Photo) { viewModel.testVibration() }
+                    ActionRow(Icons.Rounded.Settings, stringResource(R.string.battery_vibration_settings), Brand.Photo) { openSettings(Settings.ACTION_SOUND_SETTINGS) }
                 }
             }
 
             ControlCard(Icons.Rounded.PowerSettingsNew, stringResource(R.string.battery_optimization), Brand.Battery) {
-                LinkText(stringResource(R.string.battery_saver)) { context.postAnalytic("battery_saver_open"); viewModel.markBatteryTask(); openSettings(Settings.ACTION_BATTERY_SAVER_SETTINGS) }
-                Spacer(Modifier.height(6.dp))
-                LinkText(stringResource(R.string.battery_optimization_list)) { openSettings(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS) }
-                Spacer(Modifier.height(6.dp))
-                LinkText(stringResource(R.string.battery_usage)) { openSettings("android.intent.action.POWER_USAGE_SUMMARY") }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ActionRow(Icons.Rounded.BatteryChargingFull, stringResource(R.string.battery_saver), Brand.Battery) { context.postAnalytic("battery_saver_open"); viewModel.markBatteryTask(); openSettings(Settings.ACTION_BATTERY_SAVER_SETTINGS) }
+                    ActionRow(Icons.Rounded.PowerSettingsNew, stringResource(R.string.battery_optimization_list), Brand.Battery) { openSettings(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS) }
+                    ActionRow(Icons.Rounded.BatteryFull, stringResource(R.string.battery_usage), Brand.Battery) { openSettings("android.intent.action.POWER_USAGE_SUMMARY") }
+                }
             }
 
             ControlCard(Icons.Rounded.Lightbulb, stringResource(R.string.battery_tips_title), Brand.Gold) {
@@ -286,7 +287,7 @@ private fun statusLabel(info: BatteryInfo): String = when (info.status) {
 }
 
 @Composable
-private fun healthLabel(health: Int): String = when (health) {
+internal fun healthLabel(health: Int): String = when (health) {
     BatteryManager.BATTERY_HEALTH_GOOD -> stringResource(R.string.battery_health_good)
     BatteryManager.BATTERY_HEALTH_OVERHEAT -> stringResource(R.string.battery_health_overheat)
     BatteryManager.BATTERY_HEALTH_COLD -> stringResource(R.string.battery_health_cold)
@@ -296,7 +297,7 @@ private fun healthLabel(health: Int): String = when (health) {
 }
 
 @Composable
-private fun sourceLabel(plugged: Int): String = when (plugged) {
+internal fun sourceLabel(plugged: Int): String = when (plugged) {
     BatteryManager.BATTERY_PLUGGED_AC -> stringResource(R.string.battery_source_ac)
     BatteryManager.BATTERY_PLUGGED_USB -> stringResource(R.string.battery_source_usb)
     BatteryManager.BATTERY_PLUGGED_WIRELESS -> stringResource(R.string.battery_source_wireless)
@@ -345,6 +346,30 @@ private fun LinkText(text: String, onClick: () -> Unit) {
         color = MaterialTheme.colorScheme.primary,
         style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
     )
+}
+
+/** Full-width tappable row: label on the left (wraps instead of overflowing) and a chevron on the right. */
+@Composable
+private fun ActionRow(icon: ImageVector, text: String, tint: Color, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(tint.copy(alpha = 0.10f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.size(10.dp))
+        Text(
+            text,
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.tertiary,
+            style = TextStyle(fontSize = 14.sp, lineHeight = 18.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+        )
+        Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(20.dp))
+    }
 }
 
 @Composable

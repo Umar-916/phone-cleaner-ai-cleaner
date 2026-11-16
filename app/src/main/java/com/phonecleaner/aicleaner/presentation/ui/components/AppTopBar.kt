@@ -2,6 +2,7 @@ package com.phonecleaner.aicleaner.presentation.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -137,23 +138,11 @@ fun PremiumTopBarAction(
         Row(
             modifier = Modifier
                 .padding(end = 6.sdp)
-                .dropShadow(
-                    shape = pillShape,
-                    shadow = Shadow(
-                        color = Brand.GoldDeep.copy(alpha = 0.45f),
-                        radius = 8.sdp,
-                        spread = 0.sdp,
-                        offset = DpOffset(0.sdp, 4.sdp)
-                    )
-                )
-                .width(66.sdp)
-                .height(30.sdp)
+                .width(62.sdp)
+                .height(28.sdp)
                 .clip(pillShape)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Brand.Gold, Brand.GoldDeep)
-                    )
-                )
+                .background(Color.White.copy(alpha = 0.18f))
+                .border(1.sdp, Color.White.copy(alpha = 0.28f), pillShape)
                 .semantics { contentDescription = premDescription }
                 .debounceClickable(onClick = onClick),
             verticalAlignment = Alignment.CenterVertically,
@@ -163,7 +152,7 @@ fun PremiumTopBarAction(
                 modifier = Modifier
                     .size(22.sdp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.4f)),
+                    .background(Brand.Gold.copy(alpha = 0.85f)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -178,7 +167,7 @@ fun PremiumTopBarAction(
                     fontSize = 13.sp,
                     fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)),
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4A2A00)
+                    color = Color.White
                 )
             )
         }

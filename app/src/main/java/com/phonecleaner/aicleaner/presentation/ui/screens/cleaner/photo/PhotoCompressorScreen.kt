@@ -40,6 +40,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,6 +81,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.presentation.ui.components.PillChip
 import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppSwitch
 import com.phonecleaner.aicleaner.presentation.ui.components.AppSlider
@@ -258,7 +262,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                 ComparisonRow(photo, state.preview)
             }
 
-            Section(stringResource(R.string.pc_format)) {
+            Section(stringResource(R.string.pc_format), Icons.Rounded.Image) {
                 SegmentedTabs(
                     options = OutputFormat.entries.map { it.label },
                     selectedIndex = OutputFormat.entries.indexOf(settings.format),
@@ -266,8 +270,22 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                 )
             }
 
-            Section(stringResource(R.string.pc_quality)) {
+            Section(stringResource(R.string.pc_quality), Icons.Rounded.Tune) {
                 if (settings.usesQuality) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 6.dp)) {
+                        listOf(
+                            R.string.pc_preset_small to 40,
+                            R.string.pc_preset_balanced to 70,
+                            R.string.pc_preset_best to 90
+                        ).forEach { (label, value) ->
+                            PillChip(
+                                stringResource(label),
+                                selected = settings.quality == value,
+                                onClick = { viewModel.setQuality(value) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         AppSlider(
                             value = settings.quality.toFloat(),
@@ -282,6 +300,11 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                             style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                         )
                     }
+                    Text(
+                        stringResource(R.string.pc_quality_hint),
+                        color = MaterialTheme.colorScheme.surface,
+                        style = TextStyle(fontSize = 12.sp, fontFamily = medium)
+                    )
                 } else {
                     Text(
                         stringResource(R.string.pc_png_lossless),
@@ -291,7 +314,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                 }
             }
 
-            Section(stringResource(R.string.pc_size)) {
+            Section(stringResource(R.string.pc_size), Icons.Rounded.PhotoSizeSelectLarge) {
                 SegmentedTabs(
                     options = listOf(stringResource(R.string.pc_size_original), stringResource(R.string.pc_size_custom)),
                     selectedIndex = if (settings.custom) 1 else 0,
@@ -340,14 +363,29 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Text(
-            title,
-            modifier = Modifier.padding(bottom = 8.dp),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
+private fun Section(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.secondary)
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+            Box(
+                modifier = Modifier.size(34.dp).clip(CircleShape).background(Brand.Photo.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = Brand.Photo, modifier = Modifier.size(19.dp))
+            }
+            Spacer(Modifier.size(10.dp))
+            Text(
+                title,
+                color = MaterialTheme.colorScheme.tertiary,
+                style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+            )
+        }
         content()
     }
 }

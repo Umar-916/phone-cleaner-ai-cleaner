@@ -376,7 +376,11 @@ fun AppNavigator(
                             }
 
                             is AppDestination.DeviceInfo -> NavEntry(route) {
-                                DeviceInfoScreen(onBack = { navigateBack() })
+                                DeviceInfoScreen(
+                                    onBack = { navigateBack() },
+                                    onClean = { navigateTo(AppDestination.JunkCleaner) },
+                                    onOptimize = { navigateTo(AppDestination.ProcessManager) }
+                                )
                             }
 
                             is AppDestination.Feedback -> NavEntry(route) {

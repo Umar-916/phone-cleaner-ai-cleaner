@@ -15,8 +15,42 @@ data class InfoRow(@StringRes val label: Int, val value: String)
 
 data class InfoSection(@StringRes val title: Int, val rows: List<InfoRow>)
 
+data class UsageSummary(
+    val deviceName: String,
+    val androidVersion: String,
+    val storageUsed: Long,
+    val storageTotal: Long,
+    val ramUsed: Long,
+    val ramTotal: Long,
+    val cores: Int,
+    val abi: String,
+    val processor: String
+) {
+    val storageFraction: Float get() = if (storageTotal <= 0) 0f else (storageUsed.toFloat() / storageTotal).coerceIn(0f, 1f)
+    val ramFraction: Float get() = if (ramTotal <= 0) 0f else (ramUsed.toFloat() / ramTotal).coerceIn(0f, 1f)
+}
+
 /** Reads device facts that need no permission: build properties, memory, storage and display. */
 class DeviceInfoRepository(private val context: Context) {
+
+    fun usage(): UsageSummary {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val memory = ActivityManager.MemoryInfo().also { activityManager.getMemoryInfo(it) }
+        val stat = StatFs(Environment.getDataDirectory().path)
+        val model = Build.MODEL.orEmpty()
+        val maker = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+        return UsageSummary(
+            deviceName = if (model.startsWith(maker, ignoreCase = true)) model else "$maker $model".trim(),
+            androidVersion = "Android ${Build.VERSION.RELEASE}",
+            storageUsed = stat.totalBytes - stat.availableBytes,
+            storageTotal = stat.totalBytes,
+            ramUsed = memory.totalMem - memory.availMem,
+            ramTotal = memory.totalMem,
+            cores = Runtime.getRuntime().availableProcessors(),
+            abi = Build.SUPPORTED_ABIS.firstOrNull().orEmpty(),
+            processor = processorName()
+        )
+    }
 
     fun read(): List<InfoSection> {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

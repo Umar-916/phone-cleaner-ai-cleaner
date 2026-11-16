@@ -514,7 +514,7 @@ GO PREMIUM</string>
     <string name="pc_height">Height</string>
     <string name="pc_keep_aspect">Keep aspect ratio</string>
     <string name="pc_batch_hint">With the aspect ratio kept, the width is applied to every selected photo.</string>
-    <string name="pc_compress_action">Compress %1$d photos</string>
+    <string name="pc_compress_action">Compress (%1$d)</string>
     <string name="pc_processing">Compressing photos…</string>
     <string name="pc_done_title">Photos compressed</string>
     <string name="pc_done_summary">%1$s saved across %2$d photos</string>
@@ -685,4 +685,20 @@ Clean junk, manage apps, free memory and keep your phone healthy.</string>
     <string name="device_resolution">Resolution</string>
     <string name="device_density">Density</string>
     <string name="device_refresh">Refresh rate</string>
+    <string name="info_center_title">Info Center</string>
+    <string name="info_storage_used">Storage used</string>
+    <string name="info_ram_used">RAM used</string>
+    <string name="info_used">Used</string>
+    <string name="info_clean">Clean</string>
+    <string name="info_optimize">Optimize</string>
+    <string name="info_cpu_detail">CPU detail</string>
+    <string name="info_cores">%1$d-core processor</string>
+    <string name="info_battery_info">Battery info</string>
+    <string name="info_more_details">More details</string>
+    <string name="info_level">Level</string>
+    <string name="pc_preset_small">Small</string>
+    <string name="pc_preset_balanced">Balanced</string>
+    <string name="pc_preset_best">Best</string>
+    <string name="pc_quality_hint">Lower quality means a smaller file.</string>
+    <string name="pc_summary_selected">%1$d selected</string>
 </resources>
