@@ -137,10 +137,13 @@ fun JunkCleanerScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            AppTopBar(
-                title = { AppTopBarTitle(stringResource(R.string.feature_junk_cleaner)) },
-                onBack = if (busy) null else onBack
-            )
+            val showsScan = state is JunkUiState.Scanning || (state is JunkUiState.Result && (state as JunkUiState.Result).items.isNotEmpty())
+            if (!showsScan) {
+                AppTopBar(
+                    title = { AppTopBarTitle(stringResource(R.string.feature_junk_cleaner)) },
+                    onBack = if (busy) null else onBack
+                )
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -155,17 +158,11 @@ fun JunkCleanerScreen(
                     }
                 }
 
-                is JunkUiState.Scanning -> FeatureProgress(
-                    title = stringResource(R.string.junk_scanning),
-                    subtitle = stringResource(R.string.junk_found_format, Formatter.formatFileSize(context, current.progress.foundBytes), current.progress.foundCount),
-                    detail = current.progress.currentPath,
-                    icon = Icons.Rounded.CleaningServices,
-                    accent = Brand.Junk
-                )
+                is JunkUiState.Scanning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Result -> if (current.items.isEmpty()) {
                     EmptyView(onRescan = viewModel::reset)
                 } else {
-                    ResultView(current, viewModel)
+                    JunkScanView(current, viewModel, onBack)
                 }
 
                 is JunkUiState.Cleaning -> FeatureProgress(
@@ -202,7 +199,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
             .fillMaxWidth()
             .height(54.dp)
             .clip(RoundedCornerShape(27.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFF38A3FF), MaterialTheme.colorScheme.primary)))
+            .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary)))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

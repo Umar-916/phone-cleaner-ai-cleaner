@@ -85,9 +85,8 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.process.Proces
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.whatsapp.WhatsAppCleanerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.app_language.AppLanguageScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.feedback.FeedbackScreen
-import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.BlackPremiumScreen
-import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.PremiumZippoScreen
-import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.SliderPremiumScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.onboarding.OnboardingScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.PremiumScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.splash.StartScreen
 import com.phonecleaner.aicleaner.presentation.ui.theme.onSecondaryFixedVariantLight
 import network.chaintech.sdpcomposemultiplatform.sdp
@@ -116,9 +115,8 @@ fun AppNavigator(
 
     val shouldNotShowBannerAdTypes = setOf(
         AppDestination.Splash::class,
-        AppDestination.SliderPremiumScreen::class,
-        AppDestination.BlackPremiumScreen::class,
-        AppDestination.PremiumZippoScreen::class,
+        AppDestination.PremiumScreen::class,
+        AppDestination.Onboarding::class,
         AppDestination.Feedback::class,
         AppDestination.AppLanguage::class
     )
@@ -192,8 +190,7 @@ fun AppNavigator(
             Constants.currentScreenName = currentDestination?.let { it::class.simpleName }.orEmpty()
 
             val shouldHideSystemBars =
-                currentDestination is AppDestination.Splash ||
-                    currentDestination is AppDestination.BlackPremiumScreen
+                currentDestination is AppDestination.Splash
             if (shouldHideSystemBars) {
                 HideSystemBars()
             }
@@ -255,20 +252,12 @@ fun AppNavigator(
                                 }
                             }
 
-                            is AppDestination.SliderPremiumScreen -> NavEntry(route) {
-                                SliderPremiumScreen(
-                                    onClose = { continueOnboardingOr { navigateBack() } }
-                                )
+                            is AppDestination.Onboarding -> NavEntry(route) {
+                                OnboardingScreen(onFinished = { continueOnboardingOr { replaceTop(AppDestination.Home) } })
                             }
 
-                            is AppDestination.BlackPremiumScreen -> NavEntry(route) {
-                                BlackPremiumScreen(
-                                    onClose = { continueOnboardingOr { navigateBack() } }
-                                )
-                            }
-
-                            is AppDestination.PremiumZippoScreen -> NavEntry(route) {
-                                PremiumZippoScreen(
+                            is AppDestination.PremiumScreen -> NavEntry(route) {
+                                PremiumScreen(
                                     onClose = { continueOnboardingOr { navigateBack() } }
                                 )
                             }

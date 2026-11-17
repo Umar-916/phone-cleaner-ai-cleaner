@@ -59,10 +59,10 @@
       android:fillColor="#FFFFFF"/>
   <path
       android:pathData="M53.5,50 C53.5,48.6 54.6,47.5 56,47.5 C57.4,47.5 58.5,48.6 58.5,50 L58.5,62 L53.5,62 Z"
-      android:fillColor="#1F6FEB"/>
+      android:fillColor="#7A2ACB"/>
   <path
       android:pathData="M46,64 C46,62.9 46.9,62 48,62 L64,62 C65.1,62 66,62.9 66,64 L66,76 C66,78.2 64.2,80 62,80 L50,80 C47.8,80 46,78.2 46,76 Z"
-      android:fillColor="#1F6FEB"/>
+      android:fillColor="#7A2ACB"/>
   <path
       android:pathData="M50,68 L52,68 L52,77 L50,77 Z M55,68 L57,68 L57,77 L55,77 Z M60,68 L62,68 L62,77 L60,77 Z"
       android:fillColor="#FFFFFF"/>

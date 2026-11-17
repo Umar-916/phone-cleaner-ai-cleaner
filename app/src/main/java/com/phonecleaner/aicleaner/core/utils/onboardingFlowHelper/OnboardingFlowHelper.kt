@@ -177,15 +177,22 @@ object OnboardingFlowHelper {
                     OnboardingScreen.PREMIUM -> {
                         val destination = getPremiumDestination(screenConfig)
                         if (destination == null ||
-                            currentDestination is AppDestination.SliderPremiumScreen ||
-                            currentDestination is AppDestination.BlackPremiumScreen ||
-                            currentDestination is AppDestination.PremiumZippoScreen
+                            currentDestination is AppDestination.PremiumScreen
                         ) {
                             currentIndex++
                         } else {
                             selectedPremiumScreenType =
                                 normalizedPremiumScreenType(screenConfig.screenType)
                             targetDestination = destination
+                            break
+                        }
+                    }
+
+                    OnboardingScreen.ONBOARDING -> {
+                        if (currentDestination is AppDestination.Onboarding) {
+                            currentIndex++
+                        } else {
+                            targetDestination = AppDestination.Onboarding
                             break
                         }
                     }

@@ -7,6 +7,7 @@ import com.phonecleaner.aicleaner.domain.model.JunkCategory
 import com.phonecleaner.aicleaner.domain.model.JunkItem
 import com.phonecleaner.aicleaner.domain.model.ScanEvent
 import com.phonecleaner.aicleaner.domain.model.ScanProgress
+import com.phonecleaner.aicleaner.domain.model.JunkGroup
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,9 @@ sealed interface JunkUiState {
     data class Result(val items: List<JunkItem>, val selected: Set<String>) : JunkUiState {
         val grouped: Map<JunkCategory, List<JunkItem>> by lazy {
             items.groupBy { it.category }.toSortedMap(compareBy { it.ordinal })
+        }
+        val groups: Map<JunkGroup, List<JunkItem>> by lazy {
+            JunkGroup.entries.associateWith { group -> items.filter { it.category in group.categories } }
         }
         val selectedItems: List<JunkItem> get() = items.filter { it.path in selected }
         val selectedBytes: Long get() = selectedItems.sumOf { it.sizeBytes }
@@ -42,7 +46,10 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
         job = viewModelScope.launch {
             scanner.scan().collect { event ->
                 when (event) {
-                    is ScanEvent.Progress -> _state.value = JunkUiState.Scanning(event.progress)
+                    is ScanEvent.Progress -> {
+                        val previous = (_state.value as? JunkUiState.Scanning)?.progress?.fraction ?: 0f
+                        _state.value = JunkUiState.Scanning(event.progress.copy(fraction = maxOf(previous, event.progress.fraction)))
+                    }
                     is ScanEvent.Finished -> _state.value = JunkUiState.Result(
                         items = event.items,
                         selected = event.items.filter { it.category.selectedByDefault }.map { it.path }.toSet()
@@ -59,6 +66,11 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
     fun toggleCategory(category: JunkCategory) = updateSelection { result, selected ->
         val paths = result.items.filter { it.category == category }.map { it.path }
         if (selected.containsAll(paths)) selected - paths.toSet() else selected + paths
+    }
+
+    fun toggleGroup(group: JunkGroup) = updateSelection { result, selected ->
+        val paths = result.items.filter { it.category in group.categories }.map { it.path }
+        if (paths.isNotEmpty() && selected.containsAll(paths)) selected - paths.toSet() else selected + paths
     }
 
     fun setAllSelected(selectAll: Boolean) = updateSelection { result, _ ->

@@ -264,7 +264,7 @@ private fun BoostButton(running: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFF38A3FF), MaterialTheme.colorScheme.primary)))
+            .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary)))
             .clickable(enabled = !running, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

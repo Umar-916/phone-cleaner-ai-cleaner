@@ -2,20 +2,20 @@ package com.phonecleaner.aicleaner.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val colorPrimaryBoth = Color(0xFF1F6FEB)
-val colorPrimaryDark = Color(0xFF4F95FF)
+val colorPrimaryBoth = Color(0xFF7A2ACB)
+val colorPrimaryDark = Color(0xFFA66BF0)
 
-val backGroundColorLight = Color(0xFFF1F5FC)
-val backGroundColorDark = Color(0xFF0B1424)
+val backGroundColorLight = Color(0xFFF5EEFE)
+val backGroundColorDark = Color(0xFF150B24)
 
 val secondaryColorLight = Color(0xFFFFFFFF)
-val secondaryColorDark = Color(0xFF1B2942)
+val secondaryColorDark = Color(0xFF241638)
 
 val tertiaryColorDark = Color(0xFFFFFFFF)
-val tertiaryColorLight = Color(0xFF141920)
+val tertiaryColorLight = Color(0xFF250B3B)
 
-val surfaceColorDark = Color(0xFF9FAAC4)
-val surfaceColorLight = Color(0xFF919599)
+val surfaceColorDark = Color(0xFFB9A6D6)
+val surfaceColorLight = Color(0xFF857C96)
 
 val onTertiaryColorLight = Color(0xFFf6f9fa)
 val onTertiaryColorDark = Color(0xFF303640)
@@ -27,7 +27,7 @@ val onSurfaceColorLight = Color(0xFFf4f7fb)
 
 val onSurfaceVariantDark = Color(0xFF7E8494)
 
-val onSurfaceVariantLight = Color(0xFF8791A4)
+val onSurfaceVariantLight = Color(0xFF8B7FA3)
 
 val onSecondaryFixedDark = Color(0xFF2d313b)
 val onSecondaryFixedLight = Color(0xFF2d313b)

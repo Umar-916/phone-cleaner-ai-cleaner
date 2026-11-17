@@ -3,6 +3,7 @@ package com.phonecleaner.aicleaner.core.utils.onboardingFlowHelper.entity
 enum class OnboardingScreen {
     SPLASH_INTERSTITIAL,
     LANGUAGE,
+    ONBOARDING,
     PREMIUM;
 
     companion object {

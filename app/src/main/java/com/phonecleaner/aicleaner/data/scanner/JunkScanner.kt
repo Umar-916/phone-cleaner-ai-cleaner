@@ -24,6 +24,8 @@ class JunkScanner(private val context: Context) {
         val root = Environment.getExternalStorageDirectory()
         val items = ArrayList<JunkItem>()
         var foundBytes = 0L
+        var visited = 0
+        val categoryBytes = HashMap<JunkCategory, Long>()
         var lastEmit = 0L
         val stack = ArrayDeque<File>()
         stack.addLast(root)
@@ -31,6 +33,7 @@ class JunkScanner(private val context: Context) {
         while (stack.isNotEmpty()) {
             currentCoroutineContext().ensureActive()
             val dir = stack.removeLast()
+            visited++
             val children = dir.listFiles() ?: continue
 
             if (children.isEmpty() && dir != root && !isProtectedDirectory(dir)) {
@@ -46,6 +49,7 @@ class JunkScanner(private val context: Context) {
                     classify(child)?.let {
                         items += it
                         foundBytes += it.sizeBytes
+                        categoryBytes[it.category] = (categoryBytes[it.category] ?: 0L) + it.sizeBytes
                     }
                 }
             }
@@ -53,7 +57,11 @@ class JunkScanner(private val context: Context) {
             val now = SystemClock.elapsedRealtime()
             if (now - lastEmit >= EMIT_INTERVAL_MS) {
                 lastEmit = now
-                emit(ScanEvent.Progress(ScanProgress(dir.absolutePath, foundBytes, items.size)))
+                emit(
+                    ScanEvent.Progress(
+                        ScanProgress(dir.absolutePath, foundBytes, items.size, visited.toFloat() / (visited + stack.size), HashMap(categoryBytes))
+                    )
+                )
             }
         }
         emit(ScanEvent.Finished(items))
@@ -88,6 +96,7 @@ class JunkScanner(private val context: Context) {
         val modified = file.lastModified()
 
         val category = when {
+            lower.startsWith(".trashed-") || lower.contains(".trashed") || path.contains("/.trash", ignoreCase = true) -> JunkCategory.TRASH
             ext == "apk" -> JunkCategory.APK
             lower.startsWith(".thumbdata") || path.contains("/.thumbnails/") -> JunkCategory.THUMBNAILS
             ext in TEMP_EXTENSIONS -> JunkCategory.TEMP

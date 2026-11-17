@@ -47,9 +47,7 @@ class AppOpenAdManager(myApplication: Application) :
     companion object {
         private const val TAG = "app_open_ad_log"
         private const val TAG_INTERNAL = "AppOpenAdManager"
-        private const val SCREEN_PREMIUM = "SliderPremiumScreen"
-        private const val SCREEN_BLACK_PREMIUM = "BlackPremiumScreen"
-        private const val SCREEN_ZIPPO = "PremiumZippoScreen"
+        private const val SCREEN_PREMIUM = "PremiumScreen"
         private const val SCREEN_HALLOWEEN_PREMIUM = "HalloweenPremiumScreen"
         private const val SCREEN_FEEDBACK = "Feedback"
 
@@ -67,8 +65,6 @@ class AppOpenAdManager(myApplication: Application) :
         private fun isBlockedScreen(): Boolean {
             val screen = Constants.currentScreenName
             return screen == SCREEN_PREMIUM ||
-                    screen == SCREEN_BLACK_PREMIUM ||
-                    screen == SCREEN_ZIPPO ||
                     screen == SCREEN_HALLOWEEN_PREMIUM ||
                     screen == SCREEN_FEEDBACK
         }

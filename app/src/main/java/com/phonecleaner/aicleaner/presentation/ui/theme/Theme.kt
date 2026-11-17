@@ -28,8 +28,8 @@ private val DarkColorScheme = darkColorScheme(
     onSecondaryFixed = onSecondaryFixedDark,
     onSecondaryFixedVariant = onSecondaryFixedVariantDark,
     onTertiaryFixed = onTertiaryFixedDark,
-    secondaryContainer = Color(0xFF28426E),
-    onSecondaryContainer = Color(0xFFBFD7FF),
+    secondaryContainer = Color(0xFF4A2A7A),
+    onSecondaryContainer = Color(0xFFE3D0FF),
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -46,8 +46,8 @@ private val LightColorScheme = lightColorScheme(
     onSecondaryFixed = onSecondaryFixedLight,
     onSecondaryFixedVariant = onSecondaryFixedVariantLight,
     onTertiaryFixed = onTertiaryFixedLight,
-    secondaryContainer = Color(0xFFD6E5FF),
-    onSecondaryContainer = Color(0xFF123A8C),
+    secondaryContainer = Color(0xFFE8D8FB),
+    onSecondaryContainer = Color(0xFF4A1A8C),
 
 )
 

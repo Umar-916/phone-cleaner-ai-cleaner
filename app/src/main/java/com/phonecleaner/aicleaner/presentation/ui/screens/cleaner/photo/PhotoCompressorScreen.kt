@@ -183,7 +183,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
             .height(54.dp)
             .clip(RoundedCornerShape(27.dp))
             .background(
-                if (enabled) Brush.horizontalGradient(listOf(Color(0xFF38A3FF), MaterialTheme.colorScheme.primary))
+                if (enabled) Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary))
                 else Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)))
             )
             .clickable(enabled = enabled, onClick = onClick),

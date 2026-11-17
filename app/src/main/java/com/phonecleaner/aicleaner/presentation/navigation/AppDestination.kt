@@ -62,11 +62,8 @@ sealed class AppDestination : NavKey {
     data class AppLanguage(val isFromSplash: Boolean = false) : AppDestination()
 
     @Serializable
-    data class SliderPremiumScreen(val isFromSplash: Boolean) : AppDestination()
+    data object Onboarding : AppDestination()
 
     @Serializable
-    data class BlackPremiumScreen(val isFromSplash: Boolean) : AppDestination()
-
-    @Serializable
-    data class PremiumZippoScreen(val isFromSplash: Boolean) : AppDestination()
+    data class PremiumScreen(val isFromSplash: Boolean) : AppDestination()
 }

@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -173,7 +174,7 @@ fun HomeScreen(
     val homeScroll = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(modifier = Modifier.fillMaxWidth().height(HeroBackdropHeight).background(Brand.Hero))
+        Box(modifier = Modifier.fillMaxWidth().height(HeroBackdropHeight).background(Brush.verticalGradient(listOf(Color(0xFFC79BF4), Color(0xFFE6CFFB)))))
 
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Row(
@@ -183,20 +184,36 @@ fun HomeScreen(
                         Text(
                             stringResource(R.string.app_name_short),
                             modifier = Modifier.weight(1f),
-                            color = Color.White,
+                            color = Color(0xFF250B3B),
                             style = TextStyle(fontSize = 22.sp, fontFamily = boldFont, fontWeight = FontWeight.Bold)
                         )
-                        PremiumTopBarAction { onNavigateToPremium() }
+                        if (!com.phonecleaner.aicleaner.core.common.isPremiumUser()) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 10.dp)
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(Brush.verticalGradient(listOf(Brand.Gold, Brand.GoldDeep)))
+                                    .clickable { onNavigateToPremium() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.foundation.Image(
+                                    painter = androidx.compose.ui.res.painterResource(R.drawable.home_pro_crown),
+                                    contentDescription = stringResource(R.string.prem_description),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
                         Box(
                             modifier = Modifier
-                                .padding(end = 8.dp)
-                                .size(40.dp)
+                                .padding(end = 14.dp)
+                                .size(38.dp)
                                 .clip(CircleShape)
-                                .background(Color.White)
+                                .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
                                 .clickable(onClick = openDeviceInfo),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Brand.Blue, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
                         }
             }
 
@@ -218,7 +235,7 @@ fun HomeScreen(
                             Formatter.formatFileSize(context, storage.freeBytes),
                             Formatter.formatFileSize(context, storage.totalBytes)
                         ),
-                        color = Color.White.copy(alpha = 0.92f),
+                        color = Color(0xFF4A2A6F),
                         style = TextStyle(fontSize = 13.sp, fontFamily = mediumFont)
                     )
                 }
@@ -270,17 +287,15 @@ fun HomeScreen(
 private fun FeatureCard(tile: FeatureTile, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(tile.tint.copy(alpha = if (isSystemInDarkTheme()) 0.18f else 0.10f))
-            .clickable(onClick = tile.action)
+                        .clickable(onClick = tile.action)
             .padding(horizontal = 10.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.size(46.dp).clip(CircleShape).background(tile.tint.copy(alpha = 0.20f)),
+            modifier = Modifier.size(58.dp).clip(CircleShape).background(tile.tint.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(tile.icon, null, tint = tile.tint, modifier = Modifier.size(26.dp))
+            Icon(tile.icon, null, tint = tile.tint, modifier = Modifier.size(32.dp))
         }
         Spacer(Modifier.height(8.dp))
         Text(

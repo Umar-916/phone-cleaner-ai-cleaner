@@ -67,12 +67,12 @@ fun HeroOrb(
             val halo = 6.dp.toPx() * breathe
 
             // Two filled outer halos that breathe slowly (the "hover").
-            drawCircle(Color.White.copy(alpha = 0.10f), radius = 92.dp.toPx() + halo, center = c)
-            drawCircle(Color.White.copy(alpha = 0.17f), radius = 82.dp.toPx() + halo / 2, center = c)
+            drawCircle(Color.White.copy(alpha = 0.20f), radius = 92.dp.toPx() + halo, center = c)
+            drawCircle(Color.White.copy(alpha = 0.30f), radius = 82.dp.toPx() + halo / 2, center = c)
 
             // Flat disc with one thin white ring.
             val ringR = 72.dp.toPx()
-            drawCircle(Color(0xFF1B7AFF), radius = ringR, center = c)
+            drawCircle(Brush.radialGradient(listOf(Color(0xFFE9D4FB), Color(0xFFD2ADF7)), center = c, radius = ringR), radius = ringR, center = c)
             drawCircle(Color.White.copy(alpha = 0.92f), radius = ringR, center = c, style = Stroke(3.dp.toPx()))
 
             // Four short arcs travelling round just inside the ring.
@@ -84,7 +84,7 @@ fun HeroOrb(
                 for (s in 0 until pieces) {
                     val t = (s + 1) / pieces.toFloat()
                     drawArc(
-                        color = androidx.compose.ui.graphics.lerp(Color(0xFF8FE3FF), Color.White, t).copy(alpha = 0.12f + 0.88f * t),
+                        color = androidx.compose.ui.graphics.lerp(Color(0xFFB98AF2), Color(0xFF6A1FC0), t).copy(alpha = 0.12f + 0.88f * t),
                         startAngle = spin + i * 90f - tail + s * (tail / pieces),
                         sweepAngle = tail / pieces + 1.5f,
                         useCenter = false,
@@ -99,21 +99,21 @@ fun HeroOrb(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 stringResource(R.string.home_junk_files),
-                color = Color.White,
+                color = Color(0xFF250B3B),
                 style = TextStyle(fontSize = 18.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
             )
             Spacer(Modifier.height(10.dp))
             Box(
                 modifier = Modifier
-                    .shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Color(0xFF051A5E), spotColor = Color(0xFF051A5E))
+                    .shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Color(0xFF4A1A8C), spotColor = Color(0xFF4A1A8C))
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Brush.verticalGradient(listOf(Color.White, Color(0xFFDCEBFF))))
+                    .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
                     .clickable(onClick = onClean)
                     .padding(horizontal = 22.dp, vertical = 7.dp)
             ) {
                 Text(
                     stringResource(R.string.home_clean),
-                    color = Brand.BlueDark,
+                    color = Color.White,
                     style = TextStyle(fontSize = 16.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
                 )
             }

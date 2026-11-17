@@ -267,7 +267,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
             .fillMaxWidth()
             .height(54.dp)
             .clip(RoundedCornerShape(27.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFF38A3FF), MaterialTheme.colorScheme.primary)))
+            .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary)))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
