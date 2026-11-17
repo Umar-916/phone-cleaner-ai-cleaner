@@ -50,6 +50,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.drawscope.rotate as rotateDraw
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -110,9 +113,16 @@ private fun splitSize(bytes: Long): Pair<String, String> {
 fun JunkScanView(
     state: JunkUiState,
     viewModel: JunkViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onDone: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(state is JunkUiState.Done) {
+        if (state is JunkUiState.Done) {
+            kotlinx.coroutines.delay(1700)
+            onDone()
+        }
+    }
     val cleaning = state as? JunkUiState.Cleaning
     val scanning = state is JunkUiState.Scanning || cleaning != null
     val result = state as? JunkUiState.Result
@@ -131,21 +141,22 @@ fun JunkScanView(
         if (cleaning != null) cleanFraction else if (scanning) timed.value else 1f,
         tween(300), label = "junkFraction"
     )
-    val headerColor by animateColorAsState(
-        when {
-            !scanning -> PurpleTop
-            fraction < 0.45f -> PeachTop
-            fraction < 0.98f -> PinkTop
-            else -> PurpleTop
-        },
-        tween(600), label = "junkHeader"
-    )
-    val onHeader = if (scanning) Ink else Color.White
+    val isDone = state is JunkUiState.Done
     val totalBytes = when {
+        isDone -> 0L
         cleaning != null -> (cleaning.totalBytes * (1f - cleanFraction)).toLong()
         scanning -> progress?.foundBytes ?: 0L
         else -> result?.totalBytes ?: 0L
     }
+    // The scan start colour eases into the size colour (green small, purple medium, red large); cleaning eases back to green.
+    val targetColor = when {
+        isDone -> JunkGreen
+        cleaning != null -> junkColor(totalBytes)
+        scanning -> lerp(JunkStart, junkColor(totalBytes), fraction.coerceIn(0f, 1f))
+        else -> junkColor(totalBytes)
+    }
+    val headerColor by animateColorAsState(targetColor, tween(900), label = "junkHeader")
+    val onHeader = Color.White
     val (number, unit) = splitSize(totalBytes)
 
     var confirm by rememberSaveable { mutableStateOf(false) }
@@ -158,8 +169,10 @@ fun JunkScanView(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(330.dp)
-                .background(Brush.verticalGradient(listOf(headerColor, headerColor.copy(alpha = 0.78f))))
-        )
+                .background(Brush.verticalGradient(listOf(headerColor, headerColor.copy(alpha = 0.82f))))
+        ) {
+            if (scanning && cleaning == null) RadarSweep()
+        }
 
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Row(
@@ -200,7 +213,7 @@ fun JunkScanView(
                 }
                 Text(
                     "${(fraction * 100).toInt()}%",
-                    color = if (scanning) OnboardingPalette.purple else Color.White,
+                    color = Color.White,
                     style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
                 Spacer(Modifier.height(10.dp))
@@ -211,7 +224,7 @@ fun JunkScanView(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        color = Ink.copy(alpha = 0.65f),
+                        color = Color.White.copy(alpha = 0.8f),
                         style = TextStyle(fontSize = 12.sp, fontFamily = medium)
                     )
                 } else {
@@ -249,24 +262,24 @@ fun JunkScanView(
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)
                 ) {
                     if (cleaning != null) {
-                        val shown = (cleaning.names.size * cleanFraction).toInt()
-                        items(shown, key = { "clean_$it" }) { i ->
-                            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(20.dp).clip(CircleShape).background(Color(0xFF55C97E)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(13.dp))
+                        // Items leave the list one by one (oldest first) until the sheet is empty.
+                        val removed = (cleaning.targets.size * cleanFraction).toInt()
+                        val remaining = cleaning.targets.drop(removed)
+                        JunkGroup.entries.forEach { group ->
+                            val rem = remaining.filter { it.category in group.categories }
+                            if (rem.isNotEmpty()) {
+                                item(key = group.name) {
+                                    Box(Modifier.animateItem()) {
+                                        GroupRow(group, rem.sumOf { it.sizeBytes }, true, false, false, true, true, {}, {})
+                                    }
                                 }
-                                Text(
-                                    cleaning.names[cleaning.names.size - 1 - i],
-                                    modifier = Modifier.padding(start = 12.dp),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.MiddleEllipsis,
-                                    color = MaterialTheme.colorScheme.surface,
-                                    style = TextStyle(fontSize = 13.sp, fontFamily = medium)
-                                )
+                                val shownRem = rem.take(40)
+                                items(shownRem.size, key = { "c_" + shownRem[it].path }) { idx ->
+                                    Box(Modifier.animateItem()) { ItemRow(shownRem[idx], true) {} }
+                                }
                             }
                         }
-                    }
-                    JunkGroup.entries.forEachIndexed { groupIndex, group ->
+                    } else JunkGroup.entries.forEachIndexed { groupIndex, group ->
                         val items = result?.groups?.get(group).orEmpty()
                         val groupBytes = if (cleaning != null) {
                             ((cleaning.groupBytes[group] ?: 0L) * (1f - cleanFraction)).toLong()
@@ -309,7 +322,18 @@ fun JunkScanView(
                     }
                 }
 
-                if (!scanning && result != null) {
+                if (isDone) {
+                    Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 16.dp + getBannerOverlayHeight())) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp))
+                                .background(Brush.horizontalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
+                                .clickable { onDone() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(stringResource(R.string.junk_done_action), color = Color.White, style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                        }
+                    }
+                } else if (!scanning && result != null) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -438,5 +462,42 @@ private fun ItemRow(item: JunkItem, checked: Boolean, onToggle: () -> Unit) {
             style = TextStyle(fontSize = 12.sp, fontFamily = medium)
         )
         AppCheckbox(checked = checked, onCheckedChange = { onToggle() })
+    }
+}
+
+private val JunkStart = Color(0xFF8D3EDD)
+private val JunkGreen = Color(0xFF4CAF50)
+private val JunkPurple = Color(0xFFB565D0)
+private val JunkRed = Color(0xFFEF4B4B)
+
+/** Header colour by junk size: small is green, medium purple, large red, blended smoothly in between. */
+private fun junkColor(bytes: Long): Color {
+    val mb = bytes / 1048576f
+    return if (mb <= 60f) lerp(JunkGreen, JunkPurple, (mb / 60f).coerceIn(0f, 1f))
+    else lerp(JunkPurple, JunkRed, ((mb - 60f) / 140f).coerceIn(0f, 1f))
+}
+
+/** Concentric half-circle rings with a slow sweeping wedge, drawn at the bottom of the header while scanning. */
+@Composable
+private fun RadarSweep() {
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "radar")
+    val angle by t.animateFloat(
+        0f, 360f,
+        androidx.compose.animation.core.infiniteRepeatable(tween(3200, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "radarAngle"
+    )
+    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+        val c = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height)
+        listOf(0.30f, 0.52f, 0.76f).forEach {
+            drawCircle(Color.White.copy(alpha = 0.22f), radius = size.width * it, center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx()))
+        }
+        rotateDraw(degrees = angle, pivot = c) {
+            drawArc(
+                brush = Brush.sweepGradient(0f to Color.Transparent, 0.12f to Color.White.copy(alpha = 0.28f), 0.121f to Color.Transparent, center = c),
+                startAngle = 0f, sweepAngle = 360f, useCenter = true,
+                topLeft = androidx.compose.ui.geometry.Offset(c.x - size.width * 0.76f, c.y - size.width * 0.76f),
+                size = androidx.compose.ui.geometry.Size(size.width * 1.52f, size.width * 1.52f)
+            )
+        }
     }
 }

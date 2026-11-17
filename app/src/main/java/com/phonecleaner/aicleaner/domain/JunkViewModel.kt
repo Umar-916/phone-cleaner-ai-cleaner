@@ -35,7 +35,7 @@ sealed interface JunkUiState {
         val doneBytes: Long = 0L,
         val totalBytes: Long = 0L,
         val groupBytes: Map<JunkGroup, Long> = emptyMap(),
-        val names: List<String> = emptyList()
+        val targets: List<JunkItem> = emptyList()
     ) : JunkUiState
     data class Done(val freedBytes: Long, val removedCount: Int) : JunkUiState
 }
@@ -43,7 +43,7 @@ sealed interface JunkUiState {
 class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
     private companion object { const val MIN_SCAN_MS = 3000L
-        const val MIN_CLEAN_MS = 3000L }
+        const val MIN_CLEAN_MS = 3600L }
 
     private val _state = MutableStateFlow<JunkUiState>(JunkUiState.Idle)
     val state: StateFlow<JunkUiState> = _state.asStateFlow()
@@ -100,11 +100,11 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
         if (targets.isEmpty() || job?.isActive == true) return
         val totalBytes = targets.sumOf { it.sizeBytes }
         val groupBytes = JunkGroup.entries.associateWith { g -> targets.filter { it.category in g.categories }.sumOf { it.sizeBytes } }
-        _state.value = JunkUiState.Cleaning(0, targets.size, 0L, totalBytes, groupBytes, targets.map { it.name })
+        _state.value = JunkUiState.Cleaning(0, targets.size, 0L, totalBytes, groupBytes, targets)
         val cleanStart = android.os.SystemClock.elapsedRealtime()
         job = viewModelScope.launch {
             val outcome = scanner.delete(targets) { done ->
-                _state.value = JunkUiState.Cleaning(done, targets.size, targets.take(done).sumOf { it.sizeBytes }, totalBytes, groupBytes, targets.map { it.name })
+                _state.value = JunkUiState.Cleaning(done, targets.size, targets.take(done).sumOf { it.sizeBytes }, totalBytes, groupBytes, targets)
             }
             val rest = MIN_CLEAN_MS - (android.os.SystemClock.elapsedRealtime() - cleanStart)
             if (rest > 0) kotlinx.coroutines.delay(rest)

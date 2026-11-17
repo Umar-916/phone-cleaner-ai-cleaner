@@ -169,10 +169,10 @@ fun JunkCleanerScreen(
                 is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Done -> {
                     val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    DoneView {
+                    JunkScanView(current, viewModel, onBack, onDone = {
                         viewModel.reset()
                         onTaskCompleted(summary)
-                    }
+                    })
                 }
             }
         }
