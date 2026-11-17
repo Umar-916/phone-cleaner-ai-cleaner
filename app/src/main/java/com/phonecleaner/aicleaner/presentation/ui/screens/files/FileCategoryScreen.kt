@@ -43,7 +43,6 @@ import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -61,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.presentation.ui.components.AppAlertDialog
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -246,7 +246,7 @@ fun FileCategoryScreen(
     }
 
     if (deleteTargets.isNotEmpty()) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { deleteTargets = emptyList() },
             title = { Text(stringResource(R.string.junk_confirm_title)) },
             text = { Text(stringResource(R.string.junk_confirm_body, deleteTargets.size, Formatter.formatFileSize(context, deleteTargets.sumOf { it.sizeBytes }))) },

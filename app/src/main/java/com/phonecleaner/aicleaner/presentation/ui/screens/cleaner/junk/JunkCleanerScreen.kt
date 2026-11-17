@@ -42,7 +42,6 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.presentation.ui.components.AppAlertDialog
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -281,7 +281,7 @@ private fun ResultView(state: JunkUiState.Result, viewModel: JunkViewModel) {
     }
 
     if (confirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { confirm = false },
             title = { Text(stringResource(R.string.junk_confirm_title)) },
             text = {

@@ -46,7 +46,6 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.outlined.CheckBox
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +61,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.presentation.ui.components.AppAlertDialog
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -249,7 +249,7 @@ fun StorageBrowserScreen(
 
     if (deleteItem != null || deleteSelection) {
         val single = deleteItem
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { deleteItem = null; deleteSelection = false },
             title = { Text(stringResource(R.string.junk_confirm_title)) },
             text = { Text(single?.name ?: stringResource(R.string.files_selected_count, state.selected.size)) },

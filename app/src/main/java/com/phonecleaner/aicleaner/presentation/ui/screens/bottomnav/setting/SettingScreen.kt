@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.VisibilityOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.presentation.ui.components.AppAlertDialog
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -265,11 +265,11 @@ fun SettingScreen(
         }
 
         if (showAbout) {
-            AlertDialog(
+            AppAlertDialog(
                 onDismissRequest = { showAbout = false },
                 title = { Text(stringResource(R.string.app_name)) },
                 text = { Text(stringResource(R.string.about_body, BuildConfig.VERSION_NAME)) },
-                confirmButton = { TextButton(onClick = { tapEvent("setting_screen_tap_10"); showAbout = false }) { Text(stringResource(R.string.junk_done_action)) } }
+                confirmButton = { TextButton(onClick = { tapEvent("setting_screen_tap_10"); showAbout = false }) { Text(stringResource(R.string.junk_done_action), color = MaterialTheme.colorScheme.primary) } }
             )
         }
     }

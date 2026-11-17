@@ -32,7 +32,7 @@ sealed class AppDestination : NavKey {
     data object AppsManager : AppDestination()
 
     @Serializable
-    data object ProcessManager : AppDestination()
+    data class ProcessManager(val autoStart: Boolean = false) : AppDestination()
 
     @Serializable
     data object Duplicates : AppDestination()

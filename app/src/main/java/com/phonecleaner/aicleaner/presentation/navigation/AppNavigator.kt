@@ -316,7 +316,7 @@ fun AppNavigator(
                                     onNavigateToPremium = { navigateTo(getPremiumDestination()) },
                                     onNavigateToJunk = { navigateTo(AppDestination.JunkCleaner) },
                                     onNavigateToApps = { navigateTo(AppDestination.AppsManager) },
-                                    onNavigateToProcess = { navigateTo(AppDestination.ProcessManager) },
+                                    onNavigateToProcess = { navigateTo(AppDestination.ProcessManager()) },
                                     onNavigateToDuplicates = { navigateTo(AppDestination.Duplicates) },
                                     onNavigateToWhatsApp = { navigateTo(AppDestination.WhatsAppCleaner) },
                                     onNavigateToPhotoCompressor = { navigateTo(AppDestination.PhotoCompressor) },
@@ -340,7 +340,7 @@ fun AppNavigator(
                             }
 
                             is AppDestination.ProcessManager -> NavEntry(route) {
-                                ProcessManagerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
+                                ProcessManagerScreen(onBack = { navigateBack() }, autoStart = route.autoStart, onTaskCompleted = { finishTask(it) })
                             }
 
                             is AppDestination.AppsManager -> NavEntry(route) {
@@ -404,7 +404,7 @@ fun AppNavigator(
                                         navigateTo(
                                             when (task) {
                                                 MainTask.JUNK -> AppDestination.JunkCleaner
-                                                MainTask.PROCESS -> AppDestination.ProcessManager
+                                                MainTask.PROCESS -> AppDestination.ProcessManager()
                                                 MainTask.BATTERY -> AppDestination.BatteryOptimize
                                             }
                                         )
@@ -437,7 +437,7 @@ fun AppNavigator(
                                     DeviceInfoScreen(
                                     onBack = { navigateBack() },
                                     onClean = { navigateTo(AppDestination.JunkCleaner) },
-                                    onOptimize = { navigateTo(AppDestination.ProcessManager) }
+                                    onOptimize = { navigateTo(AppDestination.ProcessManager(autoStart = true)) }
                                     )
                                 }
                             }

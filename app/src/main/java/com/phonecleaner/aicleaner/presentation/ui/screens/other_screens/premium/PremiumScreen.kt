@@ -215,7 +215,7 @@ private fun ComparisonTable() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(androidx.compose.material3.MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f))
+            .background(com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor().copy(alpha = 0.92f))
     ) {
         Row(Modifier.matchParentSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.weight(1f))

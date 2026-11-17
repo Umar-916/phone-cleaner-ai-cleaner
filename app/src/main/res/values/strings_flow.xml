@@ -15,6 +15,16 @@
     <string name="bm_run_vibration">Turning off vibration</string>
     <string name="bm_done_summary">Battery settings optimised</string>
     <string name="done_text">Done</string>
+    <string name="pm_caption">Process Manager kills background processes</string>
+    <string name="pm_greeting">Hi! Tap a question and I will explain how Process Manager works.</string>
+    <string name="pm_q_what">What does it do?</string>
+    <string name="pm_q_how">How does it work?</string>
+    <string name="pm_q_when">When to use it?</string>
+    <string name="pm_q_data">Is my data safe?</string>
+    <string name="pm_a_what">It asks Android to stop background processes of the apps you installed, so more memory is free for the app you are using.</string>
+    <string name="pm_a_how">It goes through your installed apps one by one and asks the system to end their cached background processes. Android decides what really stops.</string>
+    <string name="pm_a_when">Use it when the phone feels slow, an app lags, or after playing a game or watching videos for a long time.</string>
+    <string name="pm_a_data">Nothing is deleted and nothing leaves your phone. Apps may simply restart in the background later.</string>
     <string name="files_manager_title">Files Manager</string>
     <string name="files_internal_shared">Internal shared storage</string>
     <string name="files_sort">Sort</string>

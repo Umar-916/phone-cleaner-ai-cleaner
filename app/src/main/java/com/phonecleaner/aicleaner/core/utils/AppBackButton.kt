@@ -23,7 +23,7 @@ fun AppBackButton(
 ) {
     IconButton(
         onClick = onClick.tapped("back_click"),
-        modifier = modifier.size(44.dp),
+        modifier = modifier.size(34.dp),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = MaterialTheme.colorScheme.secondary,
             contentColor = MaterialTheme.colorScheme.tertiary
@@ -32,7 +32,7 @@ fun AppBackButton(
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
             contentDescription = stringResource(R.string.back),
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(18.dp)
         )
     }
 }
