@@ -29,7 +29,13 @@ sealed interface JunkUiState {
         val selectedBytes: Long get() = selectedItems.sumOf { it.sizeBytes }
         val totalBytes: Long get() = items.sumOf { it.sizeBytes }
     }
-    data class Cleaning(val done: Int, val total: Int) : JunkUiState
+    data class Cleaning(
+        val done: Int,
+        val total: Int,
+        val doneBytes: Long = 0L,
+        val totalBytes: Long = 0L,
+        val groupBytes: Map<JunkGroup, Long> = emptyMap()
+    ) : JunkUiState
     data class Done(val freedBytes: Long, val removedCount: Int) : JunkUiState
 }
 
@@ -81,10 +87,12 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
         val result = _state.value as? JunkUiState.Result ?: return
         val targets = result.selectedItems
         if (targets.isEmpty() || job?.isActive == true) return
-        _state.value = JunkUiState.Cleaning(0, targets.size)
+        val totalBytes = targets.sumOf { it.sizeBytes }
+        val groupBytes = JunkGroup.entries.associateWith { g -> targets.filter { it.category in g.categories }.sumOf { it.sizeBytes } }
+        _state.value = JunkUiState.Cleaning(0, targets.size, 0L, totalBytes, groupBytes)
         job = viewModelScope.launch {
             val outcome = scanner.delete(targets) { done ->
-                _state.value = JunkUiState.Cleaning(done, targets.size)
+                _state.value = JunkUiState.Cleaning(done, targets.size, targets.take(done).sumOf { it.sizeBytes }, totalBytes, groupBytes)
             }
             _state.value = JunkUiState.Done(outcome.freedBytes, outcome.removedCount)
             TaskTracker.mark(MainTask.JUNK)

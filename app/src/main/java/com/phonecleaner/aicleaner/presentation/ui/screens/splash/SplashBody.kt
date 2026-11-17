@@ -60,8 +60,8 @@ import kotlin.math.abs
 // Source geometry of splash_robot.jpg / splash_brush.png (pixels of the reference artwork).
 private const val ART_W = 836f
 private const val ART_H = 760f
-private val BRUSH_ORIGIN = Offset(598f, 236f)
-private val BRUSH_PIVOT = Offset(628f, 392f)
+private val BRUSH_ORIGIN = Offset(572f, 236f)
+private val BRUSH_PIVOT = Offset(606f, 452f)
 
 /**
  * Splash content: the mascot waving her cleaning brush over a soft lavender backdrop, the app name in deep
@@ -91,7 +91,7 @@ fun SplashBody(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             BoxWithConstraints(contentAlignment = Alignment.Center) {
-                val artWidth = minOf(maxWidth, 420.dp)
+                val artWidth = minOf(maxWidth * 0.78f, 330.dp)
                 val artHeight = artWidth * (ART_H / ART_W)
                 Canvas(
                     modifier = Modifier
@@ -126,7 +126,7 @@ fun SplashBody(
                 modifier = Modifier.padding(top = 4.dp),
                 textAlign = TextAlign.Center,
                 color = SplashInk,
-                style = TextStyle(fontSize = 31.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 28.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
             )
         }
 
@@ -178,7 +178,7 @@ private fun DrawScope.drawArtwork(
         )
 
         // Brush: sways around the grip of the hand.
-        val angle = -9f + 12f * sway
+        val angle = -6f + 10f * sway
         rotate(degrees = angle, pivot = BRUSH_PIVOT * k) {
             drawImage(
                 brush,

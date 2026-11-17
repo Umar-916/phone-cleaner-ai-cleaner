@@ -191,7 +191,7 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .padding(end = 10.dp)
-                                    .size(38.dp)
+                                    .size(32.dp)
                                     .clip(CircleShape)
                                     .background(Brush.verticalGradient(listOf(Brand.Gold, Brand.GoldDeep)))
                                     .clickable { onNavigateToPremium() },
@@ -207,7 +207,7 @@ fun HomeScreen(
                         Box(
                             modifier = Modifier
                                 .padding(end = 14.dp)
-                                .size(38.dp)
+                                .size(32.dp)
                                 .clip(CircleShape)
                                 .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
                                 .clickable(onClick = openDeviceInfo),

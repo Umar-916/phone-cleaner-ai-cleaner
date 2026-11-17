@@ -112,24 +112,31 @@ fun JunkScanView(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val scanning = state is JunkUiState.Scanning
+    val cleaning = state as? JunkUiState.Cleaning
+    val scanning = state is JunkUiState.Scanning || cleaning != null
     val result = state as? JunkUiState.Result
     val progress = (state as? JunkUiState.Scanning)?.progress
+    val cleanFraction = cleaning?.let { if (it.total == 0) 0f else it.done.toFloat() / it.total } ?: 0f
 
     val fraction by animateFloatAsState(
-        if (scanning) (progress?.fraction ?: 0f).coerceIn(0f, 0.99f) else 1f,
+        if (cleaning != null) cleanFraction else if (scanning) (progress?.fraction ?: 0f).coerceIn(0f, 0.99f) else 1f,
         tween(400), label = "junkFraction"
     )
     val headerColor by animateColorAsState(
         when {
             !scanning -> PurpleTop
             fraction < 0.45f -> PeachTop
-            else -> PinkTop
+            fraction < 0.98f -> PinkTop
+            else -> PurpleTop
         },
         tween(600), label = "junkHeader"
     )
     val onHeader = if (scanning) Ink else Color.White
-    val totalBytes = if (scanning) progress?.foundBytes ?: 0L else result?.totalBytes ?: 0L
+    val totalBytes = when {
+        cleaning != null -> (cleaning.totalBytes - cleaning.doneBytes).coerceAtLeast(0L)
+        scanning -> progress?.foundBytes ?: 0L
+        else -> result?.totalBytes ?: 0L
+    }
     val (number, unit) = splitSize(totalBytes)
 
     var confirm by rememberSaveable { mutableStateOf(false) }
@@ -188,7 +195,7 @@ fun JunkScanView(
                 Spacer(Modifier.height(10.dp))
                 if (scanning) {
                     Text(
-                        stringResource(R.string.junk_scanning_file, progress?.currentPath?.substringAfterLast('/').orEmpty()),
+                        if (cleaning != null) stringResource(R.string.junk_cleaning_label) else stringResource(R.string.junk_scanning_file, progress?.currentPath?.substringAfterLast('/').orEmpty()),
                         modifier = Modifier.padding(horizontal = 32.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -232,7 +239,9 @@ fun JunkScanView(
                 ) {
                     JunkGroup.entries.forEach { group ->
                         val items = result?.groups?.get(group).orEmpty()
-                        val groupBytes = if (scanning) {
+                        val groupBytes = if (cleaning != null) {
+                            cleaning.groupBytes[group] ?: 0L
+                        } else if (scanning) {
                             group.categories.sumOf { progress?.categoryBytes?.get(it) ?: 0L }
                         } else {
                             items.sumOf { it.sizeBytes }
@@ -286,7 +295,12 @@ fun JunkScanView(
                                     if (result.selected.isEmpty()) Brush.horizontalGradient(listOf(OnboardingPalette.dot, OnboardingPalette.dot))
                                     else Brush.horizontalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple))
                                 )
-                                .clickable { if (result.selected.isNotEmpty()) confirm = true },
+                                .clickable {
+                                    if (result.selected.isNotEmpty()) {
+                                        context.postAnalytic("junk_clean_confirm")
+                                        viewModel.cleanSelected()
+                                    }
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -301,29 +315,6 @@ fun JunkScanView(
         }
     }
 
-    if (confirm && result != null) {
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text(stringResource(R.string.junk_confirm_title)) },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.junk_confirm_body,
-                        result.selected.size,
-                        Formatter.formatFileSize(context, result.selectedBytes)
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirm = false
-                    context.postAnalytic("junk_clean_confirm")
-                    viewModel.cleanSelected()
-                }) { Text(stringResource(R.string.junk_delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } }
-        )
-    }
 }
 
 @Composable

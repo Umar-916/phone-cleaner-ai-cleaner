@@ -171,7 +171,7 @@ fun BottomNavigationBar(
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = fabOverBar, bottom = 12.dp),
             shape = barShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+            colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.primary, 0.10f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             val barModifier = if (isPremiumUser()) Modifier.navigationBarsPadding() else Modifier

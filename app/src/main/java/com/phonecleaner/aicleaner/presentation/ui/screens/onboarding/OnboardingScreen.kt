@@ -139,7 +139,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     .padding(horizontal = 24.dp)
                     .padding(top = 8.dp, bottom = 24.dp)
                     .fillMaxWidth()
-                    .height(58.dp)
+                    .height(52.dp)
                     .clip(RoundedCornerShape(29.dp))
                     .background(OnboardingPalette.purple)
                     .clickable {
@@ -151,7 +151,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                 Text(
                     stringResource(if (last) R.string.onboarding_get_started else R.string.onboarding_next),
                     color = Color.White,
-                    style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                    style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
             }
         }

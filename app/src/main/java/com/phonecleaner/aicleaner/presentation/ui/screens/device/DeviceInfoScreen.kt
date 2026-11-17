@@ -41,11 +41,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -106,6 +111,13 @@ fun DeviceInfoScreen(
     val sections = remember { repository.read() }
     val usage = remember { repository.usage() }
     val battery by remember { batteryRepository.observe() }.collectAsState(initial = BatteryInfo())
+    var pending by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<(() -> Unit)?>(null) }
+    pending?.let { action ->
+        com.phonecleaner.aicleaner.presentation.ui.components.LoadingFilesScreen(
+            loadingLabel = com.phonecleaner.aicleaner.R.string.loading_files
+        ) { pending = null; action() }
+        return
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -125,7 +137,7 @@ fun DeviceInfoScreen(
                 accent = Brand.Blue,
                 ringEnd = Brand.Cyan,
                 ringFirst = true,
-                onAction = onClean
+                onAction = { pending = onClean }
             )
             UsageCard(
                 title = stringResource(R.string.info_ram_used),
@@ -136,7 +148,7 @@ fun DeviceInfoScreen(
                 accent = Brand.Photo,
                 ringEnd = Brand.BlueLight,
                 ringFirst = false,
-                onAction = onOptimize
+                onAction = { pending = onOptimize }
             )
             CpuCard(usage)
             BatteryCard(battery)
@@ -155,11 +167,23 @@ fun DeviceInfoScreen(
 
 @Composable
 private fun DeviceHeader(usage: UsageSummary) {
+    val glassTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "glass")
+    val glass by glassTransition.animateFloat(-0.3f, 1.3f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(3200, easing = androidx.compose.animation.core.FastOutSlowInEasing), androidx.compose.animation.core.RepeatMode.Reverse), label = "glassX")
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(Brand.Hero)
+            .drawWithContent {
+                drawContent()
+                val cx = size.width * glass
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(Color.Transparent, Color.White.copy(alpha = 0.22f), Color.Transparent),
+                        startX = cx - size.width * 0.18f, endX = cx + size.width * 0.18f
+                    )
+                )
+            }
             .padding(horizontal = 18.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -171,7 +195,13 @@ private fun DeviceHeader(usage: UsageSummary) {
                 modifier = Modifier.size(56.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.95f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.SmartToy, null, tint = Brand.Blue, modifier = Modifier.size(34.dp))
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.splash_robot),
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alignment = Alignment.TopCenter,
+                    modifier = Modifier.size(56.dp).clip(CircleShape)
+                )
             }
         }
         Spacer(Modifier.size(16.dp))

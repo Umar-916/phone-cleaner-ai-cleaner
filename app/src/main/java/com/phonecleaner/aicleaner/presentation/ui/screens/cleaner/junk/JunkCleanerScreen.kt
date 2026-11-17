@@ -31,7 +31,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -137,7 +138,7 @@ fun JunkCleanerScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val showsScan = state is JunkUiState.Scanning || (state is JunkUiState.Result && (state as JunkUiState.Result).items.isNotEmpty())
+            val showsScan = state is JunkUiState.Scanning || state is JunkUiState.Cleaning || state is JunkUiState.Done || (state is JunkUiState.Result && (state as JunkUiState.Result).items.isNotEmpty())
             if (!showsScan) {
                 AppTopBar(
                     title = { AppTopBarTitle(stringResource(R.string.feature_junk_cleaner)) },
@@ -165,15 +166,10 @@ fun JunkCleanerScreen(
                     JunkScanView(current, viewModel, onBack)
                 }
 
-                is JunkUiState.Cleaning -> FeatureProgress(
-                    title = stringResource(R.string.junk_cleaning),
-                    progress = if (current.total == 0) 0f else current.done.toFloat() / current.total,
-                    subtitle = "${current.done} / ${current.total}",
-                    accent = Brand.Junk
-                )
+                is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Done -> {
                     val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    DoneView(current) {
+                    DoneView {
                         viewModel.reset()
                         onTaskCompleted(summary)
                     }
@@ -381,25 +377,34 @@ private fun CategoryCard(
 }
 
 @Composable
-private fun DoneView(state: JunkUiState.Done, onDone: () -> Unit) {
-    val context = LocalContext.current
-    CenteredColumn {
-        Icon(Icons.Rounded.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(96.dp))
-        Spacer(Modifier.height(20.dp))
+private fun DoneView(onDone: () -> Unit) {
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1500)
+        onDone()
+    }
+    var shown by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { shown = true }
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        if (shown) 1f else 0.3f,
+        androidx.compose.animation.core.spring(androidx.compose.animation.core.Spring.DampingRatioMediumBouncy, androidx.compose.animation.core.Spring.StiffnessLow),
+        label = "doneScale"
+    )
+    Column(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.weight(1f))
+        Box(
+            modifier = Modifier.size(150.dp).scale(scale).clip(CircleShape).background(Brush.verticalGradient(listOf(Color(0xFF8BE0A6), Color(0xFF55C97E)))),
+            contentAlignment = Alignment.Center
+        ) { Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(84.dp)) }
+        Spacer(Modifier.weight(1f))
         Text(
-            stringResource(R.string.junk_done_title),
+            stringResource(R.string.task_completed),
             color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 22.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+            style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
         )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, state.freedBytes), state.removedCount),
-            color = MaterialTheme.colorScheme.surface,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 15.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(32.dp))
-        PrimaryButton(stringResource(R.string.junk_done_action), onDone)
+        Spacer(Modifier.height(96.dp))
     }
 }
 

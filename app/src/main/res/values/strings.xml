@@ -737,4 +737,8 @@ Clean junk, manage apps, free memory and keep your phone healthy.</string>
     <string name="junk_scanning_file">Scanning. %1$s</string>
     <string name="junk_clean_button">CLEAN %1$s</string>
     <string name="junk_header_title">Cleaner</string>
+    <string name="junk_cleaning_label">Cleaning.</string>
+    <string name="loading_files">Loading files.</string>
+    <string name="files_loaded">Files loaded.</string>
+    <string name="optimizing_label">Optimizing.</string>
 </resources>

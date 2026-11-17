@@ -14,6 +14,8 @@ import com.phonecleaner.aicleaner.core.common.ApplySystemBarColors
 import com.phonecleaner.aicleaner.core.common.SetStatusBarIconsDarkWithReset
 import com.phonecleaner.aicleaner.presentation.dialogues.theme.ThemeKeys
 
+private const val TEXT_SCALE = 0.88f
+
 private val DarkColorScheme = darkColorScheme(
     primary = colorPrimaryDark,
     onPrimary = Color.White,
@@ -80,9 +82,15 @@ fun PhoneCleanerProTheme(
     )
     SetStatusBarIconsDarkWithReset(darkIcons = !darkTheme)
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    // The whole app reads a little smaller than the system font scale: every sp size is scaled by this factor.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * TEXT_SCALE)
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
