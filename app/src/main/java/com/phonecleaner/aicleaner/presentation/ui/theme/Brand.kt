@@ -1,9 +1,11 @@
 package com.phonecleaner.aicleaner.presentation.ui.theme
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 
-/** Brand palette shared by every screen, so feature colors stay linked to the app identity. */
 object Brand {
     val BlueLight = Color(0xFFA66BF0)
     val Blue = Color(0xFF7A2ACB)
@@ -31,7 +33,6 @@ object Brand {
     val ProBadge: Brush get() = Brush.linearGradient(listOf(Gold, GoldDeep))
 }
 
-/** Splash backdrop and title colours, matching the lavender artwork. */
 object SplashPurple {
     val top = Color(0xFFE8D6FC)
     val bottom = Color(0xFFEEDFFD)
@@ -39,12 +40,18 @@ object SplashPurple {
 
 val SplashInk = Color(0xFF250B3B)
 
-/** Light lavender palette of the intro and premium screens. */
+@Composable
+fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
 object OnboardingPalette {
-    val top = Color(0xFFF1E4FE)
-    val bottom = Color(0xFFE8D6FC)
-    val purple = Color(0xFF7A2ACB)
-    val ink = Color(0xFF250B3B)
-    val muted = Color(0xFF6D5A85)
-    val dot = Color(0xFFD4B6F6)
+    val top: Color @Composable get() = if (isDarkSurface()) Color(0xFF1F1233) else Color(0xFFF1E4FE)
+    val bottom: Color @Composable get() = if (isDarkSurface()) Color(0xFF150B24) else Color(0xFFE8D6FC)
+    val purple: Color @Composable get() = if (isDarkSurface()) Color(0xFF8B3FE0) else Color(0xFF7A2ACB)
+    val ink: Color @Composable get() = if (isDarkSurface()) Color.White else Color(0xFF250B3B)
+    val muted: Color @Composable get() = if (isDarkSurface()) Color(0xFFB9A6D6) else Color(0xFF6D5A85)
+    val dot: Color @Composable get() = if (isDarkSurface()) Color(0xFF4A2A7A) else Color(0xFFD4B6F6)
 }
+
+@Composable
+fun softCardColor(): Color =
+    androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.primary, if (isDarkSurface()) 0.12f else 0.07f)

@@ -16,7 +16,6 @@ fun mimeFor(name: String, fallback: String = ""): String =
         MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase()) ?: "*/*"
     }
 
-/** Opens a file with another app; APK installation is intentionally not offered. */
 fun openEntry(context: Context, entry: FileEntry) {
     val intent = Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(entry.uri, mimeFor(entry.name, entry.mime))

@@ -102,6 +102,11 @@ class FilesRepository(private val context: Context) {
 
     fun rootDirectory(): File = Environment.getExternalStorageDirectory()
 
+    suspend fun createFolder(parent: File, name: String): Boolean = withContext(Dispatchers.IO) {
+        val target = File(parent, name)
+        runCatching { !target.exists() && target.mkdirs() }.getOrDefault(false)
+    }
+
     fun storage(): StorageInfo {
         val stat = StatFs(Environment.getDataDirectory().path)
         return StorageInfo(stat.totalBytes, stat.totalBytes - stat.availableBytes, stat.availableBytes)

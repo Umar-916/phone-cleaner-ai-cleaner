@@ -23,10 +23,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/**
- * Bottom sheet that floats above the edge like the Prank dialogs: transparent window, a fully rounded
- * card with a margin on the sides and the bottom (plus the navigation bar), and a small grab handle.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FloatingSheet(

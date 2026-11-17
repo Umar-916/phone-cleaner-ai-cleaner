@@ -1,11 +1,18 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.device
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.text.format.Formatter
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.graphicsLayer
+import com.phonecleaner.aicleaner.presentation.ui.components.featheredEdges
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,9 +90,9 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.battery.source
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.koinInject
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 
 private fun sectionStyle(title: Int): Pair<ImageVector, Color> = when (title) {
     R.string.device_section_device -> Icons.Rounded.Smartphone to Brand.Blue
@@ -95,10 +102,6 @@ private fun sectionStyle(title: Int): Pair<ImageVector, Color> = when (title) {
     else -> Icons.Rounded.Tv to Brand.Process
 }
 
-/**
- * Info Center: a header with the device name, live storage and RAM rings that lead to the cleaning
- * screens, CPU and battery details, and the full read-only list of device facts underneath.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceInfoScreen(
@@ -111,23 +114,16 @@ fun DeviceInfoScreen(
     val sections = remember { repository.read() }
     val usage = remember { repository.usage() }
     val battery by remember { batteryRepository.observe() }.collectAsState(initial = BatteryInfo())
-    var pending by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<(() -> Unit)?>(null) }
-    pending?.let { action ->
-        com.phonecleaner.aicleaner.presentation.ui.components.LoadingFilesScreen(
-            loadingLabel = com.phonecleaner.aicleaner.R.string.loading_files
-        ) { pending = null; action() }
-        return
-    }
-
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { AppTopBar(title = { AppTopBarTitle(stringResource(R.string.info_center_title)) }, onBack = onBack) }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             DeviceHeader(usage)
+            Text(stringResource(R.string.info_device_info), modifier = Modifier.padding(start = 4.dp), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
             UsageCard(
                 title = stringResource(R.string.info_storage_used),
                 fraction = usage.storageFraction,
@@ -137,7 +133,7 @@ fun DeviceInfoScreen(
                 accent = Brand.Blue,
                 ringEnd = Brand.Cyan,
                 ringFirst = true,
-                onAction = { pending = onClean }
+                onAction = onClean
             )
             UsageCard(
                 title = stringResource(R.string.info_ram_used),
@@ -148,18 +144,11 @@ fun DeviceInfoScreen(
                 accent = Brand.Photo,
                 ringEnd = Brand.BlueLight,
                 ringFirst = false,
-                onAction = { pending = onOptimize }
+                onAction = onOptimize
             )
             CpuCard(usage)
             BatteryCard(battery)
 
-            Text(
-                stringResource(R.string.info_more_details),
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
-                color = MaterialTheme.colorScheme.surface,
-                style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-            )
-            sections.forEach { Section(it) }
             Spacer(Modifier.height(16.dp + getBannerOverlayHeight()))
         }
     }
@@ -167,62 +156,18 @@ fun DeviceInfoScreen(
 
 @Composable
 private fun DeviceHeader(usage: UsageSummary) {
-    val glassTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "glass")
-    val glass by glassTransition.animateFloat(-0.3f, 1.3f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(3200, easing = androidx.compose.animation.core.FastOutSlowInEasing), androidx.compose.animation.core.RepeatMode.Reverse), label = "glassX")
-    Row(
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "infoArt")
+    val bob by t.animateFloat(-1f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2600, easing = androidx.compose.animation.core.FastOutSlowInEasing), androidx.compose.animation.core.RepeatMode.Reverse), label = "bob")
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(R.drawable.infocenter_art),
+        contentDescription = usage.deviceName,
+        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brand.Hero)
-            .drawWithContent {
-                drawContent()
-                val cx = size.width * glass
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        listOf(Color.Transparent, Color.White.copy(alpha = 0.22f), Color.Transparent),
-                        startX = cx - size.width * 0.18f, endX = cx + size.width * 0.18f
-                    )
-                )
-            }
-            .padding(horizontal = 18.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier.size(76.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.16f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier.size(56.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.95f)),
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(R.drawable.splash_robot),
-                    contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    alignment = Alignment.TopCenter,
-                    modifier = Modifier.size(56.dp).clip(CircleShape)
-                )
-            }
-        }
-        Spacer(Modifier.size(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                usage.deviceName,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.White,
-                style = TextStyle(fontSize = 19.sp, lineHeight = 23.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                usage.androidVersion + "  •  " + usage.abi,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.White.copy(alpha = 0.85f),
-                style = TextStyle(fontSize = 13.sp, fontFamily = medium)
-            )
-        }
-    }
+            .height(210.dp)
+            .graphicsLayer { translationY = bob * 5.dp.toPx() }
+            .featheredEdges(0.12f)
+    )
 }
 
 @Composable
@@ -242,7 +187,7 @@ private fun UsageCard(
     val end = if (warn) Brand.GoldDeep else ringEnd
 
     val ring: @Composable () -> Unit = {
-        Box(modifier = Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(92.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val stroke = 11.dp.toPx()
                 val arcSize = Size(size.width - stroke, size.height - stroke)
@@ -277,14 +222,14 @@ private fun UsageCard(
                 color = MaterialTheme.colorScheme.tertiary,
                 style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
+                    .height(38.dp)
                     .clip(RoundedCornerShape(21.dp))
                     .background(Brush.horizontalGradient(listOf(start, end)))
-                    .clickable(onClick = onAction),
+                    .tapClickable("usage_card_click", onClick = onAction),
                 contentAlignment = Alignment.Center
             ) {
                 Text(action, color = Color.White, style = TextStyle(fontSize = 15.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
@@ -293,7 +238,7 @@ private fun UsageCard(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(accent).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(accent).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (ringFirst) {
@@ -311,69 +256,60 @@ private fun UsageCard(
 @Composable
 private fun CpuCard(usage: UsageSummary) {
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(Brand.Photo).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).tintedCard(Brand.Photo).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.info_cpu_detail), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 13.sp, fontFamily = medium))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.info_cpu_detail), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
+                Text(
+                    stringResource(R.string.info_high_performance),
+                    modifier = Modifier.padding(start = 8.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFCDF3DC)).padding(horizontal = 6.dp, vertical = 2.dp),
+                    color = Color(0xFF1B8A4B),
+                    style = TextStyle(fontSize = 9.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+                )
+            }
             Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(R.string.info_cores, usage.cores),
-                color = MaterialTheme.colorScheme.tertiary,
-                style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-            )
-            Text(
-                usage.processor,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.surface,
-                style = TextStyle(fontSize = 13.sp, lineHeight = 17.sp, fontFamily = medium)
-            )
+            Text("•  " + stringResource(R.string.info_cores, usage.cores), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 13.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+            Text("•  " + usage.abi + " " + stringResource(R.string.info_architecture), maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 13.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
         }
         Spacer(Modifier.size(12.dp))
         Box(
-            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(Brand.Photo.copy(alpha = 0.16f)),
+            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0)))),
             contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Rounded.Memory, null, tint = Brand.Photo, modifier = Modifier.size(32.dp))
-        }
+        ) { Icon(Icons.Rounded.Memory, null, tint = Color.White, modifier = Modifier.size(30.dp)) }
     }
 }
 
 @Composable
 private fun BatteryCard(battery: BatteryInfo) {
-    Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).tintedCard(Brand.Blue).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(stringResource(R.string.info_battery_info), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
-        val tiles = listOf(
-            Triple(Icons.Rounded.BatteryFull, stringResource(R.string.info_level) to "${battery.level}%", Brand.Blue),
-            Triple(Icons.Rounded.Favorite, stringResource(R.string.battery_health) to healthLabel(battery.health), Brand.Good),
-            Triple(Icons.Rounded.Bolt, stringResource(R.string.battery_voltage) to "%.2f V".format(battery.voltageMv / 1000f), Brand.Gold),
-            Triple(Icons.Rounded.Thermostat, stringResource(R.string.battery_temperature) to "%.1f °C".format(battery.temperatureC), Brand.Junk),
-            Triple(Icons.Rounded.Power, stringResource(R.string.battery_source) to sourceLabel(battery.plugged), Brand.Apps),
-            Triple(Icons.Rounded.Memory, stringResource(R.string.battery_capacity) to (battery.estimatedCapacityMah?.let { "$it mAh" } ?: "—"), Brand.Photo)
-        )
-        tiles.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (icon, pair, tint) ->
-                    Row(
-                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(tint.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(Modifier.size(32.dp).clip(CircleShape).background(tint.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                            Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
-                        }
-                        Spacer(Modifier.size(10.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(pair.first, maxLines = 1, color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 11.sp, fontFamily = medium))
-                            Text(pair.second, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
-                        }
-                    }
-                }
+    val mah = battery.estimatedCapacityMah
+    @Composable
+    fun Row2(label: String, value: String, icon: ImageVector?, tint: Color, extra: (@Composable () -> Unit)? = null) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).tintedCard(tint).padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(label, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 11.sp, fontFamily = medium))
+                Text(value, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 15.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+            }
+            extra?.invoke()
+            if (icon != null) Icon(icon, null, tint = tint, modifier = Modifier.size(30.dp))
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(stringResource(R.string.info_battery_info), modifier = Modifier.padding(start = 4.dp), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
+        Row2(stringResource(R.string.info_current_capacity), "${battery.level}%", null, Brand.Photo) {
+            Column(horizontalAlignment = Alignment.End) {
+                com.phonecleaner.aicleaner.presentation.ui.components.AppProgressBar(battery.level / 100f, Modifier.width(80.dp), height = 8.dp)
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(R.string.info_approx, mah?.toString() ?: "—"), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 10.sp, fontFamily = medium))
             }
         }
+        Row2(stringResource(R.string.info_total_capacity), (mah?.let { "$it mAh" } ?: "—"), Icons.Rounded.BatteryFull, Color(0xFF2FC76B))
+        Row2(stringResource(R.string.battery_health), healthLabel(battery.health), Icons.Rounded.Favorite, Color(0xFFF2605F))
+        Row2(stringResource(R.string.battery_voltage), "%.1f V".format(battery.voltageMv / 1000f), Icons.Rounded.Bolt, Color(0xFFF5A524))
     }
 }
 
@@ -415,8 +351,8 @@ private fun Section(section: InfoSection) {
     }
 }
 
-/** Card surface with a soft tint fading from the top, so the cards have a little depth without shouting. */
 @Composable
 private fun Modifier.tintedCard(tint: Color): Modifier = this
     .background(MaterialTheme.colorScheme.secondary)
-    .background(Brush.verticalGradient(listOf(tint.copy(alpha = 0.16f), Color.Transparent)))
+    .background(Brush.verticalGradient(listOf(tint.copy(alpha = 0.08f), Color.Transparent)))
+    .border(1.dp, tint.copy(alpha = 0.22f), RoundedCornerShape(18.dp))

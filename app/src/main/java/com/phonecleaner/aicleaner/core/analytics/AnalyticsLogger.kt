@@ -9,6 +9,17 @@ import com.phonecleaner.aicleaner.core.common.tryCatch
 object AnalyticsLogger {
     private var myFirebaseAnalytics: FirebaseAnalytics? = null
 
+    fun init(context: Context) = initializeAnalytics(context.applicationContext)
+
+    /** Logs a UI tap without needing a context; the logger is set up once in the application class. */
+    fun tap(event: String) {
+        tryCatch {
+            val name = event.trim().lowercase().replace("[^a-z0-9_]".toRegex(), "_").take(40)
+            myFirebaseAnalytics?.logEvent(name, null)
+            Log.i("current_analytic", "tap: $name")
+        }
+    }
+
     private fun initializeAnalytics(context: Context) {
 
         if (myFirebaseAnalytics == null) {

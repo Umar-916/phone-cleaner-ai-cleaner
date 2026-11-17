@@ -38,7 +38,7 @@ fun LanguageCard(
         containerColor = if (highlighted) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.secondary
+            com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()
         }
     )
     val shape = RoundedCornerShape(16.sdp)
@@ -47,7 +47,7 @@ fun LanguageCard(
         .height(52.sdp)
     val border = BorderStroke(
         width = 0.4.sdp,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
     )
 
     val content: @Composable () -> Unit = {

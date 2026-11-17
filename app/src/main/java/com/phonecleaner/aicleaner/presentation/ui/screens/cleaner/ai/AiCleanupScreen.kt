@@ -1,5 +1,8 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -90,9 +93,9 @@ import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPr
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 
 private fun AiKind.icon(): ImageVector = when (this) {
     AiKind.SCREENSHOTS -> Icons.Rounded.Screenshot
@@ -122,7 +125,6 @@ private fun AiKind.reason(): Int = when (this) {
     AiKind.OLD_DOWNLOADS -> R.string.ai_reason_downloads
 }
 
-/** Smart suggestions built from on-device rules and an image sharpness check. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiCleanupScreen(
@@ -134,7 +136,6 @@ fun AiCleanupScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
-    var confirm by rememberSaveable { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -154,14 +155,29 @@ fun AiCleanupScreen(
         }
     }
 
+    var revealed by remember { mutableStateOf(false) }
+    val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+    var doneReady by remember { mutableStateOf(false) }
+    LaunchedEffect(state) {
+        if (state is AiUiState.Idle) { revealed = false; scanAnim.snapTo(0f) }
+        if (state !is AiUiState.Done) doneReady = false
+    }
     val busy = state is AiUiState.Analyzing || state is AiUiState.Cleaning
-    BackHandler(enabled = busy) {}
+    var stopSheet by remember { mutableStateOf(false) }
+    BackHandler(enabled = busy) { stopSheet = true }
+    androidx.compose.runtime.LaunchedEffect(busy) { if (!busy) stopSheet = false }
+    if (stopSheet) com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet(
+        onCancel = { stopSheet = false; viewModel.reset(); onBack() },
+        onDismiss = { stopSheet = false }
+    )
 
+    val loading = state is AiUiState.Analyzing || state is AiUiState.Cleaning ||
+        (state is AiUiState.Result && !revealed) || (state is AiUiState.Done && !doneReady)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { AppTopBar(title = { AppTopBarTitle(stringResource(R.string.feature_ai_cleanup)) }, onBack = if (busy) null else onBack) }
+        topBar = { if (!loading) AppTopBar(title = { AppTopBarTitle(stringResource(R.string.feature_ai_cleanup)) }, onBack = if (busy) null else onBack) }
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        Box(Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 AiUiState.Idle -> if (!granted) {
                     StoragePermissionPrompt(onDismiss = onBack, accent = Brand.Ai) {
@@ -170,54 +186,42 @@ fun AiCleanupScreen(
                     }
                 }
 
-                is AiUiState.Analyzing -> FeatureProgress(
-                    title = stringResource(if (current.phase == AiPhase.COLLECTING) R.string.ai_collecting else R.string.ai_analyzing),
+                is AiUiState.Analyzing -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
                     progress = if (current.total > 0) current.done.toFloat() / current.total else null,
-                    subtitle = if (current.total > 0) "${current.done} / ${current.total}" else null,
-                    icon = Icons.Rounded.AutoAwesome,
-                    accent = Brand.Ai
+                    finished = false,
+                    label = stringResource(if (current.phase == AiPhase.COLLECTING) R.string.ai_collecting else R.string.ai_analyzing),
+                    p = scanAnim
                 )
 
-                is AiUiState.Result -> if (current.data.groups.isEmpty()) {
+                is AiUiState.Result -> if (!revealed) {
+                    com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.ai_analyzing), scanAnim) { revealed = true }
+                } else if (current.data.groups.isEmpty()) {
                     EmptyView(onDuplicates = onOpenDuplicates, onRescan = viewModel::reset)
                 } else {
-                    ResultView(current.data, viewModel, onOpenDuplicates) { confirm = true }
+                    ResultView(current.data, viewModel, onOpenDuplicates) {
+                        context.postAnalytic("ai_cleanup_confirm")
+                        viewModel.cleanSelected()
+                    }
                 }
 
-                is AiUiState.Cleaning -> FeatureProgress(
-                    title = stringResource(R.string.junk_cleaning),
-                    progress = if (current.total == 0) 0f else current.done.toFloat() / current.total,
-                    subtitle = "${current.done} / ${current.total}",
-                    accent = Brand.Ai
-                )
-
-                is AiUiState.Done -> {
-                    val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removed)
-                    LaunchedEffect(Unit) {
-                        viewModel.reset()
-                        onFinished(summary)
+                is AiUiState.Cleaning, is AiUiState.Done -> {
+                    val done = current as? AiUiState.Done
+                    val summary = if (done != null) stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, done.freedBytes), done.removed) else ""
+                    if (done != null && doneReady) {
+                        com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(
+                            label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(extra = com.phonecleaner.aicleaner.domain.ExtraTask.AI)
+                        ) {
+                            viewModel.reset()
+                            onFinished(summary)
+                        }
+                    } else {
+                        com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, done != null, stringResource(R.string.junk_cleaning)) { doneReady = true }
                     }
                 }
             }
         }
     }
 
-    val data = (state as? AiUiState.Result)?.data
-    if (confirm && data != null) {
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text(stringResource(R.string.junk_confirm_title)) },
-            text = { Text(stringResource(R.string.junk_confirm_body, data.selected.size, Formatter.formatFileSize(context, data.selectedBytes))) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirm = false
-                    context.postAnalytic("ai_cleanup_confirm")
-                    viewModel.cleanSelected()
-                }) { Text(stringResource(R.string.junk_delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } }
-        )
-    }
 }
 
 @Composable
@@ -262,7 +266,7 @@ private fun ResultView(data: AiResult, viewModel: AiCleanupViewModel, onOpenDupl
             }
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.secondary).clickable(onClick = onOpenDuplicates).padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.secondary).tapClickable("result_view_click", onClick = onOpenDuplicates).padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
@@ -277,7 +281,7 @@ private fun ResultView(data: AiResult, viewModel: AiCleanupViewModel, onOpenDupl
         Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp + getBannerOverlayHeight())) {
             GradientButton(
                 text = if (data.selected.isEmpty()) stringResource(R.string.dup_nothing_selected) else stringResource(R.string.junk_clean_selected, Formatter.formatFileSize(context, data.selectedBytes)),
-                onClick = onClean,
+                onClick = onClean.tapped("result_view_tap_2"),
                 enabled = data.selected.isNotEmpty()
             )
         }
@@ -299,7 +303,7 @@ private fun GroupCard(
     val tint = group.kind.tint()
     val allSelected = selected.containsAll(group.files.map { it.path })
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.secondary)) {
-        Row(Modifier.fillMaxWidth().clickable(onClick = onExpand).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().tapClickable("group_card_click", onClick = onExpand).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(46.dp).clip(CircleShape).background(tint.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
                 Icon(group.kind.icon(), null, tint = tint, modifier = Modifier.size(26.dp))
             }
@@ -325,7 +329,7 @@ private fun GroupCard(
                 group.files.take(MAX_PREVIEW).forEach { entry ->
                     val isSelected = entry.path in selected
                     Column(Modifier.size(width = 96.dp, height = 132.dp)) {
-                        Box(Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)).clickable { onToggle(entry) }) {
+                        Box(Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)).tapClickable("group_card_click_2") { onToggle(entry) }) {
                             if (entry.isMedia) {
                                 MediaThumbnail(MediaFile(entry.id, entry.uri, entry.name, entry.sizeBytes, entry.modifiedMs, entry.category == com.phonecleaner.aicleaner.domain.model.FileCategory.VIDEO, 0, 0, 0L), Modifier.fillMaxSize(), 200)
                             } else {
@@ -355,7 +359,7 @@ private fun EmptyView(onDuplicates: () -> Unit, onRescan: () -> Unit) {
         Spacer(Modifier.height(24.dp))
         GradientButton(stringResource(R.string.ai_duplicates_title), onDuplicates)
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onRescan) { Text(stringResource(R.string.junk_rescan)) }
+        TextButton(onClick = onRescan.tapped("empty_view_tap")) { Text(stringResource(R.string.junk_rescan)) }
     }
 }
 

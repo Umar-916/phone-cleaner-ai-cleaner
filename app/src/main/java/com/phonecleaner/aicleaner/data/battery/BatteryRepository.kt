@@ -97,6 +97,23 @@ class BatteryRepository(private val context: Context) {
         }
     }
 
+    enum class SaverStep { TIMEOUT, SOUND, BRIGHTNESS, VIBRATION }
+
+    fun applySaver(step: SaverStep): Boolean = runCatching {
+        when (step) {
+            SaverStep.TIMEOUT -> setScreenTimeout(30_000)
+            SaverStep.SOUND -> {
+                listOf(AudioManager.STREAM_MUSIC to 0.6f, AudioManager.STREAM_RING to 0.6f, AudioManager.STREAM_NOTIFICATION to 0.4f).forEach { (stream, cap) ->
+                    val max = audioManager.getStreamMaxVolume(stream)
+                    if (audioManager.getStreamVolume(stream) > (max * cap).toInt()) runCatching { audioManager.setStreamVolume(stream, (max * cap).toInt(), 0) }
+                }
+                true
+            }
+            SaverStep.BRIGHTNESS -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC)
+            SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
+        }
+    }.getOrDefault(false)
+
     private fun read(intent: Intent): BatteryInfo {
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)

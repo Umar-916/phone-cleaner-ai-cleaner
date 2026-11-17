@@ -5,11 +5,4 @@ data class MemoryStats(val totalBytes: Long = 0L, val availableBytes: Long = 0L)
     val usedFraction: Float get() = if (totalBytes > 0) (usedBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
 }
 
-data class RecentApp(
-    val packageName: String,
-    val label: String,
-    val lastUsedAt: Long,
-    val foregroundMs: Long
-)
-
 data class BoostResult(val freedBytes: Long, val appsCount: Int)

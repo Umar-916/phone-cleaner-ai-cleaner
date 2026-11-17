@@ -57,17 +57,11 @@ import com.phonecleaner.aicleaner.presentation.ui.theme.SplashInk
 import com.phonecleaner.aicleaner.presentation.ui.theme.SplashPurple
 import kotlin.math.abs
 
-// Source geometry of splash_robot.jpg / splash_brush.png (pixels of the reference artwork).
 private const val ART_W = 836f
 private const val ART_H = 760f
 private val BRUSH_ORIGIN = Offset(572f, 236f)
 private val BRUSH_PIVOT = Offset(612f, 470f)
 
-/**
- * Splash content: the mascot waving her cleaning brush over a soft lavender backdrop, the app name in deep
- * purple, and the loader with its status text at the bottom. The brush is a separate layer that sways
- * around the hand, the mascot floats gently and a few sparkles twinkle around the brush.
- */
 @Composable
 fun SplashBody(
     logoScale: () -> Float = { 1f },
@@ -102,7 +96,6 @@ fun SplashBody(
                     val k = size.width / ART_W
                     val bob = float * 5.dp.toPx()
 
-                    // Floor shadow that shrinks a little while the mascot floats up.
                     val shadowW = size.width * (0.40f - 0.03f * float)
                     val shadowY = size.height - 14.dp.toPx()
                     drawOval(
@@ -145,7 +138,6 @@ fun SplashBody(
     }
 }
 
-/** Draws the mascot with soft edges, then the swaying brush on top and a few twinkling sparkles. */
 private fun DrawScope.drawArtwork(
     robot: ImageBitmap,
     brush: ImageBitmap,
@@ -159,7 +151,6 @@ private fun DrawScope.drawArtwork(
     val dx = (size.width - w) / 2f
 
     translate(left = dx, top = bob) {
-        // Body: draw the picture, then fade its borders into the backdrop (alpha mask).
         drawImage(robot, dstSize = IntSize(w.toInt(), h.toInt()))
         val fade = 0.10f
         drawRect(
@@ -177,7 +168,6 @@ private fun DrawScope.drawArtwork(
             size = Size(w, h), blendMode = BlendMode.DstIn
         )
 
-        // Brush: sways around the grip of the hand.
         val angle = -14f + 22f * sway
         rotate(degrees = angle, pivot = BRUSH_PIVOT * k) {
             drawImage(
@@ -187,7 +177,6 @@ private fun DrawScope.drawArtwork(
             )
         }
 
-        // Sparkles that flash around the brush, out of phase with each other.
         fun sparkle(cx: Float, cy: Float, r: Float, phase: Float) {
             val t = (twinkle + phase) % 1f
             val a = (1f - abs(2f * t - 1f)).coerceIn(0f, 1f)

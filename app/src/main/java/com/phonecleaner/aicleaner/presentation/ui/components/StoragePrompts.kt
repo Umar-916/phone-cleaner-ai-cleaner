@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.phonecleaner.aicleaner.R
 
-/** Prompt for file access (All files access on Android 11+, storage permission before). */
 @Composable
 fun StoragePermissionPrompt(
     onDismiss: () -> Unit,
@@ -34,7 +33,6 @@ fun StoragePermissionPrompt(
     )
 }
 
-/** Prompt for photo and video library access; after a denial the button leads to app settings. */
 @Composable
 fun MediaPermissionPrompt(
     showSettings: Boolean,

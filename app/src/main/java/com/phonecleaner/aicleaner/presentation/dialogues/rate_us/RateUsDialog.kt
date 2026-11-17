@@ -1,5 +1,7 @@
 package com.phonecleaner.aicleaner.presentation.dialogues.rate_us
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import RatingStars
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -109,12 +111,7 @@ fun RateUsDialog(
                                     top = 18.sdp,
                                     end = 18.sdp
                                 )
-                                .clickable(
-                                    interactionSource = remember {
-                                        MutableInteractionSource()
-                                    },
-                                    indication = null
-                                ) {
+                                .tapPlainClickable("rate_us_dialog_tap_1") {
                                     context.postAnalytic("rate_us_cancel")
                                     onDismiss()
                                 }
@@ -207,7 +204,7 @@ fun RateUsDialog(
                                     .fillMaxWidth()
                                     .height(50.sdp),
                                 enabled = rating > 0,
-                                onClick = {
+                                onClick = { tapEvent("rate_us_dialog_tap");
                                     context.postAnalytic("rate_us_submit_$rating")
                                     onSubmit(rating)
                                     onDismiss()

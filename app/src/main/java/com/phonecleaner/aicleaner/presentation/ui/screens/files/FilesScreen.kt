@@ -1,10 +1,21 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.files
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapEvent
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,9 +85,9 @@ import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPr
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 
 fun FileCategory.icon(): ImageVector = when (this) {
     FileCategory.IMAGES -> Icons.Rounded.Image
@@ -96,12 +107,12 @@ fun FileCategory.tint(): Color = when (this) {
     FileCategory.DOWNLOAD -> Brand.Photo
 }
 
-/** The Files tab: storage overview, search entry and one card per file category. */
 @Composable
 fun FilesScreen(
     onOpenCategory: (FileCategory) -> Unit,
     onSearch: () -> Unit,
     onBrowse: () -> Unit,
+    onSettings: () -> Unit = {},
     viewModel: FilesViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -156,28 +167,40 @@ fun FilesScreen(
         { if (granted) action() else promptVisible = true }
     }
 
+    val darkPage = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    0f to (if (darkPage) Color(0xFF2A1647) else Color(0xFFEFDEFF)),
+                    0.45f to Color.Transparent
+                )
+            )
             .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
-        Text(
-            stringResource(R.string.nav_files),
-            modifier = Modifier.padding(top = 14.dp, bottom = 14.dp),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 28.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.nav_files),
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.tertiary,
+                style = TextStyle(fontSize = 24.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+            )
+            Box(Modifier.size(40.dp).clip(CircleShape).tapClickable("files_screen_click", onClick = onSettings), contentAlignment = Alignment.Center) {
+                Icon(Icons.Rounded.Settings, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))
+            }
+        }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(MaterialTheme.colorScheme.secondary)
-                .clickable(onClick = guarded(onSearch))
+                .height(46.dp)
+                .clip(RoundedCornerShape(23.dp))
+                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.78f))
+                .tapClickable("files_screen_click_2", onClick = guarded(onSearch))
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -199,7 +222,7 @@ fun FilesScreen(
                         category = category,
                         subtitle = if (allowed && summary != null) Formatter.formatShortFileSize(context, summary.bytes) else "—",
                         modifier = Modifier.weight(1f),
-                        onClick = {
+                        onClick = { tapEvent("files_screen_tap_2");
                             when {
                                 allowed -> onOpenCategory(category)
                                 MediaAccess.permissionsFor(category) != null -> mediaPromptFor = category
@@ -243,47 +266,61 @@ fun FilesScreen(
 @Composable
 private fun StorageCard(fraction: Float, used: Long, total: Long, onClick: () -> Unit) {
     val context = LocalContext.current
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(Brand.Hero)
-            .clickable(onClick = onClick)
-            .padding(20.dp)
+            .tapClickable("storage_card_click", onClick = onClick)
     ) {
-        Text(
-            stringResource(R.string.files_internal_storage),
-            color = Color.White.copy(alpha = 0.9f),
-            style = TextStyle(fontSize = 14.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                Formatter.formatFileSize(context, used),
-                color = Color.White,
-                style = TextStyle(fontSize = 30.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-            )
-            Text(
-                "  |  " + Formatter.formatFileSize(context, total),
-                modifier = Modifier.padding(bottom = 4.dp),
-                color = Color.White.copy(alpha = 0.8f),
-                style = TextStyle(fontSize = 14.sp, fontFamily = medium)
-            )
-            Spacer(Modifier.weight(1f))
-            Box(
-                modifier = Modifier.size(34.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Rounded.ArrowForward, null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 16.dp, bottom = 16.dp, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.files_internal_storage),
+                    color = Color.White.copy(alpha = 0.9f),
+                    style = TextStyle(fontSize = 13.sp, fontFamily = medium)
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        Formatter.formatFileSize(context, used),
+                        color = Color.White,
+                        style = TextStyle(fontSize = 26.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        "  |  " + Formatter.formatFileSize(context, total),
+                        modifier = Modifier.padding(bottom = 3.dp),
+                        color = Color.White.copy(alpha = 0.8f),
+                        style = TextStyle(fontSize = 12.sp, fontFamily = medium)
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                AppProgressBar(
+                    fraction = fraction,
+                    height = 7.dp,
+                    trackColor = Color.White.copy(alpha = 0.25f),
+                    brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color.White, Color(0xFFD9C2FF)))
+                )
+            }
+            Spacer(Modifier.size(8.dp))
+            Box(contentAlignment = Alignment.BottomEnd) {
+                Image(
+                    painter = painterResource(R.drawable.files_mascot),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(width = 104.dp, height = 94.dp)
+                )
+                Box(
+                    modifier = Modifier.size(26.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.22f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
             }
         }
-        Spacer(Modifier.height(14.dp))
-        AppProgressBar(
-            fraction = fraction,
-            height = 8.dp,
-            trackColor = Color.White.copy(alpha = 0.25f),
-            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color.White, Color(0xFFBFE3FF)))
-        )
     }
 }
 
@@ -292,24 +329,28 @@ private fun CategoryCard(category: FileCategory, subtitle: String, modifier: Mod
     val tint = category.tint()
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(tint.copy(alpha = 0.10f))
-            .clickable(onClick = onClick)
-            .padding(vertical = 18.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(softCardColor())
+            .border(0.6.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
+            .tapClickable("category_card_click", onClick = onClick)
+            .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.size(46.dp).clip(CircleShape).background(tint.copy(alpha = 0.18f)),
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(tint.copy(alpha = 0.75f), tint))),
             contentAlignment = Alignment.Center
         ) {
-            Icon(category.icon(), null, tint = tint, modifier = Modifier.size(26.dp))
+            Icon(category.icon(), null, tint = Color.White, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(10.dp))
         Text(
             stringResource(category.label),
             color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+            style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
         )
-        Text(subtitle, color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 12.sp, fontFamily = medium))
+        Text(subtitle, color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 11.sp, fontFamily = medium))
     }
 }

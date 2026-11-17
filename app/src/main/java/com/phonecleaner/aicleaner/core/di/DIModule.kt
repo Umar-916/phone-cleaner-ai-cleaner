@@ -25,7 +25,6 @@ import com.phonecleaner.aicleaner.domain.ProcessViewModel
 import com.phonecleaner.aicleaner.domain.WhatsAppViewModel
 import com.phonecleaner.aicleaner.domain.PhotoCompressorViewModel
 import com.phonecleaner.aicleaner.domain.AiCleanupViewModel
-import com.phonecleaner.aicleaner.domain.BatteryViewModel
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FilesViewModel
 import com.phonecleaner.aicleaner.domain.StorageBrowserViewModel
@@ -73,7 +72,6 @@ val viewModelModule = module {
     viewModel { FilesViewModel(get(), get()) }
     viewModel { FileCategoryViewModel(get(), get()) }
     viewModel { StorageBrowserViewModel(get(), get()) }
-    viewModel { BatteryViewModel(get()) }
     viewModel { AiCleanupViewModel(get(), get()) }
 }
 

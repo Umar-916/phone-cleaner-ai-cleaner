@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.app_language
 
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
@@ -107,7 +108,7 @@ fun AppLanguageScreen(
                 onBack = if (showBackIcon) onBack else null,
                 actions = {
                     LanguageDoneButton(
-                        onClick = {
+                        onClick = { tapEvent("leave_with_system_back_tap");
                             clickGuard.run {
                                 context.postAnalytic(AnalyticsEvents.LANGUAGE_DONE_CLICK)
                                 languageViewModel.confirmSelection(activity ?: context) {
@@ -148,7 +149,7 @@ fun AppLanguageScreen(
                     item = appliedLanguage,
                     selected = isAppliedSelected,
                     highlighted = isAppliedSelected,
-                    onClick = {
+                    onClick = { tapEvent("leave_with_system_back_tap_2");
                         languageViewModel.selectLanguage(savedLanguageCode)
                     }
                 )
@@ -168,7 +169,7 @@ fun AppLanguageScreen(
                     item = language,
                     selected = isListSelected,
                     highlighted = isListSelected,
-                    onClick = {
+                    onClick = { tapEvent("leave_with_system_back_tap_3");
                         context.postAnalytic("${AnalyticsEvents.LANGUAGE_SELECT_PREFIX}${language.code}")
                         languageViewModel.selectLanguage(language.code)
                     }

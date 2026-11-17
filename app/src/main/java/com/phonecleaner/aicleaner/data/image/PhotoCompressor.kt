@@ -99,7 +99,6 @@ class PhotoCompressor(private val context: Context) {
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
-    /** Saves into Pictures/PhoneCleaner as a new file; the original is never touched. */
     suspend fun save(bytes: ByteArray, baseName: String, format: OutputFormat): Uri? = withContext(Dispatchers.IO) {
         runCatching {
             val fileName = "${baseName.substringBeforeLast('.')}_compressed_${System.currentTimeMillis() % 100000}.${format.extension}"

@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.feedback
 
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -189,7 +190,7 @@ fun FeedbackScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             Button(
-                onClick = {
+                onClick = { tapEvent("feedback_screen_tap");
                     context.postAnalytic("feedback_submit_tab_${if (selectedTab == 0) "issues" else "suggestions"}")
                     activity?.let { currentActivity ->
 

@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.bottomnav.setting.helpers
 
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -32,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.AppSwitch
 
-/** One row of a settings card: tinted icon, title, optional value, then an arrow or a switch. */
 @Composable
 fun SettingItem(
     icon: ImageVector,
@@ -49,8 +49,8 @@ fun SettingItem(
             .fillMaxWidth()
             .then(
                 when {
-                    switchChecked != null -> Modifier.clickable { onSwitchChange?.invoke(!switchChecked) }
-                    onClick != null -> Modifier.clickable(onClick = onClick)
+                    switchChecked != null -> Modifier.tapClickable("setting_item_click") { onSwitchChange?.invoke(!switchChecked) }
+                    onClick != null -> Modifier.tapClickable("setting_item_click_2", onClick = onClick)
                     else -> Modifier
                 }
             )

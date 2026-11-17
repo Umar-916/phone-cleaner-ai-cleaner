@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.bottomnav.setting.helpers
 
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,7 +56,7 @@ fun UpgradeProCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(onClick = onClick)
+                .tapClickable("upgrade_pro_card_click", onClick = onClick)
         ) {
             Box(
                 modifier = Modifier

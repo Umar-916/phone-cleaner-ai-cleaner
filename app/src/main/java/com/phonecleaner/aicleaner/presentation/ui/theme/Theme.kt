@@ -82,7 +82,6 @@ fun PhoneCleanerProTheme(
     )
     SetStatusBarIconsDarkWithReset(darkIcons = !darkTheme)
 
-    // The whole app reads a little smaller than the system font scale: every sp size is scaled by this factor.
     val density = androidx.compose.ui.platform.LocalDensity.current
     androidx.compose.runtime.CompositionLocalProvider(
         androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * TEXT_SCALE)
@@ -93,4 +92,10 @@ fun PhoneCleanerProTheme(
             content = content
         )
     }
+}
+
+@Composable
+fun ForceLightTheme(content: @Composable () -> Unit) {
+    SetStatusBarIconsDarkWithReset(darkIcons = true)
+    MaterialTheme(colorScheme = LightColorScheme, typography = Typography, content = content)
 }

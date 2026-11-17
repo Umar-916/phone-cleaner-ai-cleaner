@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.components
 
+import com.phonecleaner.aicleaner.core.common.tapped
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -67,10 +68,10 @@ fun AppTopBar(
 ) {
     TopAppBar(
         modifier = modifier,
-        title = title,
+        title = { androidx.compose.foundation.layout.Box(Modifier.padding(start = if (onBack != null) 6.sdp else 0.sdp)) { title() } },
         navigationIcon = {
             if (onBack != null) {
-                AppBackButton(onClick = onBack)
+                AppBackButton(onClick = onBack.tapped("app_top_bar_tap"))
             }
         },
         actions = actions,

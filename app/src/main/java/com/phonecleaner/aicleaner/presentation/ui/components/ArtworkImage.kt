@@ -28,10 +28,6 @@ import androidx.compose.ui.res.painterResource
 import coil3.compose.SubcomposeAsyncImage
 import network.chaintech.sdpcomposemultiplatform.sdp
 
-/**
- * Shows [url] when present, using the bundled [fallback] drawable while loading, on error
- * (e.g. offline) and whenever there is no url, so the UI never ends up with an empty slot.
- */
 @Composable
 fun ArtworkImage(
     url: String?,
@@ -43,13 +39,11 @@ fun ArtworkImage(
 ) {
     val fallbackPainter = painterResource(fallback)
 
-    // A picture the user picked from the gallery (file://) is a plain rectangle: round it on all four sides.
     val isUserPhoto = url?.startsWith("file://") == true
     val photoModifier = if (isUserPhoto) modifier.padding(7.dp).clip(RoundedCornerShape(14.dp)) else modifier
     val photoScale = if (isUserPhoto) ContentScale.Crop else contentScale
     val isOnlinePlaceholder = showShimmerOnLoading || fallback == R.drawable.app_logo
 
-    // Without a remote url (e.g. offline) the bundled artwork is shown; only the generic logo stays empty.
     val isGenericFallback = fallback == R.drawable.app_logo
 
     if (url.isNullOrBlank()) {

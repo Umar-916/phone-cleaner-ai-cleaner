@@ -30,10 +30,6 @@ sealed interface AiEvent {
     data class Finished(val groups: List<AiGroup>) : AiEvent
 }
 
-/**
- * On-device suggestions based on simple rules (age, size, folder) and an image sharpness measure.
- * No data leaves the phone and no cloud model is involved.
- */
 class AiCleanupScanner(private val context: Context, private val files: FilesRepository) {
 
     fun analyze(): Flow<AiEvent> = channelFlow {
@@ -79,7 +75,6 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
         )
     }.flowOn(Dispatchers.IO)
 
-    /** Variance of the Laplacian of the grayscale image: low values mean few sharp edges. */
     private fun sharpness(source: Bitmap): Double {
         val w = source.width
         val h = source.height

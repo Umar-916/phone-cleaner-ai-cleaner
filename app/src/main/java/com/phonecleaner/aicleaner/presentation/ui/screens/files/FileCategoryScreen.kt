@@ -1,5 +1,8 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.files
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,11 +34,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckBox
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FolderOpen
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Share
@@ -95,13 +99,12 @@ import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPr
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 
 private fun FileEntry.asMediaFile() = MediaFile(id, uri, name, sizeBytes, modifiedMs, category == FileCategory.VIDEO, 0, 0, 0L)
 
-/** One category of the file manager (or the global search when [category] is null). */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileCategoryScreen(
@@ -115,6 +118,7 @@ fun FileCategoryScreen(
     var granted by remember { mutableStateOf(MediaAccess.isGranted(context, category)) }
     var sheetEntry by remember { mutableStateOf<FileEntry?>(null) }
     var deleteTargets by remember { mutableStateOf<List<FileEntry>>(emptyList()) }
+    var menuOpen by remember { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -158,7 +162,8 @@ fun FileCategoryScreen(
             onQuery = viewModel::setQuery,
             onShare = { shareEntries(context, state.selectedEntries) },
             onDelete = { deleteTargets = state.selectedEntries },
-            onSelectAll = viewModel::selectAllVisible
+            onSelectAll = viewModel::selectAllVisible,
+            onMore = { menuOpen = true }
         )
 
         if (!state.global && category == FileCategory.DOCUMENTS) {
@@ -221,6 +226,15 @@ fun FileCategoryScreen(
         }
     }
 
+    if (menuOpen) {
+        com.phonecleaner.aicleaner.presentation.ui.components.MenuSheet(
+            actions = listOf(
+                com.phonecleaner.aicleaner.presentation.ui.components.MenuAction(Icons.Outlined.CheckBox, stringResource(R.string.junk_select_all)) { viewModel.selectAllVisible() }
+            ),
+            onDismiss = { menuOpen = false }
+        )
+    }
+
     sheetEntry?.let { entry ->
         FileItemSheet(
             file = SheetFile(entry.name, entry.path, entry.sizeBytes, entry.modifiedMs, entry.mime, entry.category != FileCategory.APK),
@@ -237,12 +251,12 @@ fun FileCategoryScreen(
             title = { Text(stringResource(R.string.junk_confirm_title)) },
             text = { Text(stringResource(R.string.junk_confirm_body, deleteTargets.size, Formatter.formatFileSize(context, deleteTargets.sumOf { it.sizeBytes }))) },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(onClick = { tapEvent("file_category_screen_tap");
                     viewModel.delete(deleteTargets)
                     deleteTargets = emptyList()
                 }) { Text(stringResource(R.string.junk_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { deleteTargets = emptyList() }) { Text(stringResource(R.string.cancel)) } }
+            dismissButton = { TextButton(onClick = { tapEvent("file_category_screen_tap_2"); deleteTargets = emptyList() }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
@@ -256,7 +270,8 @@ private fun Header(
     onQuery: (String) -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit,
-    onSelectAll: () -> Unit
+    onSelectAll: () -> Unit,
+    onMore: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 8.dp),
@@ -273,7 +288,7 @@ private fun Header(
                 )
                 Text(
                     stringResource(R.string.junk_select_all),
-                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).combinedClickable(onClick = onSelectAll).padding(8.dp),
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).combinedClickable(onClick = onSelectAll.tapped("header_tap")).padding(8.dp),
                     color = MaterialTheme.colorScheme.primary,
                     style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
                 )
@@ -312,6 +327,7 @@ private fun Header(
                     style = TextStyle(fontSize = 22.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
                 IconAction(Icons.Rounded.Search, onSearchToggle)
+                IconAction(Icons.Rounded.MoreVert, onMore)
             }
         }
     }
@@ -324,7 +340,6 @@ private fun IconAction(icon: androidx.compose.ui.graphics.vector.ImageVector, on
         contentAlignment = Alignment.Center
     ) { Icon(icon, null, tint = tint) }
 }
-
 
 @Composable
 private fun EmptyState(searching: Boolean) {
@@ -361,7 +376,7 @@ private fun MediaGrid(entries: List<FileEntry>, selected: Set<String>, selecting
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(8.dp))
                         .combinedClickable(
-                            onClick = { if (selecting) onToggle(entry) else openEntry(sheetContext, entry) },
+                            onClick = { tapEvent("media_grid_tap"); if (selecting) onToggle(entry) else openEntry(sheetContext, entry) },
                             onLongClick = { onToggle(entry) }
                         )
                 ) {
@@ -394,7 +409,7 @@ private fun AlbumGrid(albums: List<Pair<String, List<FileEntry>>>, onOpen: (Stri
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(albums, key = { it.first }) { (name, items) ->
-            Column(modifier = Modifier.clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = { onOpen(name) })) {
+            Column(modifier = Modifier.clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = { tapEvent("album_grid_tap"); onOpen(name) })) {
                 MediaThumbnail(items.first().asMediaFile(), Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(16.dp)))
                 Text(name.ifBlank { stringResource(R.string.files_internal_storage) }, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp, start = 2.dp),
                     color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
@@ -425,7 +440,7 @@ private fun EntryList(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .combinedClickable(
-                            onClick = { if (selecting) onToggle(entry) else openEntry(context, entry) },
+                            onClick = { tapEvent("entry_list_tap"); if (selecting) onToggle(entry) else openEntry(context, entry) },
                             onLongClick = { onToggle(entry) }
                         )
                         .padding(vertical = 8.dp),
@@ -441,7 +456,7 @@ private fun EntryList(
                             color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 12.sp, fontFamily = medium))
                     }
                     Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape).combinedClickable(onClick = { onMore(entry) }),
+                        modifier = Modifier.size(40.dp).clip(CircleShape).combinedClickable(onClick = { tapEvent("entry_list_tap_2"); onMore(entry) }),
                         contentAlignment = Alignment.Center
                     ) { Icon(Icons.Rounded.MoreVert, null, tint = MaterialTheme.colorScheme.surface) }
                 }

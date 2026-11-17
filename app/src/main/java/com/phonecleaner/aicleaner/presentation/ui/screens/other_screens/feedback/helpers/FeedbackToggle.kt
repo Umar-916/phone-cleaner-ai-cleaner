@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.feedback.helpers
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,10 +67,7 @@ fun FeedbackToggle(
                             MaterialTheme.colorScheme.secondary,
                         shape = RoundedCornerShape(12.sdp)
                     )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
+                    .tapPlainClickable("feedback_toggle_tap_1") {
                         context.postAnalytic("feedback_tab_click_${if (index == 0) "issues" else "suggestions"}")
                         onTabSelected(index)
                     }

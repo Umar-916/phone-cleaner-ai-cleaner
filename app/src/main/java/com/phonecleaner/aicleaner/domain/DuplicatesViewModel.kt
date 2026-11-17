@@ -101,7 +101,6 @@ class DuplicatesViewModel(private val scanner: DuplicateScanner) : ViewModel() {
         }
     }
 
-    /** Called after the system confirmed the deletion (or the legacy delete finished). */
     fun onDeleted(removedIds: Set<Long>? = null) {
         val data = (_state.value as? DuplicatesUiState.Result)?.data ?: return
         val removed = removedIds ?: data.selected

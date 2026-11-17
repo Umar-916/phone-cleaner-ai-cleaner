@@ -1,15 +1,14 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium
 
-import android.os.Environment
-import android.os.StatFs
-import android.text.format.Formatter
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,27 +24,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -61,35 +55,31 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.core.analytics.AnalyticsEvents
 import com.phonecleaner.aicleaner.core.billing.BillingUtilsIAP
-import com.phonecleaner.aicleaner.core.common.Constants
 import com.phonecleaner.aicleaner.core.common.getSafeString
 import com.phonecleaner.aicleaner.core.common.isPremiumUser
-import com.phonecleaner.aicleaner.core.common.openWebLinkExternally
-import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.showToast
 import com.phonecleaner.aicleaner.core.utils.PostAnalytic
 import com.phonecleaner.aicleaner.core.utils.rememberClickGuard
 import com.phonecleaner.aicleaner.domain.viewmodel.PremiumViewModel
-import com.phonecleaner.aicleaner.presentation.ui.components.AppSwitch
 import com.phonecleaner.aicleaner.presentation.ui.components.featheredEdges
 import com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette
 import org.koin.compose.viewmodel.koinViewModel
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val Coral = Color(0xFFF2605F)
-private val TrialGreen = Color(0xFF3CCB7F)
-private const val TRIAL_DAYS = 3
+private val bold = AppFonts.Bold
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val Plum: Color @Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.tertiary
 
-/**
- * The single premium screen: a storage-themed pitch, the free-trial timeline, the trial switch and the
- * price summary. Billing, trial and close behaviour all come from [PremiumViewModel], unchanged.
- */
+private class Feature(@StringRes val label: Int, @DrawableRes val icon: Int, val inBasic: Boolean)
+
+private val features = listOf(
+    Feature(R.string.pro_f_junk, R.drawable.pro_ic_junk, true),
+    Feature(R.string.pro_f_files, R.drawable.pro_ic_files, false),
+    Feature(R.string.pro_f_ai, R.drawable.pro_ic_ai, false),
+    Feature(R.string.pro_f_noads, R.drawable.pro_ic_noads, false),
+    Feature(R.string.pro_f_vip, R.drawable.pro_ic_vip, false)
+)
+
 @Composable
 fun PremiumScreen(
     onClose: () -> Unit,
@@ -105,7 +95,7 @@ fun PremiumScreen(
     val showCloseLeft by premiumViewModel.showCloseLeft.collectAsStateWithLifecycle()
     val showCloseRight by premiumViewModel.showCloseRight.collectAsStateWithLifecycle()
     val isBackPressEnabled by premiumViewModel.isBackPressEnabled.collectAsStateWithLifecycle()
-    val price = billedPrice.ifBlank { "null" }.let { if (it == "null") "…" else it }
+    val price = billedPrice.ifBlank { "null" }.let { if (it == "null") "$4.99" else it }
     val trialOn = canShowTrial && isTrialEnabled
 
     PostAnalytic(AnalyticsEvents.PREMIUM_SCREEN_DISPLAY)
@@ -134,15 +124,6 @@ fun PremiumScreen(
 
     BackHandler { if (isBackPressEnabled) closePremium(isRight = showCloseRight) }
 
-    val storage = remember {
-        val stat = StatFs(Environment.getDataDirectory().path)
-        stat.totalBytes - stat.availableBytes to stat.totalBytes
-    }
-    val activationDate = remember {
-        val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, TRIAL_DAYS) }
-        SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(cal.time as Date)
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -154,307 +135,130 @@ fun PremiumScreen(
                     .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 40.dp, bottom = 12.dp),
+                    .padding(horizontal = 18.dp)
+                    .padding(top = 44.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    stringResource(R.string.premium_title),
-                    textAlign = TextAlign.Center,
-                    color = OnboardingPalette.ink,
-                    style = TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    stringResource(R.string.premium_subtitle),
-                    textAlign = TextAlign.Center,
-                    color = OnboardingPalette.muted,
-                    style = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontFamily = medium)
-                )
-
                 Image(
-                    painter = painterResource(R.drawable.onboarding_junk),
+                    painter = painterResource(R.drawable.files_mascot),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .padding(top = 8.dp)
-                        .fillMaxWidth(0.82f)
-                        .aspectRatio(844f / 578f)
-                        .featheredEdges(0.12f)
+                        .fillMaxWidth(0.62f)
+                        .aspectRatio(340f / 310f)
+                        
                 )
-
-                StorageUsage(used = storage.first, total = storage.second)
-
+                Text(
+                    stringResource(R.string.pro_title),
+                    textAlign = TextAlign.Center,
+                    color = Plum,
+                    style = TextStyle(fontSize = 28.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                )
                 Spacer(Modifier.height(16.dp))
-                if (trialOn) {
-                    TrialTimeline(activationDate)
-                } else {
-                    Features()
-                }
-
-                if (canShowTrial) {
-                    Spacer(Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(Brush.verticalGradient(listOf(OnboardingPalette.purple.copy(alpha = 0.16f), OnboardingPalette.purple.copy(alpha = 0.07f))))
-                            .border(1.dp, OnboardingPalette.purple.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
-                            .clickable { premiumViewModel.onTrialToggled() }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(R.string.premium_trial_enabled),
-                            modifier = Modifier.weight(1f),
-                            color = OnboardingPalette.ink,
-                            style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-                        )
-                        AppSwitch(checked = isTrialEnabled, onCheckedChange = { premiumViewModel.onTrialToggled() })
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-                PriceSummary(trialOn = trialOn, price = price, activationDate = activationDate)
+                ComparisonTable()
+                Spacer(Modifier.height(18.dp))
+                Text(
+                    if (trialOn) stringResource(R.string.pro_trial_line, price) else stringResource(R.string.pro_plain_line, price),
+                    textAlign = TextAlign.Center,
+                    color = Plum,
+                    style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+                )
             }
 
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(top = 6.dp, bottom = 14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(29.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
-                        .clickable { clickGuard.run { premiumViewModel.onPurchaseClicked(activity) } },
+                        .height(54.dp)
+                        .clip(RoundedCornerShape(27.dp))
+                        .background(OnboardingPalette.purple)
+                        .tapClickable("close_premium_click") { clickGuard.run { premiumViewModel.onPurchaseClicked(activity) } },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         stringResource(if (trialOn) R.string.premium_start_trial else R.string.premium_continue_button),
                         color = Color.White,
-                        style = TextStyle(fontSize = 19.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                        style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    FooterLink(stringResource(R.string.premium_terms)) { context.openWebLinkExternally(Constants.TERMS_URL) }
-                    Text(
-                        stringResource(R.string.premium_cancel_anytime),
-                        color = OnboardingPalette.muted,
-                        style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                    )
-                    FooterLink(stringResource(R.string.premium_privacy)) {
-                        context.postAnalytic(AnalyticsEvents.PRIVACY_POLICY_CLICK)
-                        context.openWebLinkExternally(Constants.PRIVACY_POLICY_URL)
-                    }
-                }
+                Text(
+                    stringResource(R.string.pro_renews),
+                    modifier = Modifier.padding(top = 10.dp),
+                    color = Plum,
+                    textAlign = TextAlign.Center,
+                    style = TextStyle(fontSize = 11.sp, fontFamily = medium)
+                )
             }
         }
 
-        if (showCloseLeft) CloseButton(Modifier.align(Alignment.TopStart)) { closePremium(isRight = false) }
-        if (showCloseRight) CloseButton(Modifier.align(Alignment.TopEnd)) { closePremium(isRight = true) }
+        if (showCloseLeft) CloseX(Modifier.align(Alignment.TopStart)) { closePremium(isRight = false) }
+        if (showCloseRight) CloseX(Modifier.align(Alignment.TopEnd)) { closePremium(isRight = true) }
     }
 }
 
 @Composable
-private fun FooterLink(text: String, onClick: () -> Unit) {
-    Text(
-        text,
-        modifier = Modifier.clickable(onClick = onClick).padding(vertical = 4.dp),
-        color = OnboardingPalette.purple,
-        style = TextStyle(fontSize = 12.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-    )
-}
-
-@Composable
-private fun CloseButton(modifier: Modifier, onClick: () -> Unit) {
+private fun CloseX(modifier: Modifier, onClick: () -> Unit) {
     Box(
-        modifier = modifier
-            .statusBarsPadding()
-            .padding(10.dp)
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.9f))
-            .clickable(onClick = onClick),
+        modifier = modifier.statusBarsPadding().padding(10.dp).size(40.dp).clip(CircleShape).tapClickable("close_x_click", onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Rounded.Close, null, tint = OnboardingPalette.purple.copy(alpha = 0.85f), modifier = Modifier.size(22.dp))
+        Icon(Icons.Rounded.Close, null, tint = Plum, modifier = Modifier.size(28.dp))
     }
 }
 
 @Composable
-private fun StorageUsage(used: Long, total: Long) {
-    val context = LocalContext.current
-    val fraction = if (total <= 0) 0f else (used.toFloat() / total).coerceIn(0f, 1f)
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 4.dp)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(16.dp)
-                .clip(CircleShape)
-                .background(Coral.copy(alpha = 0.18f))
-        ) {
-            Box(
-                Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(fraction)
-                    .clip(CircleShape)
-                    .background(Brush.horizontalGradient(listOf(Color(0xFFFF8A7A), Coral)))
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(
-                    R.string.premium_storage_of,
-                    Formatter.formatFileSize(context, used),
-                    Formatter.formatFileSize(context, total)
-                ),
-                color = OnboardingPalette.ink,
-                style = TextStyle(fontSize = 17.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-            )
-            Text(
-                " " + stringResource(R.string.premium_storage_used),
-                color = Coral,
-                style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-            )
-        }
-    }
-}
-
-@Composable
-private fun TrialTimeline(activationDate: String) {
-    val steps = listOf(
-        Triple(Icons.Rounded.Lock, R.string.premium_step_unlock to null, true),
-        Triple(Icons.Rounded.Notifications, R.string.premium_step_reminder to R.string.premium_step_reminder_sub, false),
-        Triple(Icons.Rounded.AutoAwesome, R.string.premium_step_start to R.string.premium_step_start_sub, false)
-    )
-    Column(Modifier.fillMaxWidth()) {
-        steps.forEachIndexed { index, (icon, texts, highlighted) ->
-            Row(Modifier.fillMaxWidth()) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(44.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(if (highlighted) Color.White else OnboardingPalette.dot.copy(alpha = 0.7f))
-                            .border(if (highlighted) 2.dp else 0.dp, OnboardingPalette.purple, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(icon, null, tint = OnboardingPalette.purple, modifier = Modifier.size(20.dp))
-                    }
-                    if (index < steps.lastIndex) {
-                        Box(
-                            Modifier
-                                .width(4.dp)
-                                .height(26.dp)
-                                .clip(CircleShape)
-                                .background(OnboardingPalette.purple.copy(alpha = 0.55f))
-                        )
-                    }
-                }
-                Column(Modifier.padding(start = 6.dp, top = 2.dp)) {
-                    Text(
-                        stringResource(texts.first),
-                        color = if (highlighted) OnboardingPalette.purple else OnboardingPalette.ink,
-                        style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-                    )
-                    texts.second?.let {
-                        Text(
-                            if (it == R.string.premium_step_start_sub) stringResource(it, activationDate) else stringResource(it),
-                            color = OnboardingPalette.muted,
-                            style = TextStyle(fontSize = 13.sp, fontFamily = medium)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Features() {
-    Column(
+private fun ComparisonTable() {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Brush.verticalGradient(listOf(OnboardingPalette.purple.copy(alpha = 0.16f), OnboardingPalette.purple.copy(alpha = 0.07f))))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f))
     ) {
-        listOf(
-            R.string.premium_feature_unlock_all_prank_sounds,
-            R.string.premium_feature_exclusive_pro_sounds,
-            R.string.premium_feature_vibration_effects,
-            R.string.premium_feature_timer_loop,
-            R.string.premium_feature_ad_free_experience
-        ).forEach {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(22.dp).clip(CircleShape).background(OnboardingPalette.purple), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(14.dp))
+        Row(Modifier.matchParentSize().padding(horizontal = 14.dp)) {
+            Spacer(Modifier.weight(1f))
+            Box(
+                modifier = Modifier
+                    .width(64.dp)
+                    .fillMaxHeight()
+                    .padding(vertical = 6.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer)
+            )
+            Spacer(Modifier.width(56.dp))
+        }
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)) {
+            Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
+                Text(stringResource(R.string.pro_premium), modifier = Modifier.width(64.dp), textAlign = TextAlign.Center, color = Plum, style = TextStyle(fontSize = 13.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.pro_basic), modifier = Modifier.width(56.dp), textAlign = TextAlign.Center, color = Plum, style = TextStyle(fontSize = 13.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+            }
+            features.forEach { f ->
+                Box(Modifier.fillMaxWidth().height(1.dp).background(OnboardingPalette.purple.copy(alpha = 0.12f)))
+                Row(Modifier.fillMaxWidth().height(50.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(f.icon), null, modifier = Modifier.size(32.dp), contentScale = ContentScale.Fit)
+                    Text(
+                        stringResource(f.label),
+                        modifier = Modifier.weight(1f).padding(start = 10.dp),
+                        color = Plum,
+                        style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+                    )
+                    Box(Modifier.width(64.dp), contentAlignment = Alignment.Center) { Tick() }
+                    Box(Modifier.width(56.dp), contentAlignment = Alignment.Center) { if (f.inBasic) Tick() else Dash() }
                 }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    stringResource(it),
-                    color = OnboardingPalette.ink,
-                    style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-                )
             }
         }
     }
 }
 
 @Composable
-private fun PriceSummary(trialOn: Boolean, price: String, activationDate: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f)) {
-            if (trialOn) {
-                Text(
-                    stringResource(R.string.premium_due_today),
-                    color = OnboardingPalette.ink,
-                    style = TextStyle(fontSize = 14.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    stringResource(R.string.premium_due_on, activationDate),
-                    color = OnboardingPalette.muted,
-                    style = TextStyle(fontSize = 13.sp, fontFamily = medium)
-                )
-            } else {
-                Text(
-                    stringResource(R.string.premium_weekly_access),
-                    color = OnboardingPalette.ink,
-                    style = TextStyle(fontSize = 14.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-                )
-            }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            if (trialOn) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        stringResource(R.string.premium_days_free),
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(TrialGreen.copy(alpha = 0.25f)).padding(horizontal = 8.dp, vertical = 3.dp),
-                        color = Color(0xFF138A52),
-                        style = TextStyle(fontSize = 12.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        stringResource(R.string.premium_free),
-                        color = OnboardingPalette.ink,
-                        style = TextStyle(fontSize = 13.sp, fontFamily = medium)
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-            }
-            Text(
-                stringResource(R.string.premium_price_per_week_format, price),
-                color = OnboardingPalette.ink,
-                style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-            )
-        }
-    }
+private fun Tick() {
+    Icon(Icons.Rounded.Check, null, tint = OnboardingPalette.purple, modifier = Modifier.size(24.dp))
+}
+
+@Composable
+private fun Dash() {
+    Box(Modifier.width(16.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFB9A6D6)))
 }

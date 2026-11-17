@@ -1,5 +1,9 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapEvent
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -94,15 +98,16 @@ import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBar
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBarTitle
 import org.koin.compose.viewmodel.koinViewModel
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun JunkCleanerScreen(
     onBack: () -> Unit,
     onTaskCompleted: (String) -> Unit = {},
+    onAllClean: () -> Unit = {},
     viewModel: JunkViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -133,7 +138,14 @@ fun JunkCleanerScreen(
     }
 
     val busy = state is JunkUiState.Scanning || state is JunkUiState.Cleaning
-    BackHandler(enabled = busy) {}
+    var stopSheet by remember { mutableStateOf(false) }
+    BackHandler(enabled = busy) { stopSheet = true }
+    androidx.compose.runtime.LaunchedEffect(busy) { if (!busy) stopSheet = false }
+
+    if (stopSheet) com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet(
+        onCancel = { stopSheet = false; viewModel.reset(); onBack() },
+        onDismiss = { stopSheet = false }
+    )
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -161,7 +173,10 @@ fun JunkCleanerScreen(
 
                 is JunkUiState.Scanning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Result -> if (current.items.isEmpty()) {
-                    EmptyView(onRescan = viewModel::reset)
+                    EmptyView(onRescan = {
+                        val d = com.phonecleaner.aicleaner.domain.TaskTracker.done.value
+                        if (com.phonecleaner.aicleaner.domain.MainTask.PROCESS in d && com.phonecleaner.aicleaner.domain.MainTask.BATTERY in d) onAllClean() else viewModel.reset()
+                    })
                 } else {
                     JunkScanView(current, viewModel, onBack)
                 }
@@ -169,10 +184,10 @@ fun JunkCleanerScreen(
                 is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Done -> {
                     val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    JunkScanView(current, viewModel, onBack, onDone = {
+                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck {
                         viewModel.reset()
                         onTaskCompleted(summary)
-                    })
+                    }
                 }
             }
         }
@@ -196,7 +211,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
             .height(54.dp)
             .clip(RoundedCornerShape(27.dp))
             .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary)))
-            .clickable(onClick = onClick),
+            .tapClickable("primary_button_click", onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -225,7 +240,7 @@ private fun ResultView(state: JunkUiState.Result, viewModel: JunkViewModel) {
                 color = MaterialTheme.colorScheme.tertiary,
                 style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
             )
-            TextButton(onClick = { viewModel.setAllSelected(!allSelected) }) {
+            TextButton(onClick = { tapEvent("result_view_tap"); viewModel.setAllSelected(!allSelected) }) {
                 Text(
                     stringResource(if (allSelected) R.string.junk_deselect_all else R.string.junk_select_all),
                     color = MaterialTheme.colorScheme.primary,
@@ -260,7 +275,7 @@ private fun ResultView(state: JunkUiState.Result, viewModel: JunkViewModel) {
         Box(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + getBannerOverlayHeight())) {
             PrimaryButton(
                 text = stringResource(R.string.junk_clean_selected, Formatter.formatFileSize(context, state.selectedBytes)),
-                onClick = { if (state.selected.isNotEmpty()) confirm = true }
+                onClick = { tapEvent("result_view_tap_2"); if (state.selected.isNotEmpty()) confirm = true }
             )
         }
     }
@@ -279,13 +294,13 @@ private fun ResultView(state: JunkUiState.Result, viewModel: JunkViewModel) {
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(onClick = { tapEvent("result_view_tap_3");
                     confirm = false
                     context.postAnalytic("junk_clean_confirm")
                     viewModel.cleanSelected()
                 }) { Text(stringResource(R.string.junk_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } }
+            dismissButton = { TextButton(onClick = { tapEvent("result_view_tap_4"); confirm = false }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
@@ -309,7 +324,7 @@ private fun CategoryCard(
             .background(MaterialTheme.colorScheme.secondary)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onToggleExpand).padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().tapClickable("category_card_click", onClick = onToggleExpand).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppCheckbox(checked = selectedCount == items.size, onCheckedChange = { onToggleCategory() })
@@ -335,7 +350,7 @@ private fun CategoryCard(
             Column {
                 items.take(MAX_LISTED).forEach { item ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onToggleItem(item) }.padding(start = 22.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+                        modifier = Modifier.fillMaxWidth().tapClickable("category_card_click_2") { onToggleItem(item) }.padding(start = 22.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppCheckbox(checked = item.path in selected, onCheckedChange = { onToggleItem(item) })
@@ -373,38 +388,6 @@ private fun CategoryCard(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DoneView(onDone: () -> Unit) {
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1500)
-        onDone()
-    }
-    var shown by remember { mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(Unit) { shown = true }
-    val scale by androidx.compose.animation.core.animateFloatAsState(
-        if (shown) 1f else 0.3f,
-        androidx.compose.animation.core.spring(androidx.compose.animation.core.Spring.DampingRatioMediumBouncy, androidx.compose.animation.core.Spring.StiffnessLow),
-        label = "doneScale"
-    )
-    Column(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(Modifier.weight(1f))
-        Box(
-            modifier = Modifier.size(150.dp).scale(scale).clip(CircleShape).background(Brush.verticalGradient(listOf(Color(0xFF8BE0A6), Color(0xFF55C97E)))),
-            contentAlignment = Alignment.Center
-        ) { Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(84.dp)) }
-        Spacer(Modifier.weight(1f))
-        Text(
-            stringResource(R.string.task_completed),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-        )
-        Spacer(Modifier.height(96.dp))
     }
 }
 

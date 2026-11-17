@@ -42,7 +42,6 @@ import kotlin.system.exitProcess
 
 private const val OFFLINE_PREMIUM_NAVIGATION_DELAY_MS = 2000L
 
-
 class SplashVM(
     private val app: Application,
     private val splashDesignProvider: SplashDesignProvider
@@ -65,7 +64,6 @@ class SplashVM(
     private val _splashCount = MutableStateFlow(0)
     val splashCount: StateFlow<Int> = _splashCount
 
-    /** Splash design to show: starts from the default remote values, then follows the fetched config. */
     private val _splashDesign = MutableStateFlow(splashDesignProvider.resolve())
     val splashDesign: StateFlow<SplashDesign> = _splashDesign
 
@@ -147,7 +145,6 @@ class SplashVM(
         InitializationHelper.initializeApp(currentActivity)
     }
 
-    /** Re-reads the splash design from remote config; a changed value swaps the splash on screen. */
     private fun resolveSplashDesign() {
         _splashDesign.value = splashDesignProvider.resolve()
     }
@@ -280,7 +277,6 @@ class SplashVM(
                 activity,
                 OnboardingScreen.SPLASH_INTERSTITIAL
             )
-
 
             if (isSplashAdOn && activity.canRequestAds() && RemoteConstants.SPLASH_INTERSTITIAL_AD_UNIT_ID.isNotBlank()) {
                 loadInterstitialAd(

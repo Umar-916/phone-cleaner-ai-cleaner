@@ -94,7 +94,6 @@ import network.chaintech.sdpcomposemultiplatform.sdp
 import network.chaintech.sdpcomposemultiplatform.ssp
 import org.koin.compose.viewmodel.koinViewModel
 
-
 @Composable
 fun StartScreen(
     splashVM: SplashVM = koinViewModel(),
@@ -112,7 +111,6 @@ fun StartScreen(
 
     val splashCount by splashVM.splashCount.collectAsStateWithLifecycle()
     val dayAnalyticsEvent by splashVM.dayAnalyticsEvent.collectAsStateWithLifecycle()
-
 
     PostAnalytic(AnalyticsEvents.SPLASH_SCREEN_DISPLAY)
 
@@ -178,18 +176,12 @@ fun StartScreen(
 
 }
 
-/**
- * Shows the splash for [design]. When the design flips from Classic to New while the classic splash is
- * on screen, the new splash melts in from the classic logo's center: a soft-edged, feathered reveal with
- * a slow ease, a light fade and a barely-there settle, so there is no hard edge or sudden pop.
- */
 @Composable
 private fun SplashDesignSwitcher(
     design: SplashDesign,
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
-    // Already New on first frame (nothing to transition from) -> fully revealed, no animation.
     val reveal = remember { Animatable(if (design == SplashDesign.New) 1f else 0f) }
     var containerPos by remember { mutableStateOf(Offset.Zero) }
     var logoCenter by remember { mutableStateOf<Offset?>(null) }
@@ -208,7 +200,6 @@ private fun SplashDesignSwitcher(
     Box(
         modifier = modifier.onGloballyPositioned { containerPos = it.positionInWindow() }
     ) {
-        // The classic splash stays underneath, gently fading away, until the new one fully covers it.
 
         if (design == SplashDesign.Classic || reveal.value < 1f) {
             Box(
@@ -218,7 +209,6 @@ private fun SplashDesignSwitcher(
             ) {
                 ClassicSplashContent(
                     isDark = isDark,
-                    // The logo "breathes" once as the wave leaves it: swells, then settles back.
                     logoScale = { 1f + 0.10f * sin(PI.toFloat() * (reveal.value / 0.6f).coerceIn(0f, 1f)) },
                     onLogoPositioned = { logoCenter = it }
                 )
@@ -240,11 +230,9 @@ private fun SplashDesignSwitcher(
                     }
                     .drawWithContent {
                         drawContent()
-                        // The mask trails the glow wave slightly, so the new splash appears inside it.
                         val p = spread(((reveal.value - 0.12f) / 0.88f).coerceIn(0f, 1f))
                         if (reveal.value < 1f) {
                             val center = logoCenter?.minus(containerPos) ?: this.center
-                            // Opaque core + wide feathered edge; at p = 1 the core covers every corner.
                             val reach = maxRevealRadius(center, size.width, size.height)
                             val radius = (reach / (1f - REVEAL_FEATHER) * p).coerceAtLeast(1f)
                             drawRect(
@@ -262,7 +250,6 @@ private fun SplashDesignSwitcher(
             )
         }
 
-        // Soft glow wave leaving the logo: a blurred band (no hard line) that widens and fades as it travels.
         if (design == SplashDesign.New && reveal.value in 0.001f..0.999f) {
             Box(
                 modifier = Modifier
@@ -294,15 +281,11 @@ private fun SplashDesignSwitcher(
     }
 }
 
-// Slow overall; the timeline itself is linear and [spread] makes the spreading ease out, so the wave
-// leaves the logo gently and keeps slowing down the further it travels.
 private const val REVEAL_DURATION_MS = 2800
 
-// Share of the reveal radius taken by the soft edge.
 private const val REVEAL_FEATHER = 0.55f
 private val REVEAL_EASING = LinearEasing
 
-/** Ease-out curve for how far the reveal has spread: quick enough to start, then ever slower. */
 private fun spread(t: Float): Float = 1f - (1f - t).pow(1.8f)
 
 private fun smoothStep(from: Float, to: Float, value: Float): Float {

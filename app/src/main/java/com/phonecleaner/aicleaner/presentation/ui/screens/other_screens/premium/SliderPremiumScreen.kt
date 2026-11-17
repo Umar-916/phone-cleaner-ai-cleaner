@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium
 
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
@@ -278,7 +279,7 @@ fun SliderPremiumScreen(
                 ) {
                     PremiumContinueButton(
                         isTrialEnabled = trialOn,
-                        onClick = {
+                        onClick = { tapEvent("close_premium_tap");
                             clickGuard.run {
                                 premiumViewModel.onPurchaseClicked(activity)
                             }
@@ -305,7 +306,7 @@ fun SliderPremiumScreen(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(top = 4.sdp),
-                    onClick = { closePremium(isRight = false) }
+                    onClick = { tapEvent("close_premium_tap_2"); closePremium(isRight = false) }
                 )
             }
 
@@ -314,7 +315,7 @@ fun SliderPremiumScreen(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 4.sdp),
-                    onClick = { closePremium(isRight = true) }
+                    onClick = { tapEvent("close_premium_tap_3"); closePremium(isRight = true) }
                 )
             }
         }

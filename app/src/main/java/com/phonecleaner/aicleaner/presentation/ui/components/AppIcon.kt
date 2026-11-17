@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext
 
 private val iconCache = LruCache<String, ImageBitmap>(200)
 
-/** Launcher icon of an installed package, decoded off the main thread and cached. */
 @Composable
 fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current

@@ -28,7 +28,6 @@ import kotlinx.coroutines.withContext
 
 private val thumbCache = LruCache<Long, ImageBitmap>(120)
 
-/** Square thumbnail of a MediaStore photo or video, decoded off the main thread and cached. */
 @Composable
 fun MediaThumbnail(file: MediaFile, modifier: Modifier = Modifier, sizePx: Int = 320) {
     val context = LocalContext.current

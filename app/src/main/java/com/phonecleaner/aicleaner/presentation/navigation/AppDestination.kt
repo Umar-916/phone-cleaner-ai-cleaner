@@ -47,10 +47,13 @@ sealed class AppDestination : NavKey {
     data object AiCleanup : AppDestination()
 
     @Serializable
-    data object BatteryManager : AppDestination()
+    data object BatteryOptimize : AppDestination()
 
     @Serializable
     data object DeviceInfo : AppDestination()
+
+    @Serializable
+    data object AllDone : AppDestination()
 
     @Serializable
     data class TaskCompleted(val summary: String) : AppDestination()
@@ -67,7 +70,6 @@ sealed class AppDestination : NavKey {
     @Serializable
     data class SliderPremiumScreen(val isFromSplash: Boolean) : AppDestination()
 
-    /** Uses the storage-themed premium design (replaces the old black screen). */
     @Serializable
     data class BlackPremiumScreen(val isFromSplash: Boolean) : AppDestination()
 

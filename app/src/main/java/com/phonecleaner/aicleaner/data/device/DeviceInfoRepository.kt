@@ -30,7 +30,6 @@ data class UsageSummary(
     val ramFraction: Float get() = if (ramTotal <= 0) 0f else (ramUsed.toFloat() / ramTotal).coerceIn(0f, 1f)
 }
 
-/** Reads device facts that need no permission: build properties, memory, storage and display. */
 class DeviceInfoRepository(private val context: Context) {
 
     fun usage(): UsageSummary {

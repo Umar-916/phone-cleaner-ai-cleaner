@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.feedback.helpers
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -68,10 +69,7 @@ fun ReportBanner(
                 contentDescription = stringResource(R.string.close),
                 modifier = Modifier
                     .padding(4.sdp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
+                    .tapPlainClickable("report_banner_tap_1") {
                         context.postAnalytic("feedback_report_banner_cancel")
                         onClose()
                     }

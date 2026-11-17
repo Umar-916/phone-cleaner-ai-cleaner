@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium
 
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
@@ -277,7 +278,7 @@ fun PremiumZippoScreen(
                     )
                     ZippoCtaButton(
                         isTrialEnabled = trialOn,
-                        onClick = {
+                        onClick = { tapEvent("open_privacy_policy_tap");
                             clickGuard.run {
                                 premiumViewModel.onPurchaseClicked(activity)
                             }
@@ -295,7 +296,7 @@ fun PremiumZippoScreen(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(top = 5.sdp),
-                    onClick = { closePremium(isRight = false) }
+                    onClick = { tapEvent("open_privacy_policy_tap_2"); closePremium(isRight = false) }
                 )
             }
 
@@ -304,7 +305,7 @@ fun PremiumZippoScreen(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 5.sdp),
-                    onClick = { closePremium(isRight = true) }
+                    onClick = { tapEvent("open_privacy_policy_tap_3"); closePremium(isRight = true) }
                 )
             }
         }

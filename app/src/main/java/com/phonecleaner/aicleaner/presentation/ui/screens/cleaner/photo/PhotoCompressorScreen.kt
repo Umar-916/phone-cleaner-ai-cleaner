@@ -1,5 +1,9 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.photo
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapEvent
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,7 +30,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.focus.onFocusEvent
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -60,6 +68,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -104,9 +114,9 @@ import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 private val Good = Color(0xFF22B573)
 
 private val thumbCache = LruCache<String, ImageBitmap>(60)
@@ -137,7 +147,13 @@ fun PhotoCompressorScreen(
     }
 
     val processing = state.phase is CompressPhase.Processing
-    BackHandler(enabled = processing) {}
+    var stopSheet by remember { mutableStateOf(false) }
+    BackHandler(enabled = processing) { stopSheet = true }
+    androidx.compose.runtime.LaunchedEffect(processing) { if (!processing) stopSheet = false }
+    if (stopSheet) com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet(
+        onCancel = { stopSheet = false; viewModel.reset(); onBack() },
+        onDismiss = { stopSheet = false }
+    )
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -165,10 +181,13 @@ fun PhotoCompressorScreen(
                 is CompressPhase.Done -> {
                     val savedBytes = (phase.files.sumOf { it.originalBytes } - phase.files.sumOf { it.newBytes }).coerceAtLeast(0L)
                     val summary = stringResource(R.string.pc_done_summary, Formatter.formatFileSize(context, savedBytes), phase.files.size)
-                    DoneView(phase, onAgain = viewModel::reset, onDone = {
-                        viewModel.reset()
-                        onTaskCompleted(summary)
-                    })
+                    androidx.compose.foundation.layout.Box {
+                        DoneView(phase, onAgain = viewModel::reset, onDone = {
+                            viewModel.reset()
+                            onTaskCompleted(summary)
+                        })
+                        com.phonecleaner.aicleaner.presentation.ui.components.ConfettiBurst(Modifier.fillMaxSize(), centerY = (-150).dp)
+                    }
                 }
             }
         }
@@ -186,7 +205,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
                 if (enabled) Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary))
                 else Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)))
             )
-            .clickable(enabled = enabled, onClick = onClick),
+            .tapClickable("primary_button_click", enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(text, color = Color.White, style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
@@ -231,7 +250,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
     val settings = state.settings
     val photo = state.selected
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().imePadding()) {
         Column(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -242,7 +261,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
             ) {
                 itemsIndexed(state.photos, key = { _, p -> p.uri.toString() }) { index, item ->
                     Thumb(item, selected = index == state.selectedIndex, viewModel = viewModel,
-                        onClick = { viewModel.select(index) }, onRemove = { viewModel.removePhoto(index) })
+                        onClick = { tapEvent("editor_view_tap"); viewModel.select(index) }, onRemove = { viewModel.removePhoto(index) })
                 }
                 item {
                     Box(
@@ -250,7 +269,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                             .size(60.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                            .clickable(onClick = onAdd),
+                            .tapClickable("editor_view_click", onClick = onAdd),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Rounded.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.primary)
@@ -281,7 +300,7 @@ private fun EditorView(state: CompressorState, viewModel: PhotoCompressorViewMod
                             PillChip(
                                 stringResource(label),
                                 selected = settings.quality == value,
-                                onClick = { viewModel.setQuality(value) },
+                                onClick = { tapEvent("editor_view_tap_3"); viewModel.setQuality(value) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -385,13 +404,21 @@ private fun Section(title: String, icon: androidx.compose.ui.graphics.vector.Ima
     }
 }
 
-
 @Composable
 private fun DimensionField(label: String, value: String, modifier: Modifier, onChange: (String) -> Unit) {
+    val requester = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        modifier = modifier,
+        modifier = modifier
+            .bringIntoViewRequester(requester)
+            .onFocusEvent { focus ->
+                if (focus.isFocused) scope.launch {
+                    kotlinx.coroutines.delay(250)
+                    requester.bringIntoView()
+                }
+            },
         singleLine = true,
         label = { Text(label) },
         suffix = { Text("px") },
@@ -427,7 +454,7 @@ private fun Thumb(photo: PhotoInfo, selected: Boolean, viewModel: PhotoCompresso
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .then(if (selected) Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), RoundedCornerShape(14.dp)) else Modifier)
-            .clickable(onClick = onClick)
+            .tapClickable("thumb_click", onClick = onClick)
     ) {
         bitmap?.let { Image(it, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
         Box(
@@ -437,7 +464,7 @@ private fun Thumb(photo: PhotoInfo, selected: Boolean, viewModel: PhotoCompresso
                 .size(20.dp)
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.55f))
-                .clickable(onClick = onRemove),
+                .tapClickable("thumb_click_2", onClick = onRemove),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Rounded.Close, null, tint = Color.White, modifier = Modifier.size(13.dp))
@@ -561,12 +588,12 @@ private fun DoneView(phase: CompressPhase.Done, onAgain: () -> Unit, onDone: () 
         Spacer(Modifier.height(20.dp))
 
         if (phase.files.isNotEmpty()) {
-            PrimaryButton(stringResource(R.string.pc_share), onClick = { shareFiles(context, phase.files.map { it.uri }) })
+            PrimaryButton(stringResource(R.string.pc_share), onClick = { tapEvent("done_view_tap"); shareFiles(context, phase.files.map { it.uri }) })
             Spacer(Modifier.height(10.dp))
         }
         Text(
             stringResource(R.string.pc_compress_more),
-            modifier = Modifier.clickable(onClick = onAgain).padding(12.dp),
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)).tapClickable("done_view_click", onClick = onAgain).padding(12.dp),
             color = MaterialTheme.colorScheme.primary,
             style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
         )

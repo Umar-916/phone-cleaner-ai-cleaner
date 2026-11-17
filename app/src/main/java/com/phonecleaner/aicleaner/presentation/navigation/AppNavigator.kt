@@ -73,9 +73,12 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.duplicates.Dup
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk.JunkCleanerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FileCategoryScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai.AiCleanupScreen
-import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.battery.BatteryManagerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.completed.TaskCompletedScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.completed.OtherFeature
+import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.battery.BatteryOptimizeScreen
 import com.phonecleaner.aicleaner.domain.MainTask
+import com.phonecleaner.aicleaner.domain.TaskTracker
+import com.phonecleaner.aicleaner.domain.ExtraTask
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FilesScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.device.DeviceInfoScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.StorageBrowserScreen
@@ -127,7 +130,6 @@ fun AppNavigator(
 
     val backStack = rememberNavBackStack(AppDestination.Splash)
 
-    // Restored after process death: the back stack is already past Splash, so init never ran.
     LaunchedEffect(Unit) {
         if (backStack.lastOrNull() != AppDestination.Splash) {
             InitializationHelper.recoverIfSplashWasSkipped(activity) {
@@ -148,11 +150,46 @@ fun AppNavigator(
         }
     }
 
+    fun switchTab(destination: AppDestination) {
+        tryCatch {
+            backStack.clear()
+            backStack.add(AppDestination.Home)
+            if (destination != AppDestination.Home) backStack.add(destination)
+        }
+    }
+
     fun navigateBack() {
         tryCatch {
             if (backStack.size > 1) {
                 backStack.removeLastOrNull()
             }
+        }
+    }
+
+    fun finishTask(summary: String) {
+        tryCatch {
+            val top = backStack.lastOrNull()
+            val main = when (top) {
+                is AppDestination.ProcessManager -> MainTask.PROCESS
+                is AppDestination.BatteryOptimize -> MainTask.BATTERY
+                else -> null
+            }
+            val extra = when (top) {
+                is AppDestination.AiCleanup -> ExtraTask.AI
+                is AppDestination.WhatsAppCleaner -> ExtraTask.WHATSAPP
+                is AppDestination.Duplicates -> ExtraTask.DUPLICATES
+                else -> null
+            }
+            val all = TaskTracker.completesAll(main, extra)
+            extra?.let { TaskTracker.markExtra(it) }
+            if (all) {
+                while (backStack.size > 1 && backStack.lastOrNull() != AppDestination.Home) backStack.removeLastOrNull()
+                if (backStack.lastOrNull() != AppDestination.Home) { backStack.clear(); backStack.add(AppDestination.Home) }
+                return@tryCatch
+            }
+            backStack.removeLastOrNull()
+            if (backStack.lastOrNull() is AppDestination.TaskCompleted) backStack.removeLastOrNull()
+            backStack.add(AppDestination.TaskCompleted(summary))
         }
     }
 
@@ -257,7 +294,7 @@ fun AppNavigator(
                             }
 
                             is AppDestination.Onboarding -> NavEntry(route) {
-                                OnboardingScreen(onFinished = { continueOnboardingOr { replaceTop(AppDestination.Home) } })
+                                com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme { OnboardingScreen(onFinished = { continueOnboardingOr { replaceTop(AppDestination.Home) } }) }
                             }
 
                             is AppDestination.SliderPremiumScreen -> NavEntry(route) {
@@ -284,26 +321,26 @@ fun AppNavigator(
                                     onNavigateToWhatsApp = { navigateTo(AppDestination.WhatsAppCleaner) },
                                     onNavigateToPhotoCompressor = { navigateTo(AppDestination.PhotoCompressor) },
                                     onNavigateToAiCleanup = { navigateTo(AppDestination.AiCleanup) },
-                                    onNavigateToBattery = { navigateTo(AppDestination.BatteryManager) },
+                                    onNavigateToBattery = { navigateTo(AppDestination.BatteryOptimize) },
                                     onNavigateToDeviceInfo = { navigateTo(AppDestination.DeviceInfo) },
-                                    onNavigateToSettings = { navigateTo(AppDestination.Setting) }
+                                    onNavigateToSettings = { switchTab(AppDestination.Setting) }
                                 )
                             }
 
                             is AppDestination.PhotoCompressor -> NavEntry(route) {
-                                PhotoCompressorScreen(onBack = { navigateBack() }, onTaskCompleted = { replaceTop(AppDestination.TaskCompleted(it)) })
+                                PhotoCompressorScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
                             }
 
                             is AppDestination.WhatsAppCleaner -> NavEntry(route) {
-                                WhatsAppCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { replaceTop(AppDestination.TaskCompleted(it)) })
+                                WhatsAppCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
                             }
 
                             is AppDestination.Duplicates -> NavEntry(route) {
-                                DuplicatesScreen(onBack = { navigateBack() }, onTaskCompleted = { replaceTop(AppDestination.TaskCompleted(it)) })
+                                DuplicatesScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
                             }
 
                             is AppDestination.ProcessManager -> NavEntry(route) {
-                                ProcessManagerScreen(onBack = { navigateBack() }, onTaskCompleted = { replaceTop(AppDestination.TaskCompleted(it)) })
+                                ProcessManagerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
                             }
 
                             is AppDestination.AppsManager -> NavEntry(route) {
@@ -311,7 +348,7 @@ fun AppNavigator(
                             }
 
                             is AppDestination.JunkCleaner -> NavEntry(route) {
-                                JunkCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { replaceTop(AppDestination.TaskCompleted(it)) })
+                                JunkCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) }, onAllClean = { replaceTop(AppDestination.AllDone) })
                             }
 
                             is AppDestination.Setting -> NavEntry(route) {
@@ -328,7 +365,8 @@ fun AppNavigator(
                                 FilesScreen(
                                     onOpenCategory = { navigateTo(AppDestination.FileCategoryRoute(it.name)) },
                                     onSearch = { navigateTo(AppDestination.FileSearch) },
-                                    onBrowse = { navigateTo(AppDestination.StorageBrowser) }
+                                    onBrowse = { navigateTo(AppDestination.StorageBrowser) },
+                                    onSettings = { switchTab(AppDestination.Setting) }
                                 )
                             }
 
@@ -344,43 +382,64 @@ fun AppNavigator(
                             }
 
                             is AppDestination.StorageBrowser -> NavEntry(route) {
-                                StorageBrowserScreen(onBack = { navigateBack() })
+                                StorageBrowserScreen(onBack = { navigateBack() }, onSearch = { navigateTo(AppDestination.FileSearch) })
                             }
 
                             is AppDestination.AiCleanup -> NavEntry(route) {
                                 AiCleanupScreen(
                                     onBack = { navigateBack() },
                                     onOpenDuplicates = { replaceTop(AppDestination.Duplicates) },
-                                    onFinished = { replaceTop(AppDestination.TaskCompleted(it)) }
+                                    onFinished = { finishTask(it) }
                                 )
                             }
 
-                            is AppDestination.BatteryManager -> NavEntry(route) {
-                                BatteryManagerScreen(onBack = { navigateBack() })
+                            is AppDestination.BatteryOptimize -> NavEntry(route) {
+                                BatteryOptimizeScreen(onBack = { navigateBack() }, onFinished = { finishTask(it) })
                             }
-
                             is AppDestination.TaskCompleted -> NavEntry(route) {
                                 TaskCompletedScreen(
                                     summary = route.summary,
                                     onSkip = { navigateBack() },
                                     onOpenTask = { task ->
-                                        replaceTop(
+                                        navigateTo(
                                             when (task) {
                                                 MainTask.JUNK -> AppDestination.JunkCleaner
                                                 MainTask.PROCESS -> AppDestination.ProcessManager
-                                                MainTask.BATTERY -> AppDestination.BatteryManager
+                                                MainTask.BATTERY -> AppDestination.BatteryOptimize
+                                            }
+                                        )
+                                    },
+                                    onOpenOther = { feature ->
+                                        navigateTo(
+                                            when (feature) {
+                                                OtherFeature.AI -> AppDestination.AiCleanup
+                                                OtherFeature.WHATSAPP -> AppDestination.WhatsAppCleaner
+                                                OtherFeature.DUPLICATES -> AppDestination.Duplicates
                                             }
                                         )
                                     }
                                 )
                             }
 
+                            is AppDestination.AllDone -> NavEntry(route) {
+                                com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(
+                                    label = stringResource(R.string.congrats_text)
+                                ) {
+                                    tryCatch {
+                                        while (backStack.size > 1 && backStack.lastOrNull() != AppDestination.Home) backStack.removeLastOrNull()
+                                        if (backStack.lastOrNull() != AppDestination.Home) { backStack.clear(); backStack.add(AppDestination.Home) }
+                                    }
+                                }
+                            }
+
                             is AppDestination.DeviceInfo -> NavEntry(route) {
-                                DeviceInfoScreen(
+                                com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme {
+                                    DeviceInfoScreen(
                                     onBack = { navigateBack() },
                                     onClean = { navigateTo(AppDestination.JunkCleaner) },
                                     onOptimize = { navigateTo(AppDestination.ProcessManager) }
-                                )
+                                    )
+                                }
                             }
 
                             is AppDestination.Feedback -> NavEntry(route) {

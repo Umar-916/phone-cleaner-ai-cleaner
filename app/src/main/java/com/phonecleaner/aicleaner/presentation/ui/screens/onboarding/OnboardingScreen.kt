@@ -1,5 +1,8 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.onboarding
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -97,10 +100,9 @@ private val pages = listOf(
     ), R.string.onboarding_storage_title, R.string.onboarding_storage_body)
 )
 
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
+private val bold = AppFonts.Bold
+private val medium = AppFonts.Medium
 
-/** Three-page introduction shown once after the language screen: junk cleaner, duplicates, storage. */
 @Composable
 fun OnboardingScreen(onFinished: () -> Unit) {
     val state = rememberPagerState(pageCount = { pages.size })
@@ -128,10 +130,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     Text(
                         stringResource(R.string.onboarding_skip),
                         modifier = Modifier
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { finish("onboarding_skip") }
+                            .tapPlainClickable("onboarding_screen_tap_1") { finish("onboarding_skip") }
                             .padding(8.dp),
                         color = OnboardingPalette.purple,
                         style = TextStyle(fontSize = 16.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
@@ -169,7 +168,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     .height(52.dp)
                     .clip(RoundedCornerShape(29.dp))
                     .background(OnboardingPalette.purple)
-                    .clickable {
+                    .tapClickable("finish_click") {
                         if (last) finish("onboarding_done")
                         else scope.launch { state.animateScrollToPage(state.currentPage + 1) }
                     },

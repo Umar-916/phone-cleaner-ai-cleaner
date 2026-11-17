@@ -1,5 +1,8 @@
 package com.phonecleaner.aicleaner.presentation.dialogues.timer
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import com.phonecleaner.aicleaner.core.common.tapEvent
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -146,7 +149,7 @@ fun TimerDialog(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.sdp),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.onTertiaryFixed
+                                containerColor = com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()
                             ),
                             border = BorderStroke(
                                 0.8.sdp,
@@ -163,7 +166,7 @@ fun TimerDialog(
                                             if (isStartTime) MaterialTheme.colorScheme.primary
                                             else MaterialTheme.colorScheme.onTertiaryFixed
                                         )
-                                        .clickable {
+                                        .tapClickable("index_of_seconds_click") {
                                             isStartTime = true
                                             context.postAnalytic("timer_start_time_toggle")
                                         }
@@ -188,7 +191,7 @@ fun TimerDialog(
                                             if (!isStartTime) MaterialTheme.colorScheme.primary
                                             else MaterialTheme.colorScheme.onTertiaryFixed
                                         )
-                                        .clickable {
+                                        .tapClickable("index_of_seconds_click_2") {
                                             isStartTime = false
                                             context.postAnalytic("timer_end_time_toggle")
                                         }
@@ -233,7 +236,7 @@ fun TimerDialog(
                     ) {
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
-                            onClick = {
+                            onClick = { tapEvent("index_of_seconds_tap");
                                 context.postAnalytic("timer_dialog_cancel")
                                 onDismiss()
                             },
@@ -243,7 +246,7 @@ fun TimerDialog(
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                             ),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.onTertiaryFixed
+                                containerColor = com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()
                             ),
                             contentPadding = PaddingValues(vertical = 12.sdp)
                         ) {
@@ -270,7 +273,7 @@ fun TimerDialog(
                                 containerColor = MaterialTheme.colorScheme.primary
                             ),
                             contentPadding = PaddingValues(vertical = 12.sdp),
-                            onClick = {
+                            onClick = { tapEvent("index_of_seconds_tap_2");
                                 context.postAnalytic("timer_dialog_apply_start_${timerSeconds[startIndex]}_end_${timerSeconds[endIndex]}")
                                 onApply(timerSeconds[startIndex], timerSeconds[endIndex])
                             }
@@ -308,7 +311,7 @@ private fun TimerItem(
                 else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(16.sdp)
             )
-            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
+            .tapPlainClickable("timer_dialog_tap_1") { onClick() }
             .padding(horizontal = 16.sdp),
         verticalAlignment = Alignment.CenterVertically
     ) {

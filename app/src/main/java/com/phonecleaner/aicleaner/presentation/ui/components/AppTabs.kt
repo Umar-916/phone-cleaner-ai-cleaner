@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.components
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -32,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 
-/** Equal-width segmented control: the selected segment is a filled gradient pill, labels never wrap. */
 @Composable
 fun SegmentedTabs(
     options: List<String>,
@@ -62,7 +62,7 @@ fun SegmentedTabs(
                     .height(36.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .then(if (selected) Modifier.background(Brand.Primary) else Modifier)
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(index) },
+                    .tapPlainClickable("app_tabs_tap_1") { onSelect(index) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -80,7 +80,6 @@ fun SegmentedTabs(
     }
 }
 
-/** Single pill chip for horizontally scrolling filter rows. */
 @Composable
 fun PillChip(
     label: String,
@@ -101,7 +100,7 @@ fun PillChip(
             .height(36.dp)
             .clip(RoundedCornerShape(18.dp))
             .background(container)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+            .tapPlainClickable("app_tabs_tap_2", onClick = onClick)
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {

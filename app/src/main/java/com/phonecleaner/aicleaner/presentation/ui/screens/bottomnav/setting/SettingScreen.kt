@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.bottomnav.setting
 
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,7 +68,6 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.app_lang
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 
-/** The Settings tab; every row uses the same app palette so it reads as part of one system. */
 @Composable
 fun SettingScreen(
     settingViewModel: SettingViewModel = koinViewModel(),
@@ -112,7 +112,7 @@ fun SettingScreen(
             )
 
             if (!isPremiumUser()) {
-                UpgradeProCard(onClick = { clickGuard.run(onNavigateToPremium) })
+                UpgradeProCard(onClick = { tapEvent("setting_screen_tap"); clickGuard.run(onNavigateToPremium) })
                 Spacer(Modifier.height(20.dp))
             }
 
@@ -124,7 +124,7 @@ fun SettingScreen(
                     tint = Brand.Blue,
                     title = stringResource(R.string.app_language_new),
                     value = LanguageCatalog.displayName(languageCode),
-                    onClick = {
+                    onClick = { tapEvent("setting_screen_tap_2");
                         clickGuard.run {
                             context.postAnalytic(AnalyticsEvents.APP_LANGUAGE_CLICK)
                             onNavigateToLanguage()
@@ -137,7 +137,7 @@ fun SettingScreen(
                     tint = Brand.Photo,
                     title = stringResource(R.string.app_theme),
                     value = selectedTheme,
-                    onClick = {
+                    onClick = { tapEvent("setting_screen_tap_3");
                         clickGuard.run {
                             context.postAnalytic(AnalyticsEvents.APP_THEME_CLICK)
                             context.postAnalytic(AnalyticsEvents.APP_THEME_DIALOG_APPEAR)
@@ -164,7 +164,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.Star,
                     tint = Brand.Gold,
                     title = stringResource(R.string.rate_us),
-                    onClick = {
+                    onClick = { tapEvent("setting_screen_tap_4");
                         clickGuard.run {
                             context.postAnalytic(AnalyticsEvents.RATE_US_CLICK)
                             settingViewModel.openRateUsDialog()
@@ -176,7 +176,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.Chat,
                     tint = Brand.Blue,
                     title = stringResource(R.string.feedback),
-                    onClick = {
+                    onClick = { tapEvent("setting_screen_tap_5");
                         clickGuard.run {
                             context.postAnalytic(AnalyticsEvents.FEEDBACK_CLICK)
                             onNavigateToFeedback()
@@ -188,7 +188,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.Share,
                     tint = Brand.Good,
                     title = stringResource(R.string.share_app),
-                    onClick = {
+                    onClick = { tapEvent("setting_screen_tap_6");
                         clickGuard.run {
                             context.postAnalytic(AnalyticsEvents.SHARE_APP_CLICK)
                             context.shareAppLink()
@@ -205,7 +205,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.PrivacyTip,
                     tint = Brand.Duplicates,
                     title = stringResource(R.string.privacy_policy),
-                    onClick = {
+                    onClick = { tapEvent("setting_screen_tap_7");
                         clickGuard.run {
                             context.postAnalytic(AnalyticsEvents.PRIVACY_POLICY_CLICK)
                             context.openUrl(Constants.PRIVACY_POLICY_URL)
@@ -217,7 +217,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.Description,
                     tint = Brand.Junk,
                     title = stringResource(R.string.terms_of_service),
-                    onClick = { clickGuard.run { context.openUrl(Constants.TERMS_URL) } }
+                    onClick = { tapEvent("setting_screen_tap_8"); clickGuard.run { context.openUrl(Constants.TERMS_URL) } }
                 )
                 SettingDivider()
                 SettingItem(
@@ -225,7 +225,7 @@ fun SettingScreen(
                     tint = Brand.Process,
                     title = stringResource(R.string.about),
                     value = BuildConfig.VERSION_NAME,
-                    onClick = { showAbout = true }
+                    onClick = { tapEvent("setting_screen_tap_9"); showAbout = true }
                 )
             }
 
@@ -269,7 +269,7 @@ fun SettingScreen(
                 onDismissRequest = { showAbout = false },
                 title = { Text(stringResource(R.string.app_name)) },
                 text = { Text(stringResource(R.string.about_body, BuildConfig.VERSION_NAME)) },
-                confirmButton = { TextButton(onClick = { showAbout = false }) { Text(stringResource(R.string.junk_done_action)) } }
+                confirmButton = { TextButton(onClick = { tapEvent("setting_screen_tap_10"); showAbout = false }) { Text(stringResource(R.string.junk_done_action)) } }
             )
         }
     }

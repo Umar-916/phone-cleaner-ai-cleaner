@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.application
 
+import com.phonecleaner.aicleaner.core.analytics.AnalyticsLogger
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
@@ -33,6 +34,7 @@ class MyApplication : Application(), SingletonImageLoader.Factory {
         super.onCreate()
 
         ApiTracker.init(this)
+        AnalyticsLogger.init(this)
 
         initKoin {
             androidLogger() // Optional: For Koin logging

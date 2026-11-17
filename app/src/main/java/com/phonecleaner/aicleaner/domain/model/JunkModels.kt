@@ -8,12 +8,11 @@ enum class JunkCategory(@StringRes val label: Int, val selectedByDefault: Boolea
     THUMBNAILS(R.string.junk_cat_thumbnails, true),
     APK(R.string.junk_cat_apk, true),
     EMPTY_FOLDERS(R.string.junk_cat_empty, true),
-    OLD_DOWNLOADS(R.string.junk_cat_old_downloads, false),
-    LARGE_FILES(R.string.junk_cat_large, false),
+    OLD_DOWNLOADS(R.string.junk_cat_old_downloads, true),
+    LARGE_FILES(R.string.junk_cat_large, true),
     TRASH(R.string.junk_cat_trash, true)
 }
 
-/** The four groups the cleaner screen shows; each one gathers one or more scan categories. */
 enum class JunkGroup(@StringRes val label: Int, val categories: List<JunkCategory>) {
     RESIDUALS(R.string.junk_group_residuals, listOf(JunkCategory.EMPTY_FOLDERS, JunkCategory.THUMBNAILS)),
     OBSOLETE(R.string.junk_group_obsolete, listOf(JunkCategory.APK, JunkCategory.OLD_DOWNLOADS, JunkCategory.LARGE_FILES)),

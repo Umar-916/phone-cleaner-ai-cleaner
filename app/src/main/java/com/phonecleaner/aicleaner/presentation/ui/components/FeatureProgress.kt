@@ -43,10 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phonecleaner.aicleaner.R
 
-/**
- * One progress presentation for every scan, clean and compress step: a soft halo, a slim gradient ring
- * (determinate with a percentage, or a travelling arc while the total is unknown) and a thin inner dash ring.
- */
 @Composable
 fun FeatureProgress(
     title: String,

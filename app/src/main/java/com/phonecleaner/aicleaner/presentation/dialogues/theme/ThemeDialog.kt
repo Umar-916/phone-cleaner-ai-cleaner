@@ -1,5 +1,7 @@
 package com.phonecleaner.aicleaner.presentation.dialogues.theme
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import com.phonecleaner.aicleaner.core.common.tapEvent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -145,7 +147,7 @@ fun ThemeDialog(
 
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
-                            onClick = {
+                            onClick = { tapEvent("theme_dialog_tap");
                                 context.postAnalytic("theme_dialog_cancel")
                                 onDismiss()
                             },
@@ -154,7 +156,7 @@ fun ThemeDialog(
                                 0.7.sdp,
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                             ),
-                            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.onTertiaryFixed),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()),
                             contentPadding = PaddingValues(vertical = 13.sdp)
                         ) {
                             Text(
@@ -176,7 +178,7 @@ fun ThemeDialog(
                                     ),
                                 )
                                 .weight(1f),
-                            onClick = {
+                            onClick = { tapEvent("theme_dialog_tap_2");
                                 context.postAnalytic("theme_dialog_apply_$tempSelection")
                                 onApply(tempSelection)
                             },
@@ -219,7 +221,7 @@ private fun ThemeItem(
                 else MaterialTheme.colorScheme.outline.copy(alpha = 0.23f),
                 shape = RoundedCornerShape(16.sdp)
             )
-            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
+            .tapPlainClickable("theme_dialog_tap_1") { onClick() }
             .padding(horizontal = 14.sdp),
         verticalAlignment = Alignment.CenterVertically
     ) {

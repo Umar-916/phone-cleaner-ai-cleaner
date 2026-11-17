@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.navigation
 
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.animateColorAsState
@@ -80,14 +81,12 @@ var actualBannerOverlayHeight by mutableStateOf(0.dp)
 
 private val sideTabs = listOf(BottomNavItem.Cleaner, BottomNavItem.Settings)
 
-/** Screens that show the bottom bar. */
 val bottomBarDestinations: Set<AppDestination> = setOf(
     BottomNavItem.Cleaner.destination,
     BottomNavItem.Files.destination,
     BottomNavItem.Settings.destination
 )
 
-/** Pill-shaped bar with a smooth concave cut-out at the top centre for the floating button. */
 private class NotchedBarShape(
     private val notchRadius: Dp,
     private val centerDrop: Dp,
@@ -197,7 +196,7 @@ fun BottomNavigationBar(
                                 .height(barHeight - 16.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(container)
-                                .clickable { onItemClick(item) },
+                                .tapClickable("on_item_click_click") { onItemClick(item) },
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -257,7 +256,7 @@ fun BottomNavigationBar(
                 .clip(CircleShape)
                 .background(Brand.Primary)
                 .then(if (filesSelected) Modifier.border(2.dp, Color.White.copy(alpha = 0.85f), CircleShape) else Modifier)
-                .clickable { onItemClick(BottomNavItem.Files) },
+                .tapClickable("on_item_click_click_2") { onItemClick(BottomNavItem.Files) },
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Rounded.FolderOpen, contentDescription = stringResource(BottomNavItem.Files.title), tint = Color.White, modifier = Modifier.size(28.dp))

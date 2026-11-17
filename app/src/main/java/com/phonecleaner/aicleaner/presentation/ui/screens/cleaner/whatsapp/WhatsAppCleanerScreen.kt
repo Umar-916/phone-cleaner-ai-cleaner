@@ -1,5 +1,8 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.whatsapp
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.text.format.Formatter
 import android.util.LruCache
 import androidx.activity.compose.BackHandler
@@ -104,9 +107,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 private val WhatsAppGreen = Color(0xFF25D366)
 
 private val thumbCache = LruCache<String, ImageBitmap>(150)
@@ -143,7 +146,6 @@ fun WhatsAppCleanerScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
-    var confirm by rememberSaveable { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -168,16 +170,31 @@ fun WhatsAppCleanerScreen(
         }
     }
 
+    var revealed by remember { mutableStateOf(false) }
+    var doneReady by remember { mutableStateOf(false) }
+    val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(state) {
+        if (state is WaUiState.Idle) { revealed = false; scanAnim.snapTo(0f) }
+        if (state !is WaUiState.Done) doneReady = false
+    }
     val data = (state as? WaUiState.Result)?.data
     val busy = state is WaUiState.Scanning || state is WaUiState.Cleaning
+    var stopSheet by remember { mutableStateOf(false) }
     BackHandler(enabled = busy || data?.openCategory != null) {
-        if (!busy) viewModel.openCategory(null)
+        if (busy) stopSheet = true else viewModel.openCategory(null)
     }
+    androidx.compose.runtime.LaunchedEffect(busy) { if (!busy) stopSheet = false }
+    if (stopSheet) com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet(
+        onCancel = { stopSheet = false; viewModel.reset(); onBack() },
+        onDismiss = { stopSheet = false }
+    )
 
+    val loading = state is WaUiState.Scanning || state is WaUiState.Cleaning ||
+        (state is WaUiState.Result && !revealed) || (state is WaUiState.Done && !doneReady)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            AppTopBar(
+            if (!loading) AppTopBar(
                 title = {
                     AppTopBarTitle(
                         stringResource(data?.openCategory?.label ?: R.string.feature_whatsapp)
@@ -189,7 +206,7 @@ fun WhatsAppCleanerScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 WaUiState.Idle -> if (!granted) {
                     StoragePermissionPrompt(onDismiss = onBack, accent = Brand.WhatsApp, body = stringResource(R.string.wa_permission_body)) {
@@ -201,54 +218,37 @@ fun WhatsAppCleanerScreen(
                     }
                 }
 
-                is WaUiState.Scanning -> FeatureProgress(
-                    title = stringResource(R.string.wa_scanning),
-                    subtitle = stringResource(R.string.junk_found_format, Formatter.formatFileSize(context, current.bytes), current.count),
-                    icon = Icons.Rounded.DonutLarge,
-                    accent = Brand.WhatsApp
+                is WaUiState.Scanning -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
+                    progress = null,
+                    finished = false,
+                    label = stringResource(R.string.wa_scanning),
+                    p = scanAnim
                 )
                 WaUiState.NotFound -> NotFoundView(viewModel::reset)
-                is WaUiState.Result -> ResultView(current.data, viewModel) { confirm = true }
-                is WaUiState.Cleaning -> FeatureProgress(
-                    title = stringResource(R.string.junk_cleaning),
-                    progress = if (current.total == 0) 0f else current.done.toFloat() / current.total,
-                    subtitle = "${current.done} / ${current.total}",
-                    accent = Brand.WhatsApp
-                )
-                is WaUiState.Done -> {
-                    val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    DoneView(current) {
-                        viewModel.reset()
-                        onTaskCompleted(summary)
+                is WaUiState.Result -> if (!revealed) {
+                    com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.wa_scanning), scanAnim) { revealed = true }
+                } else ResultView(current.data, viewModel) {
+                    context.postAnalytic("wa_clean_confirm")
+                    viewModel.cleanSelected()
+                }
+                is WaUiState.Cleaning, is WaUiState.Done -> {
+                    val done = current as? WaUiState.Done
+                    val summary = if (done != null) stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, done.freedBytes), done.removedCount) else ""
+                    if (done != null && doneReady) {
+                        com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(
+                            label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(extra = com.phonecleaner.aicleaner.domain.ExtraTask.WHATSAPP)
+                        ) {
+                            viewModel.reset()
+                            onTaskCompleted(summary)
+                        }
+                    } else {
+                        com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, done != null, stringResource(R.string.junk_cleaning)) { doneReady = true }
                     }
                 }
             }
         }
     }
 
-    if (confirm && data != null) {
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text(stringResource(R.string.junk_confirm_title)) },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.junk_confirm_body,
-                        data.selected.size,
-                        Formatter.formatFileSize(context, data.selectedBytes)
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirm = false
-                    context.postAnalytic("wa_clean_confirm")
-                    viewModel.cleanSelected()
-                }) { Text(stringResource(R.string.junk_delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } }
-        )
-    }
 }
 
 @Composable
@@ -268,7 +268,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
             .height(54.dp)
             .clip(RoundedCornerShape(27.dp))
             .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary)))
-            .clickable(onClick = onClick),
+            .tapClickable("primary_button_click", onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -345,7 +345,7 @@ private fun Overview(data: WaData, viewModel: WhatsAppViewModel) {
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(MaterialTheme.colorScheme.secondary)
-                    .clickable { viewModel.openCategory(category) }
+                    .tapClickable("overview_click") { viewModel.openCategory(category) }
                     .padding(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -402,7 +402,7 @@ private fun CategoryDetail(data: WaData, viewModel: WhatsAppViewModel) {
             )
             if (visible.isNotEmpty()) {
                 val allSelected = data.selected.containsAll(visible.map { it.path })
-                TextButton(onClick = viewModel::toggleVisible) {
+                TextButton(onClick = viewModel::toggleVisible.tapped("category_detail_tap")) {
                     Text(
                         stringResource(if (allSelected) R.string.junk_deselect_all else R.string.junk_select_all),
                         color = MaterialTheme.colorScheme.primary,
@@ -449,7 +449,7 @@ private fun FileCell(file: WaFile, selected: Boolean, viewModel: WhatsAppViewMod
             .aspectRatio(1f)
             .clip(RoundedCornerShape(12.dp))
             .background(file.category.tint().copy(alpha = 0.12f))
-            .clickable(onClick = onToggle)
+            .tapClickable("file_cell_click", onClick = onToggle)
     ) {
         val image = thumb
         if (image != null) {
@@ -488,29 +488,6 @@ private fun FileCell(file: WaFile, selected: Boolean, viewModel: WhatsAppViewMod
             color = Color.White,
             style = TextStyle(fontSize = 10.sp, fontFamily = semiBold)
         )
-    }
-}
-
-@Composable
-private fun DoneView(state: WaUiState.Done, onDone: () -> Unit) {
-    val context = LocalContext.current
-    CenteredColumn {
-        Icon(Icons.Rounded.CheckCircle, null, tint = WhatsAppGreen, modifier = Modifier.size(96.dp))
-        Spacer(Modifier.height(20.dp))
-        Text(
-            stringResource(R.string.junk_done_title),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 22.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, state.freedBytes), state.removedCount),
-            color = MaterialTheme.colorScheme.surface,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 15.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(32.dp))
-        PrimaryButton(stringResource(R.string.junk_done_action), onDone)
     }
 }
 

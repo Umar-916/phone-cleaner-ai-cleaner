@@ -20,8 +20,6 @@ object LanguageHelper {
     private const val PREFS_NAME = "app_language_prefs"
     private const val KEY_LANGUAGE_CODE = "selected_language_code"
 
-    // Locale currently applied to the UI. Language changes during onboarding don't recreate the
-    // activity, so Compose reads the layout direction from here instead of the initial configuration.
     private val _appliedLocale = MutableStateFlow(Locale.getDefault())
     val appliedLocale = _appliedLocale.asStateFlow()
 

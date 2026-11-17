@@ -1,5 +1,9 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.duplicates
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapEvent
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -104,9 +108,9 @@ import com.phonecleaner.aicleaner.presentation.ui.components.MediaThumbnail
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Date
 
-private val semiBold = FontFamily(Font(R.font.google_sans_flex_semi))
-private val medium = FontFamily(Font(R.font.google_sans_flex_medium))
-private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
+private val semiBold = AppFonts.SemiBold
+private val medium = AppFonts.Medium
+private val bold = AppFonts.Bold
 private val Gold = Color(0xFFF5B301)
 
 private fun requiredPermissions(): Array<String> = when {
@@ -128,7 +132,9 @@ fun DuplicatesScreen(
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(hasPermissions(context)) }
     var requestedOnce by rememberSaveable { mutableStateOf(false) }
-    var confirm by rememberSaveable { mutableStateOf(false) }
+    var revealed by remember { mutableStateOf(false) }
+    val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(state) { if (state is DuplicatesUiState.Idle) { revealed = false; scanAnim.snapTo(0f) } }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -155,18 +161,25 @@ fun DuplicatesScreen(
         }
     }
 
-    BackHandler(enabled = state is DuplicatesUiState.Scanning) {}
+    var stopSheet by remember { mutableStateOf(false) }
+    BackHandler(enabled = state is DuplicatesUiState.Scanning) { stopSheet = true }
+    androidx.compose.runtime.LaunchedEffect(state is DuplicatesUiState.Scanning) { if (state !is DuplicatesUiState.Scanning) stopSheet = false }
+    if (stopSheet) com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet(
+        onCancel = { stopSheet = false; viewModel.reset(); onBack() },
+        onDismiss = { stopSheet = false }
+    )
 
+    val loading = state is DuplicatesUiState.Scanning || (state is DuplicatesUiState.Result && !revealed)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            AppTopBar(
+            if (!loading) AppTopBar(
                 title = { AppTopBarTitle(stringResource(R.string.feature_duplicates)) },
                 onBack = if (state is DuplicatesUiState.Scanning) null else onBack
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 DuplicatesUiState.Idle -> if (!granted) {
                     MediaPermissionPrompt(
@@ -183,31 +196,41 @@ fun DuplicatesScreen(
                     )
                 }
 
-                is DuplicatesUiState.Scanning -> FeatureProgress(
-                    title = stringResource(
+                is DuplicatesUiState.Scanning -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
+                    progress = if (current.progress.total > 0) (current.progress.done.toFloat() / current.progress.total).coerceIn(0f, 1f) else null,
+                    finished = false,
+                    label = stringResource(
                         when (current.progress.phase) {
                             DuplicatePhase.READING -> R.string.dup_phase_reading
                             DuplicatePhase.COMPARING -> R.string.dup_phase_comparing
                             DuplicatePhase.ANALYZING -> R.string.dup_phase_analyzing
                         }
                     ),
-                    progress = if (current.progress.total > 0) (current.progress.done.toFloat() / current.progress.total).coerceIn(0f, 1f) else null,
-                    subtitle = if (current.progress.total > 0) "${current.progress.done} / ${current.progress.total}" else null,
-                    icon = Icons.Rounded.ContentCopy,
-                    accent = Brand.Duplicates
+                    p = scanAnim
                 )
                 is DuplicatesUiState.Result -> {
                     val data = current.data
-                    if (data.photoGroups.isEmpty() && data.videoGroups.isEmpty()) {
+                    if (!revealed) {
+                        com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.dup_phase_analyzing), scanAnim) { revealed = true }
+                    } else if (data.photoGroups.isEmpty() && data.videoGroups.isEmpty()) {
                         EmptyView(viewModel::reset)
                     } else {
-                        ResultView(data, viewModel) { confirm = true }
+                        ResultView(data, viewModel) {
+                            context.postAnalytic("duplicates_delete_confirm")
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                val uris: List<Uri> = data.selectedFiles.map { it.uri }
+                                val sender = MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
+                                deleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+                            } else {
+                                viewModel.deleteLegacy()
+                            }
+                        }
                     }
                 }
 
                 is DuplicatesUiState.Done -> {
                     val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    DoneView(current) {
+                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(extra = com.phonecleaner.aicleaner.domain.ExtraTask.DUPLICATES)) {
                         viewModel.reset()
                         onTaskCompleted(summary)
                     }
@@ -216,36 +239,6 @@ fun DuplicatesScreen(
         }
     }
 
-    val data = (state as? DuplicatesUiState.Result)?.data
-    if (confirm && data != null) {
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text(stringResource(R.string.dup_confirm_title)) },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.dup_confirm_body,
-                        data.selected.size,
-                        Formatter.formatFileSize(context, data.selectedBytes)
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirm = false
-                    context.postAnalytic("duplicates_delete_confirm")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val uris: List<Uri> = data.selectedFiles.map { it.uri }
-                        val sender = MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
-                        deleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
-                    } else {
-                        viewModel.deleteLegacy()
-                    }
-                }) { Text(stringResource(R.string.junk_delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) } }
-        )
-    }
 }
 
 private fun hasPermissions(context: android.content.Context): Boolean =
@@ -268,7 +261,7 @@ private fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier 
             .height(54.dp)
             .clip(RoundedCornerShape(27.dp))
             .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), MaterialTheme.colorScheme.primary)))
-            .clickable(onClick = onClick),
+            .tapClickable("primary_button_click", onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -302,7 +295,7 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
                 color = MaterialTheme.colorScheme.surface,
                 style = TextStyle(fontSize = 12.sp, lineHeight = 17.sp, fontFamily = medium)
             )
-            TextButton(onClick = { if (data.selected.isEmpty()) viewModel.selectAllButKeepers() else viewModel.deselectAll() }) {
+            TextButton(onClick = { tapEvent("result_view_tap"); if (data.selected.isEmpty()) viewModel.selectAllButKeepers() else viewModel.deselectAll() }) {
                 Text(
                     stringResource(if (data.selected.isEmpty()) R.string.dup_select_all_but_one else R.string.junk_deselect_all),
                     color = MaterialTheme.colorScheme.primary,
@@ -342,11 +335,10 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
             } else {
                 stringResource(R.string.dup_delete_selected, data.selected.size, Formatter.formatFileSize(context, data.selectedBytes))
             }
-            PrimaryButton(label, onClick = { if (data.selected.isNotEmpty()) onDelete() })
+            PrimaryButton(label, onClick = { tapEvent("result_view_tap_2"); if (data.selected.isNotEmpty()) onDelete() })
         }
     }
 }
-
 
 @Composable
 private fun GroupCard(group: DuplicateGroup, data: DuplicatesData, viewModel: DuplicatesViewModel) {
@@ -409,7 +401,7 @@ private fun MediaCell(
             modifier = Modifier
                 .size(112.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .clickable(onClick = onToggle)
+                .tapClickable("media_cell_click", onClick = onToggle)
         ) {
             MediaThumbnail(file, Modifier.fillMaxSize())
             if (isKeeper) {
@@ -457,34 +449,11 @@ private fun MediaCell(
         if (!isKeeper) {
             Text(
                 stringResource(R.string.dup_make_original),
-                modifier = Modifier.clickable(onClick = onKeep).padding(vertical = 4.dp),
+                modifier = Modifier.clip(RoundedCornerShape(10.dp)).tapClickable("media_cell_click_2", onClick = onKeep).padding(vertical = 4.dp),
                 color = MaterialTheme.colorScheme.primary,
                 style = TextStyle(fontSize = 11.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
             )
         }
-    }
-}
-
-@Composable
-private fun DoneView(state: DuplicatesUiState.Done, onDone: () -> Unit) {
-    val context = LocalContext.current
-    CenteredColumn {
-        Icon(Icons.Rounded.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(96.dp))
-        Spacer(Modifier.height(20.dp))
-        Text(
-            stringResource(R.string.junk_done_title),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 22.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, state.freedBytes), state.removedCount),
-            color = MaterialTheme.colorScheme.surface,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 15.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(32.dp))
-        PrimaryButton(stringResource(R.string.junk_done_action), onDone)
     }
 }
 

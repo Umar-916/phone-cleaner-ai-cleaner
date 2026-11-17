@@ -39,8 +39,9 @@ fun FeedbackChip(
             containerColor = if (selected)
                 MaterialTheme.colorScheme.primary
             else
-                MaterialTheme.colorScheme.secondary
-        )
+                com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()
+        ),
+        border = androidx.compose.foundation.BorderStroke(0.4.sdp, MaterialTheme.colorScheme.primary.copy(alpha = if (selected) 0f else 0.14f))
     ) {
 
         Box(

@@ -43,7 +43,7 @@ sealed interface JunkUiState {
 class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
     private companion object { const val MIN_SCAN_MS = 3000L
-        const val MIN_CLEAN_MS = 3600L }
+        const val MIN_CLEAN_MS = 5000L }
 
     private val _state = MutableStateFlow<JunkUiState>(JunkUiState.Idle)
     val state: StateFlow<JunkUiState> = _state.asStateFlow()

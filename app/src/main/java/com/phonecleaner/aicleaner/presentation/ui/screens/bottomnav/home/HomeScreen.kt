@@ -1,5 +1,8 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.bottomnav.home
 
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -50,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -81,9 +85,9 @@ import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.system.exitProcess
 
-private val boldFont = FontFamily(Font(R.font.google_sans_flex_bold))
+private val boldFont = AppFonts.Bold
 private val semiFont = FontFamily(Font(R.font.google_sans_flex_semi))
-private val mediumFont = FontFamily(Font(R.font.google_sans_flex_medium))
+private val mediumFont = AppFonts.Medium
 
 private val HeroBackdropHeight = 330.dp
 
@@ -96,7 +100,6 @@ private class FeatureTile(
     val action: () -> Unit
 )
 
-/** The Cleaner tab: a compact hero for the junk scan and one soft-colored card per feature. */
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = koinViewModel(),
@@ -172,13 +175,12 @@ fun HomeScreen(
         FeatureTile(R.string.feature_photo_compressor, R.string.hint_photo, Icons.Rounded.PhotoSizeSelectLarge, Brand.Photo, "home_photo_click", gated("home_photo_click", "HomePhoto", onNavigateToPhotoCompressor)),
         FeatureTile(R.string.feature_battery, R.string.hint_battery, Icons.Rounded.BatteryChargingFull, Brand.Battery, "home_battery_click", gated("home_battery_click", "HomeBattery", onNavigateToBattery))
     )
-    // Device info opens directly: no interstitial in front of it.
     val openDeviceInfo = { context.postAnalytic("home_device_info_click"); onNavigateToDeviceInfo() }
     val openJunk = gated("home_junk_click", "HomeJunk", onNavigateToJunk)
     val homeScroll = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(modifier = Modifier.fillMaxWidth().height(HeroBackdropHeight).background(Brush.verticalGradient(listOf(Color(0xFFEFDEFF), Color(0xFFE5C9FC)))))
+        Box(modifier = Modifier.fillMaxWidth().height(HeroBackdropHeight).background(Brush.verticalGradient(if (androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f) listOf(Color(0xFF2A1647), Color(0xFF1B0E31)) else listOf(Color(0xFFEFDEFF), Color(0xFFE5C9FC)))))
 
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Row(
@@ -188,28 +190,26 @@ fun HomeScreen(
                         Text(
                             stringResource(R.string.app_name_short),
                             modifier = Modifier.weight(1f),
-                            color = Color(0xFF250B3B),
+                            color = MaterialTheme.colorScheme.tertiary,
                             style = TextStyle(fontSize = 22.sp, fontFamily = boldFont, fontWeight = FontWeight.Bold)
                         )
                         if (!com.phonecleaner.aicleaner.core.common.isPremiumUser()) {
                             androidx.compose.foundation.Image(
-                                painter = androidx.compose.ui.res.painterResource(R.drawable.home_crown_fig),
+                                painter = androidx.compose.ui.res.painterResource(R.drawable.home_crown_vector),
                                 contentDescription = stringResource(R.string.prem_description),
                                 modifier = Modifier
                                     .padding(end = 6.dp)
-                                    .size(38.dp)
-                                    .featheredEdges(0.2f)
-                                    .clickable { onNavigateToPremium() }
+                                    .size(34.dp)
+                                    .clip(CircleShape).tapClickable("home_crown") { onNavigateToPremium() }
                             )
                         }
                         androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.res.painterResource(R.drawable.home_robot_fig),
+                            painter = androidx.compose.ui.res.painterResource(R.drawable.home_robot_fig2),
                             contentDescription = stringResource(R.string.device_info_title),
                             modifier = Modifier
                                 .padding(end = 12.dp)
-                                .size(42.dp)
-                                .featheredEdges(0.2f)
-                                .clickable(onClick = openDeviceInfo)
+                                .size(width = 46.dp, height = 34.dp)
+                                .clip(RoundedCornerShape(10.dp)).tapClickable("home_device_info_icon", onClick = openDeviceInfo)
                         )
             }
 
@@ -231,7 +231,7 @@ fun HomeScreen(
                             Formatter.formatFileSize(context, storage.freeBytes),
                             Formatter.formatFileSize(context, storage.totalBytes)
                         ),
-                        color = Color(0xFF4A2A6F),
+                        color = MaterialTheme.colorScheme.surface,
                         style = TextStyle(fontSize = 13.sp, fontFamily = mediumFont)
                     )
                 }
@@ -283,7 +283,7 @@ fun HomeScreen(
 private fun FeatureCard(tile: FeatureTile, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-                        .clickable(onClick = tile.action)
+                        .clip(RoundedCornerShape(18.dp)).tapClickable("home_feature_tile", onClick = tile.action)
             .padding(horizontal = 10.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

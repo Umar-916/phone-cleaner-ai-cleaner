@@ -1,5 +1,7 @@
 package com.phonecleaner.aicleaner.presentation.ui.components
 
+import com.phonecleaner.aicleaner.core.common.tapped
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +41,6 @@ import androidx.compose.ui.unit.sp
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 
-/** Gradient call-to-action used on sheets, dialogs and full-width screen buttons. */
 @Composable
 fun GradientButton(
     text: String,
@@ -57,7 +58,7 @@ fun GradientButton(
                 if (enabled) Brand.Primary
                 else androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.surface.copy(alpha = 0.45f))
             )
-            .clickable(enabled = enabled, onClick = onClick),
+            .tapClickable("gradient_button_click", enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -68,10 +69,6 @@ fun GradientButton(
     }
 }
 
-/**
- * Permission request presented as a bottom sheet instead of a system-style dialog: explains what the
- * access is used for, then hands over to the real permission flow through [onAllow].
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PermissionPrompt(
@@ -130,7 +127,7 @@ fun PermissionPrompt(
             Spacer(Modifier.height(6.dp))
             Text(
                 notNowLabel,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onDismiss).padding(horizontal = 24.dp, vertical = 12.dp),
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).tapClickable("permission_prompt_click", onClick = onDismiss).padding(horizontal = 24.dp, vertical = 12.dp),
                 color = MaterialTheme.colorScheme.surface,
                 style = TextStyle(fontSize = 15.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_semi)), fontWeight = FontWeight.SemiBold)
             )

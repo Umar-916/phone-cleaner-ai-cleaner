@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.files
 
+import com.phonecleaner.aicleaner.core.common.tapClickable
 import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,7 +49,6 @@ import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.FloatingSheet
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 
-/** What the sheet needs to know about a file, so it works for MediaStore entries and plain paths alike. */
 class SheetFile(
     val name: String,
     val path: String,
@@ -59,7 +59,6 @@ class SheetFile(
     val canShare: Boolean = true
 )
 
-/** Prank-style bottom sheet with the actions available for one file. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileItemSheet(
@@ -108,7 +107,7 @@ fun FileItemSheet(
 @Composable
 private fun SheetAction(icon: ImageVector, label: String, tint: Color, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).tapClickable("sheet_action_click", onClick = onClick).padding(horizontal = 8.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(

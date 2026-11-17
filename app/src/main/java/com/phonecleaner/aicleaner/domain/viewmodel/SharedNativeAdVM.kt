@@ -88,8 +88,6 @@ class SharedNativeAdVM : ViewModel() {
                 if (!waitingOnLanguageNative) return
                 waitingOnLanguageNative = false
                 languageHandoffDone = true
-                // The language ad is on screen right now; keep it there and only preload the home native
-                // for the next Home visit / refresh, so the slot never drops to "Loading" or gets hidden.
                 requestHomeNative(context, showWhenLoaded = false)
             }
         }

@@ -24,7 +24,7 @@ fun SettingSection(
             .clip(RoundedCornerShape(18.sdp)),
         shape = RoundedCornerShape(18.sdp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary
+            containerColor = com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()
         ),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {

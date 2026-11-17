@@ -28,7 +28,6 @@ class SettingViewModel(
             LanguageHelper.getSavedLanguageCode(appContext)
         )
 
-
     val showHiddenFiles = appDataStore.showHiddenFilesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -59,7 +58,6 @@ class SettingViewModel(
     fun dismissThemeDialog() {
         _showThemeDialog.value = false
     }
-
 
     fun applyTheme(key: String) {
         viewModelScope.launch(Dispatchers.IO) {

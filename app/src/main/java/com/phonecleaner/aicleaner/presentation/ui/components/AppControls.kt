@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.components
 
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -34,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 
-/** Pill switch with a gradient track and a white thumb that glides between the two states. */
 @Composable
 fun AppSwitch(
     checked: Boolean,
@@ -51,11 +51,7 @@ fun AppSwitch(
             .clip(CircleShape)
             .background(if (checked) Brand.Primary else androidx.compose.ui.graphics.SolidColor(off))
             .border(1.dp, offBorder, CircleShape)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                enabled = onCheckedChange != null
-            ) { onCheckedChange?.invoke(!checked) }
+            .tapPlainClickable("app_controls_tap_1", enabled = onCheckedChange != null) { onCheckedChange?.invoke(!checked) }
             .padding(3.dp)
     ) {
         Box(
@@ -68,7 +64,6 @@ fun AppSwitch(
     }
 }
 
-/** Rounded square checkbox with a filled brand state and a visible outline in both themes. */
 @Composable
 fun AppCheckbox(
     checked: Boolean,
@@ -84,11 +79,7 @@ fun AppCheckbox(
                 .clip(shape)
                 .background(if (checked) Brand.Primary else androidx.compose.ui.graphics.SolidColor(Color.Transparent))
                 .border(if (checked) 0.dp else 2.dp, outline, shape)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    enabled = onCheckedChange != null
-                ) { onCheckedChange?.invoke(!checked) },
+                .tapPlainClickable("app_controls_tap_2", enabled = onCheckedChange != null) { onCheckedChange?.invoke(!checked) },
             contentAlignment = Alignment.Center
         ) {
             if (checked) Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
@@ -96,7 +87,6 @@ fun AppCheckbox(
     }
 }
 
-/** Thin gradient progress bar with rounded ends, used for storage and other determinate values. */
 @Composable
 fun AppProgressBar(
     fraction: Float,
@@ -116,7 +106,6 @@ fun AppProgressBar(
     }
 }
 
-/** Slider with a slim gradient track and a white thumb ringed in the brand colour. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun AppSlider(

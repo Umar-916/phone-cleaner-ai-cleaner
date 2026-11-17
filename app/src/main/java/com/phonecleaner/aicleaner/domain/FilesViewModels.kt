@@ -23,7 +23,6 @@ data class FilesOverviewState(
     val isLoading: Boolean = false
 )
 
-/** State of the Files tab: storage usage and one summary per category. */
 class FilesViewModel(
     private val repository: FilesRepository,
     private val dataStore: AppDataStore
@@ -69,7 +68,6 @@ data class FileCategoryState(
     val isSelecting: Boolean get() = selected.isNotEmpty()
 }
 
-/** State of one category screen: loading, filtering, searching, selecting and deleting files. */
 class FileCategoryViewModel(
     private val repository: FilesRepository,
     private val dataStore: AppDataStore
@@ -117,14 +115,21 @@ class FileCategoryViewModel(
     }
 }
 
+enum class BrowserSort { NAME, SIZE, DATE }
+
 data class BrowserState(
     val directory: String = "",
     val items: List<BrowserItem> = emptyList(),
     val isLoading: Boolean = true,
-    val isRoot: Boolean = true
-)
+    val isRoot: Boolean = true,
+    val selected: Set<String> = emptySet(),
+    val sort: BrowserSort = BrowserSort.NAME,
+    val showHidden: Boolean = false,
+    val nameClash: Boolean = false
+) {
+    val isSelecting: Boolean get() = selected.isNotEmpty()
+}
 
-/** Plain directory browser for internal storage (uses the All files access permission). */
 class StorageBrowserViewModel(
     private val repository: FilesRepository,
     private val dataStore: AppDataStore
@@ -139,12 +144,22 @@ class StorageBrowserViewModel(
         val directory = path?.let { File(it) } ?: root
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val items = repository.browse(directory, dataStore.showHiddenFilesFlow.first())
-            _state.value = BrowserState(directory.absolutePath, items, false, directory == root)
+            val showHidden = dataStore.showHiddenFilesFlow.first()
+            val items = repository.browse(directory, showHidden)
+            _state.update {
+                it.copy(
+                    directory = directory.absolutePath,
+                    items = sorted(items, it.sort),
+                    isLoading = false,
+                    isRoot = directory == root,
+                    selected = emptySet(),
+                    showHidden = showHidden,
+                    nameClash = false
+                )
+            }
         }
     }
 
-    /** Goes one folder up; returns false when already at the storage root. */
     fun up(): Boolean {
         val current = _state.value
         if (current.isRoot || current.directory.isEmpty()) return false
@@ -152,10 +167,50 @@ class StorageBrowserViewModel(
         return true
     }
 
-    fun delete(item: BrowserItem) {
+    fun toggleSelect(item: BrowserItem) = _state.update {
+        it.copy(selected = if (item.path in it.selected) it.selected - item.path else it.selected + item.path)
+    }
+
+    fun selectAll() = _state.update { it.copy(selected = it.items.map { item -> item.path }.toSet()) }
+
+    fun clearSelection() = _state.update { it.copy(selected = emptySet()) }
+
+    fun setSort(sort: BrowserSort) = _state.update { it.copy(sort = sort, items = sorted(it.items, sort)) }
+
+    fun toggleHidden() {
         viewModelScope.launch {
-            repository.deletePaths(listOf(item.path))
+            dataStore.setShowHiddenFiles(!_state.value.showHidden)
             open(_state.value.directory)
+        }
+    }
+
+    fun createFolder(name: String, onResult: (Boolean) -> Unit) {
+        val clean = name.trim().trim('/')
+        if (clean.isEmpty()) return onResult(false)
+        viewModelScope.launch {
+            val created = repository.createFolder(File(_state.value.directory), clean)
+            if (created) open(_state.value.directory)
+            onResult(created)
+        }
+    }
+
+    fun delete(item: BrowserItem) = deletePaths(listOf(item.path))
+
+    fun deleteSelected() = deletePaths(_state.value.selected.toList())
+
+    private fun deletePaths(paths: List<String>) {
+        viewModelScope.launch {
+            repository.deletePaths(paths)
+            open(_state.value.directory)
+        }
+    }
+
+    private fun sorted(items: List<BrowserItem>, sort: BrowserSort): List<BrowserItem> {
+        val folderFirst = compareByDescending<BrowserItem> { it.isDirectory }
+        return when (sort) {
+            BrowserSort.NAME -> items.sortedWith(folderFirst.thenBy { it.name.lowercase() })
+            BrowserSort.SIZE -> items.sortedWith(folderFirst.thenByDescending { it.sizeBytes }.thenBy { it.name.lowercase() })
+            BrowserSort.DATE -> items.sortedWith(folderFirst.thenByDescending { it.modifiedMs })
         }
     }
 }

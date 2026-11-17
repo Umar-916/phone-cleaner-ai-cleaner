@@ -36,8 +36,9 @@ fun DescriptionField(
             .height(125.sdp),
         shape = RoundedCornerShape(15.sdp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary
-        )
+            containerColor = com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor()
+        ),
+        border = androidx.compose.foundation.BorderStroke(0.4.sdp, MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
     ) {
 
         Box(

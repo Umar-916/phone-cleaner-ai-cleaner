@@ -1,4 +1,5 @@
 import com.phonecleaner.aicleaner.BuildConfig
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -38,12 +39,7 @@ fun RatingStars(
                 ),
                 contentDescription = null,
                 modifier = Modifier
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember {
-                            MutableInteractionSource()
-                        }
-                    ) {
+                    .tapPlainClickable("rating_stars_tap_1") {
                         onRatingSelected(index + 1)
                         if (index + 1 == 5) {
                             val intent = Intent(

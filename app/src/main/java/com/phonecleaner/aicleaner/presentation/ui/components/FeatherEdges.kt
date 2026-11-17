@@ -1,6 +1,9 @@
 package com.phonecleaner.aicleaner.presentation.ui.components
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -8,11 +11,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 
-/**
- * Fades the four borders of the content into whatever is behind it, so artwork that carries its own flat
- * backdrop (the mascot pictures) melts into the screen background instead of showing a rectangle.
- */
-fun Modifier.featheredEdges(fraction: Float = 0.10f): Modifier = this
+fun Modifier.featheredEdges(fraction: Float = 0.10f): Modifier = composed {
+    if (com.phonecleaner.aicleaner.presentation.ui.theme.isDarkSurface()) {
+        Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(28.dp))
+    } else Modifier.featherLayer(fraction)
+}
+
+private fun Modifier.featherLayer(fraction: Float): Modifier = this
     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
     .drawWithContent {
         drawContent()

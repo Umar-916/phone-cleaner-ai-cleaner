@@ -55,7 +55,6 @@ class FeedbackViewModel : ViewModel() {
         _selectedItems.value = if (item in current) {
             current - item
         } else {
-            // Enforce max selection limit
             if (current.size >= maxSelection) {
                 _showMaxSelectionToast.value = true
                 current // Don't add if limit reached

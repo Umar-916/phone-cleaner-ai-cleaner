@@ -43,14 +43,7 @@ val colorWhite = Color(0xFFFFFFFF)
 
 val colorGrayF5 = Color(0xFFF5F5F5)
 
-
-
-
-
 val premIconColor = Color(0xFFFFC53D)
-
-
-
 
 val colorNine = Color(0xFF999999)
 val blackPremiumOrange = Color(0xFF22D3EE)
