@@ -116,11 +116,19 @@ fun JunkScanView(
     val scanning = state is JunkUiState.Scanning || cleaning != null
     val result = state as? JunkUiState.Result
     val progress = (state as? JunkUiState.Scanning)?.progress
-    val cleanFraction = cleaning?.let { if (it.total == 0) 0f else it.done.toFloat() / it.total } ?: 0f
+    val cleanTimed = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(cleaning != null) {
+        if (cleaning != null) cleanTimed.animateTo(1f, tween(2700, easing = androidx.compose.animation.core.LinearEasing))
+    }
+    val cleanFraction = cleanTimed.value
 
+    val timed = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(scanning, cleaning == null) {
+        if (scanning && cleaning == null) timed.animateTo(0.99f, tween(2800, easing = androidx.compose.animation.core.LinearEasing))
+    }
     val fraction by animateFloatAsState(
-        if (cleaning != null) cleanFraction else if (scanning) (progress?.fraction ?: 0f).coerceIn(0f, 0.99f) else 1f,
-        tween(400), label = "junkFraction"
+        if (cleaning != null) cleanFraction else if (scanning) timed.value else 1f,
+        tween(300), label = "junkFraction"
     )
     val headerColor by animateColorAsState(
         when {
@@ -133,7 +141,7 @@ fun JunkScanView(
     )
     val onHeader = if (scanning) Ink else Color.White
     val totalBytes = when {
-        cleaning != null -> (cleaning.totalBytes - cleaning.doneBytes).coerceAtLeast(0L)
+        cleaning != null -> (cleaning.totalBytes * (1f - cleanFraction)).toLong()
         scanning -> progress?.foundBytes ?: 0L
         else -> result?.totalBytes ?: 0L
     }
@@ -240,7 +248,7 @@ fun JunkScanView(
                     JunkGroup.entries.forEach { group ->
                         val items = result?.groups?.get(group).orEmpty()
                         val groupBytes = if (cleaning != null) {
-                            cleaning.groupBytes[group] ?: 0L
+                            ((cleaning.groupBytes[group] ?: 0L) * (1f - cleanFraction)).toLong()
                         } else if (scanning) {
                             group.categories.sumOf { progress?.categoryBytes?.get(it) ?: 0L }
                         } else {

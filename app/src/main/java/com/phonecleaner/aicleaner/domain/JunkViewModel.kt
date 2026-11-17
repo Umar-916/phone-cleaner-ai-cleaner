@@ -41,6 +41,9 @@ sealed interface JunkUiState {
 
 class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
+    private companion object { const val MIN_SCAN_MS = 3000L
+        const val MIN_CLEAN_MS = 3000L }
+
     private val _state = MutableStateFlow<JunkUiState>(JunkUiState.Idle)
     val state: StateFlow<JunkUiState> = _state.asStateFlow()
 
@@ -48,6 +51,7 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
     fun startScan() {
         if (job?.isActive == true) return
+        val startedAt = android.os.SystemClock.elapsedRealtime()
         _state.value = JunkUiState.Scanning(ScanProgress("", 0L, 0))
         job = viewModelScope.launch {
             scanner.scan().collect { event ->
@@ -56,10 +60,16 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
                         val previous = (_state.value as? JunkUiState.Scanning)?.progress?.fraction ?: 0f
                         _state.value = JunkUiState.Scanning(event.progress.copy(fraction = maxOf(previous, event.progress.fraction)))
                     }
-                    is ScanEvent.Finished -> _state.value = JunkUiState.Result(
+                    is ScanEvent.Finished -> {
+                        val byCat = event.items.groupBy { it.category }.mapValues { e -> e.value.sumOf { it.sizeBytes } }
+                        _state.value = JunkUiState.Scanning(ScanProgress("", event.items.sumOf { it.sizeBytes }, event.items.size, 0.9f, byCat))
+                        val wait = MIN_SCAN_MS - (android.os.SystemClock.elapsedRealtime() - startedAt)
+                        if (wait > 0) kotlinx.coroutines.delay(wait)
+                        _state.value = JunkUiState.Result(
                         items = event.items,
                         selected = event.items.filter { it.category.selectedByDefault }.map { it.path }.toSet()
                     )
+                    }
                 }
             }
         }
@@ -90,10 +100,13 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
         val totalBytes = targets.sumOf { it.sizeBytes }
         val groupBytes = JunkGroup.entries.associateWith { g -> targets.filter { it.category in g.categories }.sumOf { it.sizeBytes } }
         _state.value = JunkUiState.Cleaning(0, targets.size, 0L, totalBytes, groupBytes)
+        val cleanStart = android.os.SystemClock.elapsedRealtime()
         job = viewModelScope.launch {
             val outcome = scanner.delete(targets) { done ->
                 _state.value = JunkUiState.Cleaning(done, targets.size, targets.take(done).sumOf { it.sizeBytes }, totalBytes, groupBytes)
             }
+            val rest = MIN_CLEAN_MS - (android.os.SystemClock.elapsedRealtime() - cleanStart)
+            if (rest > 0) kotlinx.coroutines.delay(rest)
             _state.value = JunkUiState.Done(outcome.freedBytes, outcome.removedCount)
             TaskTracker.mark(MainTask.JUNK)
         }
