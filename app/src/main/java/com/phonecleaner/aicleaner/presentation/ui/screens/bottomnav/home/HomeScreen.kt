@@ -8,6 +8,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -195,7 +196,8 @@ fun HomeScreen(
                                     .padding(end = 10.dp)
                                     .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(Brush.verticalGradient(listOf(Brand.Gold, Brand.GoldDeep)))
+                                    .background(Color(0xFFFFE9B0))
+                                    .border(1.5.dp, Brand.Gold, CircleShape)
                                     .clickable { onNavigateToPremium() },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -216,16 +218,6 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
-                        }
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 14.dp)
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .clickable(onClick = onNavigateToSettings),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.Settings, contentDescription = null, tint = Color(0xFF250B3B), modifier = Modifier.size(24.dp))
                         }
             }
 

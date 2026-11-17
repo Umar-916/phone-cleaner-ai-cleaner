@@ -65,5 +65,12 @@ sealed class AppDestination : NavKey {
     data object Onboarding : AppDestination()
 
     @Serializable
-    data class PremiumScreen(val isFromSplash: Boolean) : AppDestination()
+    data class SliderPremiumScreen(val isFromSplash: Boolean) : AppDestination()
+
+    /** Uses the storage-themed premium design (replaces the old black screen). */
+    @Serializable
+    data class BlackPremiumScreen(val isFromSplash: Boolean) : AppDestination()
+
+    @Serializable
+    data class PremiumZippoScreen(val isFromSplash: Boolean) : AppDestination()
 }

@@ -60,8 +60,8 @@ import kotlin.math.abs
 // Source geometry of splash_robot.jpg / splash_brush.png (pixels of the reference artwork).
 private const val ART_W = 836f
 private const val ART_H = 760f
-private val BRUSH_ORIGIN = Offset(598f, 236f)
-private val BRUSH_PIVOT = Offset(628f, 392f)
+private val BRUSH_ORIGIN = Offset(572f, 236f)
+private val BRUSH_PIVOT = Offset(612f, 470f)
 
 /**
  * Splash content: the mascot waving her cleaning brush over a soft lavender backdrop, the app name in deep
@@ -178,7 +178,7 @@ private fun DrawScope.drawArtwork(
         )
 
         // Brush: sways around the grip of the hand.
-        val angle = -9f + 12f * sway
+        val angle = -8f + 11f * sway
         rotate(degrees = angle, pivot = BRUSH_PIVOT * k) {
             drawImage(
                 brush,

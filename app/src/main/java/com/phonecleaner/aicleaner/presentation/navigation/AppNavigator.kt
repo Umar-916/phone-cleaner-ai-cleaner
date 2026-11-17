@@ -87,6 +87,8 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.app_lang
 import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.feedback.FeedbackScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.onboarding.OnboardingScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.PremiumScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.PremiumZippoScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.other_screens.premium.SliderPremiumScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.splash.StartScreen
 import com.phonecleaner.aicleaner.presentation.ui.theme.onSecondaryFixedVariantLight
 import network.chaintech.sdpcomposemultiplatform.sdp
@@ -115,7 +117,9 @@ fun AppNavigator(
 
     val shouldNotShowBannerAdTypes = setOf(
         AppDestination.Splash::class,
-        AppDestination.PremiumScreen::class,
+        AppDestination.SliderPremiumScreen::class,
+        AppDestination.BlackPremiumScreen::class,
+        AppDestination.PremiumZippoScreen::class,
         AppDestination.Onboarding::class,
         AppDestination.Feedback::class,
         AppDestination.AppLanguage::class
@@ -256,10 +260,16 @@ fun AppNavigator(
                                 OnboardingScreen(onFinished = { continueOnboardingOr { replaceTop(AppDestination.Home) } })
                             }
 
-                            is AppDestination.PremiumScreen -> NavEntry(route) {
-                                PremiumScreen(
-                                    onClose = { continueOnboardingOr { navigateBack() } }
-                                )
+                            is AppDestination.SliderPremiumScreen -> NavEntry(route) {
+                                SliderPremiumScreen(onClose = { continueOnboardingOr { navigateBack() } })
+                            }
+
+                            is AppDestination.BlackPremiumScreen -> NavEntry(route) {
+                                PremiumScreen(onClose = { continueOnboardingOr { navigateBack() } })
+                            }
+
+                            is AppDestination.PremiumZippoScreen -> NavEntry(route) {
+                                PremiumZippoScreen(onClose = { continueOnboardingOr { navigateBack() } })
                             }
 
                             is AppDestination.Home -> NavEntry(route) {

@@ -278,11 +278,11 @@ private fun CloseButton(modifier: Modifier, onClick: () -> Unit) {
             .padding(10.dp)
             .size(36.dp)
             .clip(CircleShape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
+            .background(Color.White.copy(alpha = 0.6f))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Rounded.Close, null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.Close, null, tint = OnboardingPalette.purple.copy(alpha = 0.55f), modifier = Modifier.size(20.dp))
     }
 }
 

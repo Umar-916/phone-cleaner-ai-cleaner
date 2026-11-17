@@ -17,7 +17,11 @@ fun isTrialPremiumScreenType(screenType: Int?): Boolean = screenType in TRIAL_PR
 
 private fun premiumDestinationFor(screenType: Int, isFromSplash: Boolean): AppDestination =
     when (screenType) {
-        else -> AppDestination.PremiumScreen(isFromSplash = isFromSplash)
+        1, 2 -> AppDestination.SliderPremiumScreen(isFromSplash = isFromSplash)
+        3, 4 -> AppDestination.PremiumZippoScreen(isFromSplash = isFromSplash)
+        5, 6 -> AppDestination.BlackPremiumScreen(isFromSplash = isFromSplash)
+        7, 8 -> AppDestination.BlackPremiumScreen(isFromSplash = isFromSplash)
+        else -> AppDestination.SliderPremiumScreen(isFromSplash = isFromSplash)
     }
 
 fun resolvePremiumDestination(screenType: Int?): AppDestination? {
