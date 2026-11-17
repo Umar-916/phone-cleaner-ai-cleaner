@@ -198,8 +198,8 @@ fun PremiumScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .background(Color.White.copy(alpha = 0.55f))
-                            .border(1.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(18.dp))
+                            .background(Brush.verticalGradient(listOf(OnboardingPalette.purple.copy(alpha = 0.16f), OnboardingPalette.purple.copy(alpha = 0.07f))))
+                            .border(1.dp, OnboardingPalette.purple.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
                             .clickable { premiumViewModel.onTrialToggled() }
                             .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -278,11 +278,11 @@ private fun CloseButton(modifier: Modifier, onClick: () -> Unit) {
             .padding(10.dp)
             .size(36.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.7f))
+            .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Rounded.Close, null, tint = OnboardingPalette.purple, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.Close, null, tint = Color.White, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -382,7 +382,7 @@ private fun Features() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White.copy(alpha = 0.55f))
+            .background(Brush.verticalGradient(listOf(OnboardingPalette.purple.copy(alpha = 0.16f), OnboardingPalette.purple.copy(alpha = 0.07f))))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

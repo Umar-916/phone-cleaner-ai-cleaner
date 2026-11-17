@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.SmartToy
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material3.Icon
@@ -109,6 +110,7 @@ fun HomeScreen(
     onNavigateToAiCleanup: () -> Unit = {},
     onNavigateToBattery: () -> Unit = {},
     onNavigateToDeviceInfo: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current as ComponentActivity
@@ -206,7 +208,7 @@ fun HomeScreen(
                         }
                         Box(
                             modifier = Modifier
-                                .padding(end = 14.dp)
+                                .padding(end = 10.dp)
                                 .size(32.dp)
                                 .clip(CircleShape)
                                 .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
@@ -214,6 +216,16 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
+                        }
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 14.dp)
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .clickable(onClick = onNavigateToSettings),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.Settings, contentDescription = null, tint = Color(0xFF250B3B), modifier = Modifier.size(24.dp))
                         }
             }
 

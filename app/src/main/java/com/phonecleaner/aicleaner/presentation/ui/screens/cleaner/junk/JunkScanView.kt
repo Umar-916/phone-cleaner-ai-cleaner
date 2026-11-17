@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
@@ -148,7 +149,9 @@ fun JunkScanView(
     val (number, unit) = splitSize(totalBytes)
 
     var confirm by rememberSaveable { mutableStateOf(false) }
-    var expanded by remember { mutableStateOf(setOf<JunkGroup>()) }
+    var expanded by remember(result?.items?.size) {
+        mutableStateOf(result?.groups?.filter { it.value.isNotEmpty() && it.key != JunkGroup.RESIDUALS }?.keys ?: emptySet<JunkGroup>())
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Box(
@@ -245,7 +248,25 @@ fun JunkScanView(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)
                 ) {
-                    JunkGroup.entries.forEach { group ->
+                    if (cleaning != null) {
+                        val shown = (cleaning.names.size * cleanFraction).toInt()
+                        items(shown, key = { "clean_$it" }) { i ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(20.dp).clip(CircleShape).background(Color(0xFF55C97E)), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(13.dp))
+                                }
+                                Text(
+                                    cleaning.names[cleaning.names.size - 1 - i],
+                                    modifier = Modifier.padding(start = 12.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.MiddleEllipsis,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    style = TextStyle(fontSize = 13.sp, fontFamily = medium)
+                                )
+                            }
+                        }
+                    }
+                    JunkGroup.entries.forEachIndexed { groupIndex, group ->
                         val items = result?.groups?.get(group).orEmpty()
                         val groupBytes = if (cleaning != null) {
                             ((cleaning.groupBytes[group] ?: 0L) * (1f - cleanFraction)).toLong()
@@ -260,6 +281,7 @@ fun JunkScanView(
                                 group = group,
                                 bytes = groupBytes,
                                 scanning = scanning,
+                                stepDone = scanning && fraction >= (groupIndex + 1) * 0.23f,
                                 expandable = !scanning && items.isNotEmpty(),
                                 open = isOpen,
                                 checked = !scanning && items.isNotEmpty() && items.all { it.path in result!!.selected },
@@ -330,6 +352,7 @@ private fun GroupRow(
     group: JunkGroup,
     bytes: Long,
     scanning: Boolean,
+    stepDone: Boolean,
     expandable: Boolean,
     open: Boolean,
     checked: Boolean,
@@ -367,7 +390,11 @@ private fun GroupRow(
             style = TextStyle(fontSize = 14.sp, fontFamily = medium)
         )
         Box(Modifier.padding(start = 6.dp).size(40.dp), contentAlignment = Alignment.Center) {
-            if (scanning) {
+            if (scanning && stepDone) {
+                Box(Modifier.size(24.dp).clip(CircleShape).background(Color(0xFF55C97E)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
+            } else if (scanning) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,

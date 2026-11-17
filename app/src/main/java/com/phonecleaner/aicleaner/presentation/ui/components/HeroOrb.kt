@@ -70,6 +70,9 @@ fun HeroOrb(
             drawCircle(Color.White.copy(alpha = 0.20f), radius = 92.dp.toPx() + halo, center = c)
             drawCircle(Color.White.copy(alpha = 0.30f), radius = 82.dp.toPx() + halo / 2, center = c)
 
+            // Thick soft band between the halos and the disc, as in the design.
+            drawCircle(Color.White.copy(alpha = 0.32f), radius = 77.dp.toPx(), center = c, style = Stroke(9.dp.toPx()))
+
             // Flat disc with one thin white ring.
             val ringR = 72.dp.toPx()
             drawCircle(Brush.radialGradient(listOf(Color(0xFFE9D4FB), Color(0xFFD2ADF7)), center = c, radius = ringR), radius = ringR, center = c)
@@ -105,8 +108,8 @@ fun HeroOrb(
             Spacer(Modifier.height(10.dp))
             Box(
                 modifier = Modifier
-                    .shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Color(0xFF4A1A8C), spotColor = Color(0xFF4A1A8C))
-                    .clip(RoundedCornerShape(14.dp))
+                    .shadow(6.dp, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp), ambientColor = Color(0xFF4A1A8C), spotColor = Color(0xFF4A1A8C))
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
                     .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
                     .clickable(onClick = onClean)
                     .padding(horizontal = 22.dp, vertical = 7.dp)

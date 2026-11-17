@@ -275,7 +275,8 @@ fun AppNavigator(
                                     onNavigateToPhotoCompressor = { navigateTo(AppDestination.PhotoCompressor) },
                                     onNavigateToAiCleanup = { navigateTo(AppDestination.AiCleanup) },
                                     onNavigateToBattery = { navigateTo(AppDestination.BatteryManager) },
-                                    onNavigateToDeviceInfo = { navigateTo(AppDestination.DeviceInfo) }
+                                    onNavigateToDeviceInfo = { navigateTo(AppDestination.DeviceInfo) },
+                                    onNavigateToSettings = { navigateTo(AppDestination.Setting) }
                                 )
                             }
 
