@@ -78,7 +78,7 @@ fun SplashBody(
 
     val transition = rememberInfiniteTransition(label = "splash")
     val float by transition.animateFloat(-1f, 1f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "float")
-    val sway by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sway")
+    val sway by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(750, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sway")
     val twinkle by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Reverse), label = "twinkle")
 
     Box(
@@ -178,7 +178,7 @@ private fun DrawScope.drawArtwork(
         )
 
         // Brush: sways around the grip of the hand.
-        val angle = -8f + 11f * sway
+        val angle = -14f + 22f * sway
         rotate(degrees = angle, pivot = BRUSH_PIVOT * k) {
             drawImage(
                 brush,

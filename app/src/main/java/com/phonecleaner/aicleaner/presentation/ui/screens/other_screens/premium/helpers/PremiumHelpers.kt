@@ -90,7 +90,7 @@ fun PremiumFeatureRow(text: String) {
         Image(
             painter = painterResource(R.drawable.premium_check),
             contentDescription = null,
-            modifier = Modifier.size(16.sdp),
+            modifier = Modifier.size(20.sdp),
             contentScale = ContentScale.Fit
         )
     }
@@ -303,17 +303,17 @@ fun PremiumCloseButton(
     Box(
         modifier = modifier
             .padding(16.sdp)
-            .size(24.sdp)
+            .size(30.sdp)
             .clip(RoundedCornerShape(12.sdp))
-            .background(Color.White.copy(alpha = 0.6f))
+            .background(Color.White.copy(alpha = 0.9f))
             .debounceClickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(R.drawable.premium_close),
             contentDescription = stringResource(R.string.close),
-            modifier = Modifier.size(16.sdp),
-            colorFilter = ColorFilter.tint(Color(0xFF7A2ACB).copy(alpha = 0.55f))
+            modifier = Modifier.size(20.sdp),
+            colorFilter = ColorFilter.tint(Color(0xFF7A2ACB).copy(alpha = 0.85f))
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -68,26 +69,27 @@ fun HeroOrb(
             val halo = 6.dp.toPx() * breathe
 
             // Outer translucent rings that breathe slowly (the "hover").
-            drawCircle(Color.White.copy(alpha = 0.14f), radius = 90.dp.toPx() + halo, center = c, style = Stroke(14.dp.toPx()))
-            drawCircle(Color.White.copy(alpha = 0.22f), radius = 78.dp.toPx() + halo / 2, center = c, style = Stroke(10.dp.toPx()))
-            // Thin white ring.
-            drawCircle(Color.White.copy(alpha = 0.95f), radius = 68.dp.toPx(), center = c, style = Stroke(2.5.dp.toPx()))
+            drawCircle(Color(0xFFB98AF2).copy(alpha = 0.38f), radius = 84.dp.toPx() + halo, center = c, style = Stroke(10.dp.toPx()))
+            drawCircle(Color(0xFFC9A3F7).copy(alpha = 0.55f), radius = 75.dp.toPx() + halo / 2, center = c, style = Stroke(6.dp.toPx()))
+            // Thin white ring, then a pale track just inside it.
+            drawCircle(Color.White.copy(alpha = 0.95f), radius = 71.dp.toPx(), center = c, style = Stroke(2.dp.toPx()))
+            drawCircle(Color(0xFFB98AF2).copy(alpha = 0.40f), radius = 65.dp.toPx(), center = c, style = Stroke(6.dp.toPx()))
 
-            // Dark purple arcs travelling round just inside the white ring, each fading into a tail.
-            val arcR = 62.dp.toPx()
-            val tail = 70f
-            val pieces = 22
-            repeat(3) { i ->
+            // Four dark purple arc segments riding on the track, each with a fading tail.
+            val arcR = 65.dp.toPx()
+            val span = 46f
+            val pieces = 16
+            repeat(4) { i ->
                 for (s in 0 until pieces) {
                     val t = (s + 1) / pieces.toFloat()
                     drawArc(
-                        color = androidx.compose.ui.graphics.lerp(Color(0xFFB98AF2), Color(0xFF6A1FC0), t).copy(alpha = 0.15f + 0.85f * t),
-                        startAngle = spin + i * 120f - tail + s * (tail / pieces),
-                        sweepAngle = tail / pieces + 1.5f,
+                        color = androidx.compose.ui.graphics.lerp(Color(0xFFB98AF2), Color(0xFF7424C4), t).copy(alpha = 0.25f + 0.75f * t),
+                        startAngle = spin * 0.6f + i * 90f - span + s * (span / pieces),
+                        sweepAngle = span / pieces + 1.5f,
                         useCenter = false,
                         topLeft = Offset(c.x - arcR, c.y - arcR),
                         size = Size(arcR * 2, arcR * 2),
-                        style = Stroke((1.5f + 5.5f * t).dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(7.dp.toPx(), cap = StrokeCap.Round)
                     )
                 }
             }
@@ -101,26 +103,26 @@ fun HeroOrb(
             lineTo(inset + r * 2, s.height); quadraticTo(inset + r, s.height, inset, s.height - r)
             lineTo(0f, r); quadraticTo(0f, 0f, r, 0f); close()
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(18.dp))
+        Box(contentAlignment = Alignment.Center) {
             Text(
                 stringResource(R.string.home_junk_files),
                 color = Color(0xFF250B3B),
-                style = TextStyle(fontSize = 18.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
+                modifier = Modifier.offset(y = (-18).dp),
+                style = TextStyle(fontSize = 21.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
             )
-            Spacer(Modifier.height(30.dp))
             Box(
                 modifier = Modifier
+                    .offset(y = 38.dp)
                     .shadow(5.dp, clean, ambientColor = Color(0xFF4A1A8C), spotColor = Color(0xFF4A1A8C))
                     .clip(clean)
                     .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
                     .clickable(onClick = onClean)
-                    .padding(horizontal = 24.dp, vertical = 6.dp)
+                    .padding(horizontal = 22.dp, vertical = 5.dp)
             ) {
                 Text(
                     stringResource(R.string.home_clean),
                     color = Color.White,
-                    style = TextStyle(fontSize = 16.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
+                    style = TextStyle(fontSize = 15.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_bold)), fontWeight = FontWeight.Bold)
                 )
             }
         }

@@ -54,12 +54,12 @@ object RemoteConfig {
                 RemoteConstants.splashScreenType = if (BuildConfig.DEBUG) 2 else
                     mFirebaseRemoteConfig.getLong("splashScreenType").toInt()
 
-                inner_premium_screen = if (BuildConfig.DEBUG) 1 else mFirebaseRemoteConfig.getLong("inner_premium_screen").toInt()
+                inner_premium_screen = if (BuildConfig.DEBUG) 7 else mFirebaseRemoteConfig.getLong("inner_premium_screen").toInt()
 
                 backPressOnPremiumScreen = mFirebaseRemoteConfig.getLong("backPressOnPremiumScreen").toInt()
 
                 RemoteConstants.hotBadgeDisplayState =
-                   if (BuildConfig.DEBUG) 1 else mFirebaseRemoteConfig.getLong("hotBadgeDisplayState").toInt()
+                   if (BuildConfig.DEBUG) 7 else mFirebaseRemoteConfig.getLong("hotBadgeDisplayState").toInt()
                 RemoteConstants.hotBadgeText =
                     mFirebaseRemoteConfig.getString("hotBadgeText").trim().ifBlank { "HOT" }
 

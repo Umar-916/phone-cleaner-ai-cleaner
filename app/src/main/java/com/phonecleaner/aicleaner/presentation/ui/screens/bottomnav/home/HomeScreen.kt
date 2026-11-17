@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.SmartToy
+import com.phonecleaner.aicleaner.presentation.ui.components.featheredEdges
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.RocketLaunch
@@ -177,7 +178,7 @@ fun HomeScreen(
     val homeScroll = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(modifier = Modifier.fillMaxWidth().height(HeroBackdropHeight).background(Brush.verticalGradient(listOf(Color(0xFFC79BF4), Color(0xFFE6CFFB)))))
+        Box(modifier = Modifier.fillMaxWidth().height(HeroBackdropHeight).background(Brush.verticalGradient(listOf(Color(0xFFEFDEFF), Color(0xFFE5C9FC)))))
 
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Row(
@@ -191,34 +192,25 @@ fun HomeScreen(
                             style = TextStyle(fontSize = 22.sp, fontFamily = boldFont, fontWeight = FontWeight.Bold)
                         )
                         if (!com.phonecleaner.aicleaner.core.common.isPremiumUser()) {
-                            Box(
+                            androidx.compose.foundation.Image(
+                                painter = androidx.compose.ui.res.painterResource(R.drawable.home_crown_fig),
+                                contentDescription = stringResource(R.string.prem_description),
                                 modifier = Modifier
-                                    .padding(end = 10.dp)
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFFFE9B0))
-                                    .border(1.5.dp, Brand.Gold, CircleShape)
-                                    .clickable { onNavigateToPremium() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                androidx.compose.foundation.Image(
-                                    painter = androidx.compose.ui.res.painterResource(R.drawable.home_pro_crown),
-                                    contentDescription = stringResource(R.string.prem_description),
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
+                                    .padding(end = 6.dp)
+                                    .size(38.dp)
+                                    .featheredEdges(0.2f)
+                                    .clickable { onNavigateToPremium() }
+                            )
                         }
-                        Box(
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(R.drawable.home_robot_fig),
+                            contentDescription = stringResource(R.string.device_info_title),
                             modifier = Modifier
-                                .padding(end = 10.dp)
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(Brush.verticalGradient(listOf(Color(0xFF8D3EDD), Color(0xFF6A1FC0))))
-                                .clickable(onClick = openDeviceInfo),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.SmartToy, contentDescription = stringResource(R.string.device_info_title), tint = Color.White, modifier = Modifier.size(22.dp))
-                        }
+                                .padding(end = 12.dp)
+                                .size(42.dp)
+                                .featheredEdges(0.2f)
+                                .clickable(onClick = openDeviceInfo)
+                        )
             }
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(homeScroll)) {

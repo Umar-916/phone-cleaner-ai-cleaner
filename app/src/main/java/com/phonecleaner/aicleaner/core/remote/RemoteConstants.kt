@@ -61,7 +61,7 @@ object RemoteConstants {
 
     var interAdCapping = 30
 
-    var inner_premium_screen = 1
+    var inner_premium_screen = 7
 
     /**
      * Splash screen design

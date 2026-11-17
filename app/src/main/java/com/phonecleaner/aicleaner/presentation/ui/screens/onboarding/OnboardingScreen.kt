@@ -10,7 +10,17 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.animation.core.LinearEasing
+import kotlin.math.PI
+import kotlin.math.sin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -58,16 +68,33 @@ import com.phonecleaner.aicleaner.presentation.ui.components.featheredEdges
 import com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette
 import kotlinx.coroutines.launch
 
+private class ArtLayer(
+    @DrawableRes val res: Int,
+    val x: Float, val y: Float, val w: Float, val h: Float,
+    val rotate: Boolean, val amount: Float, val phase: Float,
+    val pivotX: Float = 0f, val pivotY: Float = 0f
+)
+
 private class OnboardingPage(
     @DrawableRes val image: Int,
+    val layers: List<ArtLayer>,
     @StringRes val title: Int,
     @StringRes val body: Int
 )
 
 private val pages = listOf(
-    OnboardingPage(R.drawable.onboarding_junk, R.string.onboarding_junk_title, R.string.onboarding_junk_body),
-    OnboardingPage(R.drawable.onboarding_duplicates, R.string.onboarding_duplicates_title, R.string.onboarding_duplicates_body),
-    OnboardingPage(R.drawable.onboarding_storage, R.string.onboarding_storage_title, R.string.onboarding_storage_body)
+    OnboardingPage(R.drawable.onboarding_junk_base, listOf(
+        ArtLayer(R.drawable.ob_junk_1, 594f, 176f, 133f, 219f, false, 7f, 0f),
+        ArtLayer(R.drawable.ob_junk_2, 428f, 226f, 185f, 125f, true, 5f, 0.25f, 432f, 305f)
+    ), R.string.onboarding_junk_title, R.string.onboarding_junk_body),
+    OnboardingPage(R.drawable.onboarding_duplicates_base, listOf(
+        ArtLayer(R.drawable.ob_duplicates_1, 490f, 146f, 245f, 309f, false, 6f, 0.5f),
+        ArtLayer(R.drawable.ob_duplicates_2, 390f, 204f, 165f, 193f, true, 5f, 0f, 425f, 352f)
+    ), R.string.onboarding_duplicates_title, R.string.onboarding_duplicates_body),
+    OnboardingPage(R.drawable.onboarding_storage_base, listOf(
+        ArtLayer(R.drawable.ob_storage_1, 468f, 156f, 289f, 279f, false, 6f, 0.3f),
+        ArtLayer(R.drawable.ob_storage_2, 392f, 238f, 113f, 89f, true, 6f, 0f, 395f, 320f)
+    ), R.string.onboarding_storage_title, R.string.onboarding_storage_body)
 )
 
 private val bold = FontFamily(Font(R.font.google_sans_flex_bold))
@@ -168,16 +195,27 @@ private fun PageContent(page: OnboardingPage) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Image(
-                painter = painterResource(page.image),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
+            val base = ImageBitmap.imageResource(page.image)
+            val layers = page.layers.map { it to ImageBitmap.imageResource(it.res) }
+            val wave by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "wave")
+            Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(844f / 578f)
                     .graphicsLayer { translationY = float * 6.dp.toPx() }
                     .featheredEdges(0.10f)
-            )
+            ) {
+                val k = size.width / 844f
+                drawImage(base, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
+                layers.forEach { (l, bmp) ->
+                    val s = sin(2f * PI.toFloat() * (wave + l.phase))
+                    val draw = {
+                        drawImage(bmp, dstOffset = IntOffset((l.x * k).toInt(), (l.y * k).toInt()), dstSize = IntSize((l.w * k).toInt(), (l.h * k).toInt()))
+                    }
+                    if (l.rotate) rotate(s * l.amount, pivot = Offset(l.pivotX * k, l.pivotY * k)) { draw() }
+                    else translate(top = s * l.amount * k) { draw() }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text(

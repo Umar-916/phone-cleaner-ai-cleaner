@@ -41,7 +41,7 @@ fun normalizedPremiumScreenType(screenType: Int?): Int? {
 
 fun getPremiumDestination(): AppDestination {
     if (RemoteConstants.inner_premium_screen !in 1..MAX_PREMIUM_SCREEN_TYPE) {
-        RemoteConstants.inner_premium_screen = 1
+        RemoteConstants.inner_premium_screen = 7
     }
 
     return premiumDestinationFor(RemoteConstants.inner_premium_screen, isFromSplash = false)
