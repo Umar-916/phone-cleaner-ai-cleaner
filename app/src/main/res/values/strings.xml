@@ -560,8 +560,8 @@ GO PREMIUM</string>
     <string name="hint_photo">Make photos smaller</string>
     <string name="hint_battery">Save power</string>
     <string name="battery_perm_title">Allow system settings</string>
-    <string name="battery_perm_body">To adjust the screen brightness for you, Android needs your permission to modify system settings.</string>
-    <string name="battery_perm_b1">Only the screen brightness is changed</string>
+    <string name="battery_perm_body">To adjust the screen brightness, screen timeout and vibration for you, Android needs your permission to modify system settings.</string>
+    <string name="battery_perm_b1">Only brightness, screen timeout and vibration are changed</string>
     <string name="battery_perm_b2">You can turn this off anytime in Settings</string>
     <string name="battery_health">Health</string>
     <string name="battery_voltage">Voltage</string>

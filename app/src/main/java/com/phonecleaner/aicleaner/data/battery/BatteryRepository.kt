@@ -109,7 +109,9 @@ class BatteryRepository(private val context: Context, private val processes: Pro
                 true
             }
             SaverStep.BRIGHTNESS -> setBrightness(0)
-            SaverStep.TIMEOUT, SaverStep.VIBRATION, SaverStep.BACKGROUND -> true
+            SaverStep.TIMEOUT -> setScreenTimeout(5_000)
+            SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
+            SaverStep.BACKGROUND -> processes.killBackground() >= 0
         }
     }.getOrDefault(false)
 

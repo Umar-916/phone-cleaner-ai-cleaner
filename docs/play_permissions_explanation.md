@@ -21,6 +21,8 @@ The app requests no runtime permission except Notifications. It does NOT request
 
 **What the app changes (and nothing else):**
 - Screen brightness (`Settings.System.SCREEN_BRIGHTNESS`, `SCREEN_BRIGHTNESS_MODE`)
+- Screen timeout (`Settings.System.SCREEN_OFF_TIMEOUT`)
+- Haptic feedback and vibrate-when-ringing (`HAPTIC_FEEDBACK_ENABLED`, `vibrate_when_ringing`)
 
 
 **Why it is required:** Android provides no alternative API for an app to change these system-wide values. Changing only the app window's brightness would not save battery once the user leaves the app.
@@ -32,7 +34,7 @@ The app requests no runtime permission except Notifications. It does NOT request
 - If the user declines, the app does not apply these changes and nothing else is affected.
 
 **Short text for the declaration form:**
-> The app's Battery Manager feature lowers the screen brightness to extend battery life, at the user's request. These are system-wide settings that can be changed only with Modify System Settings access. The user grants it explicitly on the system settings page after an in-app explanation, and can revoke it at any time. No other system setting is modified and no data is collected.
+> The app's Battery Manager feature lowers screen brightness, shortens screen timeout and turns off haptic feedback to extend battery life, at the user's request. These are system-wide settings that can be changed only with Modify System Settings access. The user grants it explicitly on the system settings page after an in-app explanation, and can revoke it at any time. No other system setting is modified and no data is collected.
 
 ---
 
@@ -62,7 +64,7 @@ Used only for the app's own cleaning and charge reminders. It is a runtime permi
 
 1. **Short screen recording (30 to 60 seconds):** open Battery Manager, tap Start, the in-app explanation appears, the system "Modify system settings" page, return, the progress screens, the result.
 2. **Privacy Policy:** state that the app does not collect or transmit file contents, and that the special accesses are used only for the features above.
-3. **Store listing:** mention that Battery Manager lowers screen brightness and volume at the user's request.
+3. **Store listing:** mention that Battery Manager lowers brightness, screen timeout, vibration and volume at the user's request.
 
 ## Notes for the team
 
