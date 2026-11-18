@@ -84,14 +84,14 @@ import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
-import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import com.phonecleaner.aicleaner.presentation.ui.components.RoundCheck
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.openUri
 import androidx.compose.material.icons.rounded.PlayCircle
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tryCatch
 import com.phonecleaner.aicleaner.data.media.recoverableBytes
@@ -124,26 +124,11 @@ fun DuplicatesScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
+    var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
     var revealed by remember { mutableStateOf(false) }
     val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(state) { if (state is DuplicatesUiState.Idle) { revealed = false; scanAnim.snapTo(0f) } }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = StoragePermission.isGranted(context)
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = StoragePermission.isGranted(context) }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { granted = StoragePermission.isGranted(context) }
-
-    val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) viewModel.onDeleted()
-    }
 
     LaunchedEffect(granted, state is DuplicatesUiState.Idle) {
         if (granted && state is DuplicatesUiState.Idle) {
@@ -160,7 +145,8 @@ fun DuplicatesScreen(
         onDismiss = { stopSheet = false }
     )
 
-    val loading = state is DuplicatesUiState.Scanning || (state is DuplicatesUiState.Result && !revealed)
+    val current0 = state
+    val loading = current0 is DuplicatesUiState.Scanning || (current0 is DuplicatesUiState.Result && (!revealed || (current0.data.photoGroups.isEmpty() && current0.data.videoGroups.isEmpty())))
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -173,10 +159,7 @@ fun DuplicatesScreen(
         Box(modifier = Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 DuplicatesUiState.Idle -> if (!granted) {
-                    StoragePermissionPrompt(onDismiss = onBack, accent = Brand.Duplicates) {
-                        if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
-                        else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
-                    }
+                    FolderAccessPrompt(onDismiss = onBack, onGranted = { granted = true }, accent = Brand.Duplicates)
                 }
 
                 is DuplicatesUiState.Scanning -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
@@ -196,17 +179,11 @@ fun DuplicatesScreen(
                     if (!revealed) {
                         com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.dup_phase_analyzing), scanAnim) { revealed = true }
                     } else if (data.photoGroups.isEmpty() && data.videoGroups.isEmpty()) {
-                        EmptyView(viewModel::reset)
+                        com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(stringResource(R.string.congrats_text)) { viewModel.reset(); onTaskCompleted("") }
                     } else {
                         ResultView(data, viewModel) {
                             context.postAnalytic("duplicates_delete_confirm")
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                val uris: List<Uri> = data.selectedFiles.map { it.uri }
-                                val sender = MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
-                                deleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
-                            } else {
-                                viewModel.deleteLegacy()
-                            }
+                            viewModel.deleteSelected()
                         }
                     }
                 }
@@ -426,25 +403,3 @@ private fun MediaCell(
     }
 }
 
-@Composable
-private fun EmptyView(onRescan: () -> Unit) {
-    CenteredColumn {
-        Icon(Icons.Rounded.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
-        Spacer(Modifier.height(20.dp))
-        Text(
-            stringResource(R.string.dup_empty_title),
-            color = MaterialTheme.colorScheme.tertiary,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.dup_empty_body),
-            color = MaterialTheme.colorScheme.surface,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 14.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(28.dp))
-        PrimaryButton(stringResource(R.string.junk_rescan), onRescan)
-    }
-}

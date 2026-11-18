@@ -56,7 +56,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
-import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tapClickable
 import com.phonecleaner.aicleaner.data.ai.AiGroup
@@ -70,9 +70,14 @@ import com.phonecleaner.aicleaner.presentation.navigation.getBannerOverlayHeight
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBar
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBarTitle
 import com.phonecleaner.aicleaner.presentation.ui.components.GradientButton
+import com.phonecleaner.aicleaner.presentation.ui.components.RoundCheck
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.fillMaxHeight
 import com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView
 import com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.openEntry
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
@@ -88,26 +93,17 @@ fun AiCleanupScreen(
     onBack: () -> Unit,
     onOpenDuplicates: () -> Unit,
     onOpenCategory: (AiKind) -> Unit,
+    onFinished: (String) -> Unit = {},
     viewModel: AiCleanupViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val groups by AiResultStore.groups.collectAsState()
-    var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
+    var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
     var revealed by remember { mutableStateOf(false) }
     var stopSheet by remember { mutableStateOf(false) }
     val scanAnim = remember { Animatable(0f) }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = StoragePermission.isGranted(context)
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = StoragePermission.isGranted(context) }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { granted = StoragePermission.isGranted(context) }
 
     LaunchedEffect(granted, state is AiUiState.Idle) {
         if (granted && state is AiUiState.Idle) {
@@ -132,7 +128,7 @@ fun AiCleanupScreen(
         )
     }
 
-    val loading = analyzing || (state is AiUiState.Result && !revealed)
+    val loading = analyzing || (state is AiUiState.Result && (!revealed || groups.isEmpty()))
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { if (!loading) AppTopBar(title = { AppTopBarTitle(stringResource(R.string.feature_ai_cleanup)) }, onBack = onBack) }
@@ -140,10 +136,7 @@ fun AiCleanupScreen(
         Box(Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 AiUiState.Idle -> if (!granted) {
-                    StoragePermissionPrompt(onDismiss = onBack, accent = Brand.Ai) {
-                        if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
-                        else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
-                    }
+                    FolderAccessPrompt(onDismiss = onBack, onGranted = { granted = true }, accent = Brand.Ai)
                 }
 
                 is AiUiState.Analyzing -> ScanLoadingView(
@@ -155,9 +148,10 @@ fun AiCleanupScreen(
 
                 AiUiState.Result -> when {
                     !revealed -> ScanLoadingView(null, true, stringResource(R.string.ai_analyzing), scanAnim) { revealed = true }
-                    groups.isEmpty() -> EmptyView(onDuplicates = onOpenDuplicates, onRescan = viewModel::reset)
+                    groups.isEmpty() -> com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(stringResource(R.string.congrats_text)) { viewModel.reset(); onFinished("") }
                     else -> ResultView(groups, onOpenCategory, onOpenDuplicates)
                 }
+
             }
         }
     }
@@ -166,7 +160,7 @@ fun AiCleanupScreen(
 @Composable
 private fun ResultView(groups: List<AiGroup>, onOpenCategory: (AiKind) -> Unit, onOpenDuplicates: () -> Unit) {
     val context = LocalContext.current
-    val totalStorage = remember { Environment.getExternalStorageDirectory().totalSpace }
+    val totalStorage = remember { android.os.StatFs(Environment.getDataDirectory().path).totalBytes }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp + getBannerOverlayHeight()),
@@ -281,24 +275,5 @@ private fun PreviewTile(entry: FileEntry, kind: AiKind) {
     )
 }
 
-@Composable
-private fun EmptyView(onDuplicates: () -> Unit, onRescan: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Rounded.CheckCircle, null, tint = Brand.Good, modifier = Modifier.size(84.dp))
-        Spacer(Modifier.height(18.dp))
-        Text(stringResource(R.string.ai_empty_title), color = MaterialTheme.colorScheme.tertiary, textAlign = TextAlign.Center, style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.ai_empty_body), color = MaterialTheme.colorScheme.surface, textAlign = TextAlign.Center, style = TextStyle(fontSize = 14.sp, fontFamily = medium))
-        Spacer(Modifier.height(24.dp))
-        GradientButton(stringResource(R.string.ai_duplicates_title), onDuplicates)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.junk_rescan),
-            modifier = Modifier.clip(RoundedCornerShape(12.dp)).tapClickable("ai_rescan", onClick = onRescan).padding(12.dp),
-            color = MaterialTheme.colorScheme.primary,
-            style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-        )
-    }
-}
 
 private const val PREVIEW_COUNT = 8

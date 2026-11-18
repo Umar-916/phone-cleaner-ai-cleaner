@@ -33,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Android
-import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Image
@@ -73,15 +72,13 @@ import com.phonecleaner.aicleaner.presentation.ui.components.AppProgressBar
 import android.content.Intent
 import android.provider.Settings
 import androidx.core.net.toUri
-import com.phonecleaner.aicleaner.core.common.MediaAccess
-import com.phonecleaner.aicleaner.core.common.StoragePermission
-import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.domain.FilesViewModel
 import com.phonecleaner.aicleaner.domain.model.FileCategory
 import com.phonecleaner.aicleaner.presentation.navigation.getBannerOverlayHeight
 import com.phonecleaner.aicleaner.presentation.navigation.getTotalBottomHeight
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -93,69 +90,26 @@ fun FileCategory.icon(): ImageVector = when (this) {
     FileCategory.IMAGES -> Icons.Rounded.Image
     FileCategory.VIDEO -> Icons.Rounded.Videocam
     FileCategory.AUDIO -> Icons.Rounded.MusicNote
-    FileCategory.DOCUMENTS -> Icons.Rounded.Description
-    FileCategory.APK -> Icons.Rounded.Android
-    FileCategory.DOWNLOAD -> Icons.Rounded.Download
 }
 
 fun FileCategory.tint(): Color = when (this) {
     FileCategory.IMAGES -> Color(0xFFD946EF)
     FileCategory.VIDEO -> Brand.Blue
     FileCategory.AUDIO -> Brand.Danger
-    FileCategory.DOCUMENTS -> Color(0xFF2563EB)
-    FileCategory.APK -> Brand.Good
-    FileCategory.DOWNLOAD -> Brand.Photo
 }
 
 @Composable
 fun FilesScreen(
     onOpenCategory: (FileCategory) -> Unit,
     onSearch: () -> Unit,
-    onBrowse: () -> Unit,
     onSettings: () -> Unit = {},
     viewModel: FilesViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
+    var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
     var accessTick by remember { mutableStateOf(0) }
-    var pendingCategory by remember { mutableStateOf<FileCategory?>(null) }
     var promptVisible by rememberSaveable { mutableStateOf(false) }
-    var mediaPromptFor by remember { mutableStateOf<FileCategory?>(null) }
-    var mediaDeniedOnce by rememberSaveable { mutableStateOf(false) }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                granted = StoragePermission.isGranted(context)
-                accessTick++
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        granted = StoragePermission.isGranted(context)
-    }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        granted = StoragePermission.isGranted(context)
-    }
-    val mediaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-        accessTick++
-        val target = mediaPromptFor
-        if (result.values.all { it } && target != null) {
-            mediaPromptFor = null
-            onOpenCategory(target)
-        } else {
-            mediaDeniedOnce = true
-        }
-    }
-    val requestAccess = {
-        if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
-        else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
-    }
 
     LaunchedEffect(granted, accessTick) {
         viewModel.refresh(withCategories = true)
@@ -210,25 +164,18 @@ fun FilesScreen(
         }
 
         Spacer(Modifier.height(16.dp))
-        StorageCard(state.storage.usedFraction, state.storage.usedBytes, state.storage.totalBytes, guarded(onBrowse))
+        StorageCard(state.storage.usedFraction, state.storage.usedBytes, state.storage.totalBytes)
         Spacer(Modifier.height(16.dp))
 
         FileCategory.entries.chunked(3).forEach { row ->
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { category ->
                     val summary = state.summaries[category]
-                    val allowed = MediaAccess.isGranted(context, category)
                     CategoryCard(
                         category = category,
-                        subtitle = if (allowed && summary != null) Formatter.formatShortFileSize(context, summary.bytes) else "—",
+                        subtitle = if (granted && summary != null) Formatter.formatShortFileSize(context, summary.bytes) else "—",
                         modifier = Modifier.weight(1f),
-                        onClick = { tapEvent("files_screen_tap_2");
-                            when {
-                                allowed -> onOpenCategory(category)
-                                MediaAccess.permissionsFor(category) != null -> mediaPromptFor = category
-                                else -> promptVisible = true
-                            }
-                        }
+                        onClick = { tapEvent("files_screen_tap_2"); if (granted) onOpenCategory(category) else promptVisible = true }
                     )
                 }
             }
@@ -237,41 +184,22 @@ fun FilesScreen(
     }
 
     if (promptVisible && !granted) {
-        StoragePermissionPrompt(
-            onDismiss = {
-                promptVisible = false
-            },
-            accent = Brand.Blue,
-            onAllow = requestAccess
-        )
-    }
-
-    mediaPromptFor?.let { target ->
-        MediaPermissionPrompt(
-            showSettings = mediaDeniedOnce,
-            onDismiss = { mediaPromptFor = null },
-            onAllow = {
-                if (mediaDeniedOnce) {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
-                    runCatching { context.startActivity(intent) }
-                    mediaPromptFor = null
-                } else {
-                    mediaLauncher.launch(MediaAccess.permissionsFor(target) ?: emptyArray())
-                }
-            }
+        FolderAccessPrompt(
+            onDismiss = { promptVisible = false },
+            onGranted = { granted = true; promptVisible = false; accessTick++ },
+            accent = Brand.Blue
         )
     }
 }
 
 @Composable
-private fun StorageCard(fraction: Float, used: Long, total: Long, onClick: () -> Unit) {
+private fun StorageCard(fraction: Float, used: Long, total: Long) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(Brand.Hero)
-            .tapClickable("storage_card_click", onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 16.dp, bottom = 16.dp, end = 12.dp),
@@ -313,12 +241,6 @@ private fun StorageCard(fraction: Float, used: Long, total: Long, onClick: () ->
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.size(width = 104.dp, height = 94.dp)
                 )
-                Box(
-                    modifier = Modifier.size(26.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.22f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                }
             }
         }
     }

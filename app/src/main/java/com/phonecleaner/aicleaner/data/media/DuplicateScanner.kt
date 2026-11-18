@@ -4,7 +4,9 @@ import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.net.Uri
+import com.phonecleaner.aicleaner.data.files.FilesRepository
+import com.phonecleaner.aicleaner.data.storage.DocumentWalker
+import com.phonecleaner.aicleaner.domain.model.FileCategory
 import android.provider.MediaStore
 import com.phonecleaner.aicleaner.domain.model.DuplicateGroup
 import com.phonecleaner.aicleaner.domain.model.DuplicateKind
@@ -27,11 +29,15 @@ import kotlinx.coroutines.withContext
 import java.io.FileInputStream
 import java.security.MessageDigest
 
-class DuplicateScanner(private val context: Context) {
+class DuplicateScanner(private val context: Context, private val filesRepository: FilesRepository) {
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val scanDispatcher = Dispatchers.Default.limitedParallelism(2)
 
     private val resolver = context.contentResolver
 
     fun scan(): Flow<DuplicateScanEvent> = channelFlow {
+        filesRepository.refresh()
         send(DuplicateScanEvent.Progress(DuplicateProgress(DuplicatePhase.READING, 0, 0)))
         val images = queryMedia(isVideo = false)
         val videos = queryMedia(isVideo = true)
@@ -50,50 +56,14 @@ class DuplicateScanner(private val context: Context) {
         )
     }.flowOn(Dispatchers.IO)
 
-    suspend fun deleteLegacy(files: List<MediaFile>): List<Long> = withContext(Dispatchers.IO) {
-        files.filter { runCatching { resolver.delete(it.uri, null, null) > 0 }.getOrDefault(false) }.map { it.id }
+    suspend fun delete(files: List<MediaFile>): List<Long> = withContext(Dispatchers.IO) {
+        files.filter { DocumentWalker.delete(context, it.uri) }.map { it.id }.also { if (it.isNotEmpty()) filesRepository.refresh() }
     }
 
-    private fun queryMedia(isVideo: Boolean): List<MediaFile> {
-        val collection: Uri = if (isVideo) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val projection = buildList {
-            add(MediaStore.MediaColumns._ID)
-            add(MediaStore.MediaColumns.DISPLAY_NAME)
-            add(MediaStore.MediaColumns.SIZE)
-            add(MediaStore.MediaColumns.DATE_ADDED)
-            add(MediaStore.MediaColumns.WIDTH)
-            add(MediaStore.MediaColumns.HEIGHT)
-            if (isVideo) add(MediaStore.Video.VideoColumns.DURATION)
-        }.toTypedArray()
-
-        val result = ArrayList<MediaFile>()
-        resolver.query(collection, projection, null, null, null)?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-            val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
-            val addedCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
-            val widthCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.WIDTH)
-            val heightCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.HEIGHT)
-            val durationCol = if (isVideo) cursor.getColumnIndexOrThrow(MediaStore.Video.VideoColumns.DURATION) else -1
-            while (cursor.moveToNext()) {
-                val size = cursor.getLong(sizeCol)
-                if (size <= 0L) continue
-                val id = cursor.getLong(idCol)
-                result += MediaFile(
-                    id = id,
-                    uri = ContentUris.withAppendedId(collection, id),
-                    name = cursor.getString(nameCol).orEmpty(),
-                    sizeBytes = size,
-                    addedAtMs = cursor.getLong(addedCol) * 1000L,
-                    isVideo = isVideo,
-                    width = cursor.getInt(widthCol),
-                    height = cursor.getInt(heightCol),
-                    durationMs = if (durationCol >= 0) cursor.getLong(durationCol) else 0L
-                )
-            }
+    private suspend fun queryMedia(isVideo: Boolean): List<MediaFile> =
+        filesRepository.list(if (isVideo) FileCategory.VIDEO else FileCategory.IMAGES, showHidden = false).map {
+            MediaFile(it.id, it.uri, it.name, it.sizeBytes, it.modifiedMs, isVideo, 0, 0, 0L)
         }
-        return result
-    }
 
     private suspend fun findExact(
         files: List<MediaFile>,
@@ -142,7 +112,7 @@ class DuplicateScanner(private val context: Context) {
             scope.coroutineContext.ensureActive()
             coroutineScope {
                 batch.map { index ->
-                    async(Dispatchers.Default) {
+                    async(scanDispatcher) {
                         MediaThumbs.load(context, pool[index], HASH_THUMB_SIZE)?.let {
                             hashes[index] = differenceHash(it)
                             valid[index] = true
@@ -230,7 +200,7 @@ class DuplicateScanner(private val context: Context) {
         const val CHUNK = 1024 * 1024
         const val FULL_HASH_LIMIT = 32L * 1024 * 1024
         const val PROGRESS_STEP = 5
-        const val HASH_BATCH = 24
+        const val HASH_BATCH = 12
         const val HASH_THUMB_SIZE = 72
         const val SIMILAR_DISTANCE = 5
         const val COMPARE_YIELD = 256

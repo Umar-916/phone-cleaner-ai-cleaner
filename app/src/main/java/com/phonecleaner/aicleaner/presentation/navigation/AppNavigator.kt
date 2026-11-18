@@ -73,7 +73,6 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.bottomnav.home.HomeScr
 import com.phonecleaner.aicleaner.presentation.ui.screens.bottomnav.setting.SettingScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.apps.AppsManagerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.duplicates.DuplicatesScreen
-import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk.JunkCleanerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FileCategoryScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai.AiCleanupScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai.AiCategoryScreen
@@ -83,9 +82,9 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.battery.Batter
 import com.phonecleaner.aicleaner.domain.MainTask
 import com.phonecleaner.aicleaner.domain.TaskTracker
 import com.phonecleaner.aicleaner.domain.ExtraTask
+import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk.JunkCleanerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FilesScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.device.DeviceInfoScreen
-import com.phonecleaner.aicleaner.presentation.ui.screens.files.StorageBrowserScreen
 import com.phonecleaner.aicleaner.domain.model.FileCategory
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.photo.PhotoCompressorScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.process.ProcessManagerScreen
@@ -376,7 +375,6 @@ fun AppNavigator(
                                 FilesScreen(
                                     onOpenCategory = { navigateTo(AppDestination.FileCategoryRoute(it.name)) },
                                     onSearch = { navigateTo(AppDestination.FileSearch) },
-                                    onBrowse = { navigateTo(AppDestination.StorageBrowser) },
                                     onSettings = { switchTab(AppDestination.Setting) }
                                 )
                             }
@@ -392,15 +390,12 @@ fun AppNavigator(
                                 FileCategoryScreen(category = null, onBack = { navigateBack() })
                             }
 
-                            is AppDestination.StorageBrowser -> NavEntry(route) {
-                                StorageBrowserScreen(onBack = { navigateBack() }, onSearch = { navigateTo(AppDestination.FileSearch) })
-                            }
-
                             is AppDestination.AiCleanup -> NavEntry(route) {
                                 com.phonecleaner.aicleaner.presentation.ui.components.ProvideScanAccent(com.phonecleaner.aicleaner.presentation.ui.theme.Brand.Ai, androidx.compose.material.icons.Icons.Rounded.AutoAwesome, com.phonecleaner.aicleaner.R.drawable.load_ai, 500f / 390f) { AiCleanupScreen(
                                     onBack = { navigateBack() },
                                     onOpenDuplicates = { replaceTop(AppDestination.Duplicates) },
-                                    onOpenCategory = { navigateTo(AppDestination.AiCategory(it.name)) }
+                                    onOpenCategory = { navigateTo(AppDestination.AiCategory(it.name)) },
+                                    onFinished = { finishTask(it) }
                                 ) }
                             }
 
@@ -444,7 +439,7 @@ fun AppNavigator(
                                     DeviceInfoScreen(
                                     onBack = { navigateBack() },
                                     onClean = { navigateTo(AppDestination.JunkCleaner) },
-                                    onOptimize = { navigateTo(AppDestination.ProcessManager(autoStart = true)) }
+                                    onOptimize = { navigateTo(AppDestination.ProcessManager()) }
                                     )
                                 }
                             }

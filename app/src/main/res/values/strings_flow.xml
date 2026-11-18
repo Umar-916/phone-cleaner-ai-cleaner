@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="bm_timeout">Screen time out</string>
-    <string name="bm_timeout_sub">Lock device after 30 seconds of inactivity</string>
+    <string name="bm_timeout_sub">Lock device after 5 seconds of inactivity</string>
     <string name="bm_sound">Sound</string>
     <string name="bm_sound_sub">Adjust your sound to save battery</string>
     <string name="bm_brightness">Brightness</string>
@@ -67,4 +67,17 @@
     <string name="task_try">Try It</string>
     <string name="task_hooray">Hooray!</string>
     <string name="task_recommended">Recommended</string>
+    <string name="folder_title">Choose a folder</string>
+    <string name="folder_body">Pick the folder you want to scan, such as DCIM or Pictures. Only that folder becomes visible to the app.</string>
+    <string name="folder_body_wa">Pick your WhatsApp Media folder so its files can be found. Only that folder becomes visible to the app.</string>
+    <string name="folder_bullet_only">Only the folder you pick is used</string>
+    <string name="folder_bullet_local">Your files never leave this phone</string>
+    <string name="folder_choose">Choose folder</string>
+    <string name="home_orb_title">Phone Boost</string>
+    <string name="home_orb_action">Boost</string>
+    <string name="battery_policy_title">Allow Do Not Disturb access</string>
+    <string name="battery_policy_body">To switch your ringer to vibrate while saving power, Android needs you to allow Do Not Disturb access for this app.</string>
+    <string name="battery_policy_b1">Only the ringer mode is changed</string>
+    <string name="battery_policy_b2">Your calls and messages are never read</string>
+    <string name="junk_start_title">Scanning.</string>
 </resources>

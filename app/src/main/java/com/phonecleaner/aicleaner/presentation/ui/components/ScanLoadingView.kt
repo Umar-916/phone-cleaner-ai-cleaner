@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -55,9 +56,10 @@ fun ScanLoadingView(
     finished: Boolean,
     label: String,
     p: Animatable<Float, androidx.compose.animation.core.AnimationVector1D> = remember { Animatable(0f) },
+    showProgress: Boolean = true,
     onFull: () -> Unit = {}
 ) {
-    com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme { ScanLoadingContent(progress, finished, label, p, onFull) }
+    com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme { ScanLoadingContent(progress, finished, label, p, onFull, showProgress) }
 }
 
 @Composable
@@ -66,9 +68,11 @@ private fun ScanLoadingContent(
     finished: Boolean,
     label: String,
     p: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
-    onFull: () -> Unit
+    onFull: () -> Unit,
+    showProgress: Boolean
 ) {
     val percent = (p.value * 100).toInt()
+    val showPercent = showProgress
     val accent = LocalScanAccent.current
 
     LaunchedEffect(finished, progress) {
@@ -133,7 +137,7 @@ private fun ScanLoadingContent(
             }
         }
         Spacer(Modifier.weight(1f))
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center, modifier = Modifier.graphicsLayer { alpha = if (showPercent) 1f else 0f }) {
             Text(
                 "$percent",
                 color = MaterialTheme.colorScheme.tertiary,

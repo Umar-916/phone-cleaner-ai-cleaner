@@ -84,10 +84,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
-import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
-import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.domain.JunkUiState
 import com.phonecleaner.aicleaner.domain.JunkViewModel
@@ -111,23 +110,8 @@ fun JunkCleanerScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var permissionGranted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
+    var permissionGranted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) permissionGranted = StoragePermission.isGranted(context)
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        permissionGranted = StoragePermission.isGranted(context)
-    }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        permissionGranted = StoragePermission.isGranted(context)
-    }
 
     LaunchedEffect(permissionGranted, state is JunkUiState.Idle) {
         if (permissionGranted && state is JunkUiState.Idle) {
@@ -158,19 +142,14 @@ fun JunkCleanerScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        val fullScreen = state !is JunkUiState.Idle
+        Box(modifier = Modifier.fillMaxSize().padding(if (fullScreen) androidx.compose.foundation.layout.PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 JunkUiState.Idle -> if (!permissionGranted) {
-                    StoragePermissionPrompt(onDismiss = onBack, accent = Brand.Junk) {
-                        if (StoragePermission.usesSettingsScreen) {
-                            settingsLauncher.launch(StoragePermission.settingsIntent(context))
-                        } else {
-                            legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
-                        }
-                    }
+                    FolderAccessPrompt(onDismiss = onBack, onGranted = { permissionGranted = true }, accent = Brand.Junk)
                 }
 
-                is JunkUiState.Scanning -> JunkScanView(current, viewModel, onBack)
+                is JunkUiState.Scanning -> JunkScanView(current, viewModel, onBack = { if (busy) stopSheet = true else onBack() })
                 is JunkUiState.Result -> if (current.items.isEmpty()) {
                     val summary = stringResource(R.string.junk_already_summary)
                     androidx.compose.runtime.LaunchedEffect(Unit) { com.phonecleaner.aicleaner.domain.TaskTracker.mark(com.phonecleaner.aicleaner.domain.MainTask.JUNK) }
@@ -182,10 +161,10 @@ fun JunkCleanerScreen(
                         viewModel.reset()
                     }
                 } else {
-                    JunkScanView(current, viewModel, onBack)
+                    JunkScanView(current, viewModel, onBack = { if (busy) stopSheet = true else onBack() })
                 }
 
-                is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack)
+                is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack = { if (busy) stopSheet = true else onBack() })
                 is JunkUiState.Done -> {
                     val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
                     com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(caption = summary) {

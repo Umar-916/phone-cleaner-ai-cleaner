@@ -57,6 +57,10 @@ class BatteryRepository(private val context: Context, private val processes: Pro
 
     fun canWriteSettings(): Boolean = Settings.System.canWrite(context)
 
+    private val notificationManager get() = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+
+    fun hasPolicyAccess(): Boolean = notificationManager.isNotificationPolicyAccessGranted
+
     fun screenTimeoutMs(): Int = runCatching { Settings.System.getInt(resolver, Settings.System.SCREEN_OFF_TIMEOUT) }.getOrDefault(0)
 
     fun setScreenTimeout(ms: Int): Boolean = canWriteSettings() &&
@@ -72,7 +76,7 @@ class BatteryRepository(private val context: Context, private val processes: Pro
         if (!canWriteSettings()) return false
         return runCatching {
             Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
-            Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, value.coerceIn(1, 255))
+            Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, value.coerceIn(0, 255))
         }.getOrDefault(false)
     }
 
@@ -100,46 +104,17 @@ class BatteryRepository(private val context: Context, private val processes: Pro
 
     enum class SaverStep { TIMEOUT, SOUND, BRIGHTNESS, VIBRATION, BACKGROUND }
 
-    class Reduction(val from: Int, val to: Int, val unit: String) {
-        fun format(value: Int) = "$value$unit"
-    }
-
-    fun reduction(step: SaverStep): Reduction = when (step) {
-        SaverStep.TIMEOUT -> {
-            val now = (screenTimeoutMs() / 1000).coerceAtLeast(0)
-            Reduction(now, minOf(now, 30), " s")
-        }
-        SaverStep.SOUND -> {
-            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-            val now = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) * 100 / max
-            Reduction(now, minOf(now, 60), "%")
-        }
-        SaverStep.BRIGHTNESS -> {
-            val now = brightness() * 100 / 255
-            Reduction(now, minOf(now, 40), "%")
-        }
-        SaverStep.VIBRATION -> {
-            val on = runCatching { Settings.System.getInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED) == 1 }.getOrDefault(false)
-            Reduction(if (on) 100 else 0, 0, "%")
-        }
-        SaverStep.BACKGROUND -> Reduction(processes.userAppCount(), 0, " apps")
-    }
 
     fun applySaver(step: SaverStep): Boolean = runCatching {
         when (step) {
-            SaverStep.TIMEOUT -> setScreenTimeout(30_000)
+            SaverStep.TIMEOUT -> setScreenTimeout(5_000)
             SaverStep.SOUND -> {
-                listOf(AudioManager.STREAM_MUSIC to 0.6f, AudioManager.STREAM_RING to 0.6f, AudioManager.STREAM_NOTIFICATION to 0.4f).forEach { (stream, cap) ->
-                    val max = audioManager.getStreamMaxVolume(stream)
-                    if (audioManager.getStreamVolume(stream) > (max * cap).toInt()) runCatching { audioManager.setStreamVolume(stream, (max * cap).toInt(), 0) }
-                }
+                listOf(AudioManager.STREAM_MUSIC, AudioManager.STREAM_RING, AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
+                    .forEach { stream -> runCatching { audioManager.setStreamVolume(stream, 0, 0) } }
+                if (hasPolicyAccess() && audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) runCatching { audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE }
                 true
             }
-            SaverStep.BRIGHTNESS -> canWriteSettings() && run {
-                val target = 102
-                Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
-                if (brightness() > target) Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, target) else true
-            }
+            SaverStep.BRIGHTNESS -> setBrightness(0)
             SaverStep.BACKGROUND -> processes.killBackground() >= 0
             SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
         }

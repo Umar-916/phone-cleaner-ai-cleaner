@@ -42,7 +42,9 @@ sealed interface JunkUiState {
 
 class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
-    private companion object { const val MIN_SCAN_MS = 6500L
+    private companion object { const val INTRO_MS = 2000L
+        const val REPEAT_INTRO_MS = 600L
+        const val MIN_SCAN_MS = 6500L
         const val MIN_CLEAN_MS = 6500L
         const val MIN_REVEAL_MS = 2500L
         const val REVEAL_LIMIT = 45 }
@@ -54,9 +56,10 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
     fun startScan() {
         if (job?.isActive == true) return
-        val startedAt = android.os.SystemClock.elapsedRealtime()
         _state.value = JunkUiState.Scanning(ScanProgress("", 0L, 0))
         job = viewModelScope.launch {
+            kotlinx.coroutines.delay(INTRO_MS)
+            val startedAt = android.os.SystemClock.elapsedRealtime()
             scanner.scan().collect { event ->
                 when (event) {
                     is ScanEvent.Progress -> {
@@ -84,7 +87,7 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
         if (shown.isEmpty()) kotlinx.coroutines.delay(remaining)
         _state.value = JunkUiState.Result(
             items = items,
-            selected = shown.filter { it.category in JunkGroup.entries.first().categories }.map { it.path }.toSet()
+            selected = items.filter { it.category in JunkGroup.AD_JUNK.categories }.map { it.path }.toSet()
         )
     }
 
@@ -139,4 +142,8 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
     override fun onCleared() {
         job?.cancel()
     }
+}
+
+object JunkIntro {
+    @Volatile var radarPlayed = false
 }

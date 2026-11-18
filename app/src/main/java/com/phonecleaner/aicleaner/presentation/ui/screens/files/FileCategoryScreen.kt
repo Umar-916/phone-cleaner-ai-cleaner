@@ -85,18 +85,15 @@ import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import android.content.Intent
 import android.provider.Settings
 import androidx.core.net.toUri
-import com.phonecleaner.aicleaner.core.common.MediaAccess
-import com.phonecleaner.aicleaner.core.common.StoragePermission
-import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FileViewMode
-import com.phonecleaner.aicleaner.domain.model.DocumentType
 import com.phonecleaner.aicleaner.domain.model.FileCategory
 import com.phonecleaner.aicleaner.domain.model.FileEntry
 import com.phonecleaner.aicleaner.domain.model.MediaFile
 import com.phonecleaner.aicleaner.presentation.navigation.getBannerOverlayHeight
 import com.phonecleaner.aicleaner.presentation.ui.components.MediaThumbnail
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -115,23 +112,11 @@ fun FileCategoryScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var mediaDenied by remember { mutableStateOf(false) }
-    var granted by remember { mutableStateOf(MediaAccess.isGranted(context, category)) }
+    var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
     var sheetEntry by remember { mutableStateOf<FileEntry?>(null) }
     var deleteTargets by remember { mutableStateOf<List<FileEntry>>(emptyList()) }
     var menuOpen by remember { mutableStateOf(false) }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = MediaAccess.isGranted(context, category)
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = MediaAccess.isGranted(context, category) }
-    val mediaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted = MediaAccess.isGranted(context, category) }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { granted = MediaAccess.isGranted(context, category) }
 
     LaunchedEffect(category, granted) {
         if (granted) {
@@ -167,16 +152,6 @@ fun FileCategoryScreen(
             onMore = { menuOpen = true }
         )
 
-        if (!state.global && category == FileCategory.DOCUMENTS) {
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                DocumentType.entries.forEach { type ->
-                    PillChip(stringResource(type.label), state.documentType == type, { viewModel.setDocumentType(type) })
-                }
-            }
-        }
         if (!state.global && (category == FileCategory.IMAGES || category == FileCategory.VIDEO) && !inAlbum) {
             SegmentedTabs(
                 options = listOf(stringResource(R.string.files_tab_all), stringResource(R.string.files_tab_album)),
@@ -201,30 +176,11 @@ fun FileCategoryScreen(
     }
 
     if (!granted) {
-        val mediaPermissions = MediaAccess.permissionsFor(category)
-        if (mediaPermissions != null) {
-            MediaPermissionPrompt(
-                showSettings = mediaDenied,
-                onDismiss = onBack,
-                onAllow = {
-                    if (mediaDenied) {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
-                        runCatching { context.startActivity(intent) }
-                    } else {
-                        mediaDenied = true
-                        mediaLauncher.launch(mediaPermissions)
-                    }
-                }
-            )
-        } else {
-            StoragePermissionPrompt(
-                onDismiss = onBack,
-                accent = (category ?: FileCategory.IMAGES).tint()
-            ) {
-                if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
-                else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
-            }
-        }
+        FolderAccessPrompt(
+            onDismiss = onBack,
+            onGranted = { granted = true },
+            accent = (category ?: FileCategory.IMAGES).tint()
+        )
     }
 
     if (menuOpen) {
@@ -238,7 +194,7 @@ fun FileCategoryScreen(
 
     sheetEntry?.let { entry ->
         FileItemSheet(
-            file = SheetFile(entry.name, entry.path, entry.sizeBytes, entry.modifiedMs, entry.mime, entry.category != FileCategory.APK),
+            file = SheetFile(entry.name, entry.path, entry.sizeBytes, entry.modifiedMs, entry.mime, true),
             onDismiss = { sheetEntry = null },
             onOpen = { openEntry(context, entry) },
             onShare = { shareEntries(context, listOf(entry)) },

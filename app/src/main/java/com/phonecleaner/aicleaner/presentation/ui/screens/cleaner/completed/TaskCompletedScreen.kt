@@ -208,6 +208,7 @@ private fun TaskCard(
             .shadow(3.dp, shape, ambientColor = Color(0x337A2ACB), spotColor = Color(0x337A2ACB))
             .clip(shape)
             .background(com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor())
+            .tapClickable("task_card_click", onClick = onClick)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -222,7 +223,7 @@ private fun TaskCard(
             }
             Spacer(Modifier.height(10.dp))
             Box(
-                modifier = Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(19.dp)).background(Color(0xFF7425CF)).tapClickable("task_card_click", onClick = onClick),
+                modifier = Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(19.dp)).background(Color(0xFF7425CF)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(action, color = Color.White, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))

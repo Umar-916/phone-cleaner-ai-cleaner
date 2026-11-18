@@ -128,8 +128,23 @@ fun JunkScanView(
             onDone()
         }
     }
+    var startPhase by remember { mutableStateOf(state is JunkUiState.Scanning) }
+    val firstRun = remember { state is JunkUiState.Scanning }
+    val radarAlpha = remember { androidx.compose.animation.core.Animatable(if (firstRun) 1f else 0f) }
+    val sweep = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (firstRun) {
+            sweep.animateTo(360f, tween(2000, easing = androidx.compose.animation.core.LinearEasing))
+            com.phonecleaner.aicleaner.domain.JunkIntro.radarPlayed = true
+        } else {
+            kotlinx.coroutines.delay(600)
+        }
+        startPhase = false
+        radarAlpha.animateTo(0f, tween(450))
+    }
     val cleaning = state as? JunkUiState.Cleaning
     val scanning = state is JunkUiState.Scanning || cleaning != null
+    val start = startPhase && state is JunkUiState.Scanning
     val result = state as? JunkUiState.Result
     val progress = (state as? JunkUiState.Scanning)?.progress
     val revealed = (state as? JunkUiState.Scanning)?.items.orEmpty()
@@ -144,7 +159,7 @@ fun JunkScanView(
         if (scanning && cleaning == null) timed.animateTo(0.99f, tween(6200, easing = androidx.compose.animation.core.LinearEasing))
     }
     val scanFraction = if (revealed.isNotEmpty() && progress != null) {
-        0.35f + 0.6f * (progress.fraction / 0.95f).coerceIn(0f, 1f)
+        0.35f + 0.65f * (progress.fraction / 0.95f).coerceIn(0f, 1f)
     } else {
         minOf(timed.value, 0.35f)
     }
@@ -166,14 +181,15 @@ fun JunkScanView(
         else -> 1f
     }
     val shade = if (cleaning != null || isDone) heat else Math.pow(heat.toDouble(), 2.6).toFloat()
-    val headerColor by animateColorAsState(if (cleaning != null || isDone) cleanColor(shade) else heatColor(shade), tween(500, easing = androidx.compose.animation.core.LinearEasing), label = "junkHeader")
-    val onHeader = lerp(Ink, Color.White, ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f))
+    val headerColor by animateColorAsState(if (cleaning != null || isDone) cleanColor(shade) else lerp(Color(0xFFE2CDF8), heatColor(shade), if (start) 0f else (shade * 6f).coerceIn(0f, 1f)), tween(500, easing = androidx.compose.animation.core.LinearEasing), label = "junkHeader")
+    val onHeader by animateColorAsState(lerp(Ink, Color.White, ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f)), tween(600, easing = androidx.compose.animation.core.LinearEasing), label = "junkOnHeader")
     val checkColor by animateColorAsState(lerp(OnboardingPalette.purple, Color(0xFFE23B3B), ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f)), tween(500), label = "checkColor")
-    val (number, unit) = splitSize(totalBytes)
+    val shownBytes by animateFloatAsState(totalBytes.toFloat(), tween(1300, easing = androidx.compose.animation.core.LinearEasing), label = "junkBytes")
+    val (number, unit) = splitSize(shownBytes.toLong())
 
     var confirm by rememberSaveable { mutableStateOf(false) }
     var expanded by remember(result?.items?.size) {
-        mutableStateOf(result?.groups?.filter { it.value.isNotEmpty() }?.keys ?: emptySet<JunkGroup>())
+        mutableStateOf(emptySet<JunkGroup>())
     }
 
     androidx.compose.runtime.CompositionLocalProvider(LocalCheckColor provides checkColor) {
@@ -184,20 +200,18 @@ fun JunkScanView(
                 .height(330.dp)
                 .background(Brush.verticalGradient(listOf(headerColor, headerColor.copy(alpha = 0.82f))))
         ) {
-            if (scanning && cleaning == null) RadarSweep()
+            if (radarAlpha.value > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = radarAlpha.value }) { RadarSweep(sweep.value) }
         }
 
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().height(64.dp).padding(start = 4.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                run {
-                    if (!scanning) AppBackButton(onClick = onBack) else Spacer(Modifier.size(44.dp))
-                }
+                AppBackButton(onClick = onBack)
                 Text(
                     stringResource(R.string.junk_header_title),
-                    modifier = Modifier.padding(start = 8.3.dp),
+                    modifier = Modifier.padding(start = 11.3.dp),
                     color = onHeader,
                     style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
@@ -207,6 +221,26 @@ fun JunkScanView(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                androidx.compose.animation.Crossfade(targetState = start, animationSpec = tween(380), label = "junkStart") { isStart ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (isStart) {
+                    Text("1%", color = onHeader, style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        stringResource(R.string.junk_start_title),
+                        color = onHeader,
+                        style = TextStyle(fontSize = 32.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        progress?.currentPath?.substringAfterLast('/').orEmpty(),
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = onHeader.copy(alpha = 0.8f),
+                        style = TextStyle(fontSize = 13.sp, fontFamily = medium)
+                    )
+                } else {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         number,
@@ -225,8 +259,11 @@ fun JunkScanView(
                     color = onHeader,
                     style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
+                }
+                }
+                }
                 Spacer(Modifier.height(10.dp))
-                if (scanning) {
+                if (start) Unit else if (scanning) {
                     val stageRes = listOf(R.string.junk_stage_1, R.string.junk_stage_2, R.string.junk_stage_3, R.string.junk_stage_4, R.string.junk_stage_5)
                     androidx.compose.animation.Crossfade(
                         targetState = if (cleaning != null) -1 else (fraction * stageRes.size).toInt().coerceIn(0, stageRes.lastIndex),
@@ -272,82 +309,20 @@ fun JunkScanView(
                     .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                LazyColumn(
+                JunkList(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)
-                ) {
-                    if (cleaning != null) {
-                        val ordered = JunkGroup.entries.reversed().flatMap { g -> cleaning.targets.filter { it.category in g.categories }.reversed() }
-                        val indexOf = ordered.withIndex().associate { it.value.path to it.index }
-                        val position = ordered.size * cleanFraction
-                        JunkGroup.entries.forEach { group ->
-                            val rem = cleaning.targets.filter { it.category in group.categories && (indexOf[it.path] ?: 0) + 1 > position }
-                            if (rem.isNotEmpty()) {
-                                item(key = group.name) {
-                                    Box(Modifier.animateItem()) {
-                                        GroupRow(group, rem.sumOf { it.sizeBytes }, false, false, false, true, true, {}, {})
-                                    }
-                                }
-                                val shownRem = rem.take(200)
-                                items(shownRem.size, key = { "c_" + shownRem[it].path }) { idx ->
-                                    val p = (position - (indexOf[shownRem[idx].path] ?: 0)).coerceIn(0f, 1f)
-                                    Box(
-                                        Modifier.animateItem().graphicsLayer {
-                                            translationX = -p * size.width * 0.45f
-                                            alpha = 1f - p
-                                        }
-                                    ) { ItemRow(shownRem[idx], true) {} }
-                                }
-                            }
-                        }
-                    } else JunkGroup.entries.forEachIndexed { groupIndex, group ->
-                        val items = result?.groups?.get(group).orEmpty()
-                        val groupBytes = if (cleaning != null) {
-                            ((cleaning.groupBytes[group] ?: 0L) * (1f - cleanFraction)).toLong()
-                        } else if (scanning) {
-                            group.categories.sumOf { progress?.categoryBytes?.get(it) ?: 0L }
-                        } else {
-                            items.sumOf { it.sizeBytes }
-                        }
-                        val isOpen = group in expanded
-                        item(key = group.name) {
-                            Box(Modifier.animateItem()) { GroupRow(
-                                group = group,
-                                bytes = groupBytes,
-                                scanning = scanning,
-                                stepDone = scanning && fraction >= (groupIndex + 1) * 0.23f,
-                                expandable = !scanning && items.isNotEmpty(),
-                                open = isOpen,
-                                checked = !scanning && (items.isEmpty() || items.all { it.path in result!!.selected }),
-                                onToggleOpen = { expanded = if (isOpen) expanded - group else expanded + group },
-                                onToggleChecked = { viewModel.toggleGroup(group) }
-                            ) }
-                        }
-                        if (scanning) {
-                            val shownNow = revealed.filter { it.category in group.categories }
-                            items(shownNow.size, key = { "r_${group.name}_${shownNow[it].path}" }) { idx ->
-                                Box(Modifier.animateItem()) { RevealRow(shownNow[idx]) }
-                            }
-                        }
-                        if (!scanning && isOpen) {
-                            val shown = items.take(MAX_LISTED)
-                            items(shown.size, key = { "${group.name}_${shown[it].path}" }) { index ->
-                                val item = shown[index]
-                                ItemRow(item, item.path in result!!.selected) { viewModel.toggleItem(item) }
-                            }
-                            if (items.size > MAX_LISTED) {
-                                item(key = "${group.name}_more") {
-                                    Text(
-                                        "+${items.size - MAX_LISTED}",
-                                        modifier = Modifier.padding(start = 36.dp, bottom = 8.dp),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                    cleaning = cleaning,
+                    cleanFraction = if (cleaning != null) cleanFraction else 0f,
+                    result = result,
+                    scanning = scanning,
+                    progress = progress,
+                    revealed = revealed,
+                    stepsDone = (fraction / 0.23f).toInt(),
+                    start = start,
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                    viewModel = viewModel
+                )
 
                 if (isDone) {
                     Box(Modifier.fillMaxWidth().padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 22.dp + getBannerOverlayHeight())) {
@@ -407,7 +382,8 @@ private fun GroupRow(
     open: Boolean,
     checked: Boolean,
     onToggleOpen: () -> Unit,
-    onToggleChecked: () -> Unit
+    onToggleChecked: () -> Unit,
+    hideSize: Boolean = false
 ) {
     val context = LocalContext.current
     val (icon, tint) = groupIcon(group)
@@ -425,7 +401,7 @@ private fun GroupRow(
             color = MaterialTheme.colorScheme.tertiary,
             style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
         )
-        if (expandable) {
+        if (expandable || (scanning && group != JunkGroup.RESIDUALS)) {
             Icon(
                 if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                 null,
@@ -434,7 +410,7 @@ private fun GroupRow(
             )
         }
         Spacer(Modifier.weight(1f))
-        Text(
+        if (!hideSize) Text(
             Formatter.formatShortFileSize(context, bytes),
             color = MaterialTheme.colorScheme.tertiary,
             style = TextStyle(fontSize = 14.sp, fontFamily = medium)
@@ -508,21 +484,16 @@ private fun junkColor(bytes: Long): Color {
 }
 
 @Composable
-private fun RadarSweep() {
-    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "radar")
-    val angle by t.animateFloat(
-        0f, 360f,
-        androidx.compose.animation.core.infiniteRepeatable(tween(3200, easing = androidx.compose.animation.core.LinearEasing)),
-        label = "radarAngle"
-    )
+private fun RadarSweep(angle: Float) {
     androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
         val c = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height)
+        drawCircle(Color.White.copy(alpha = 0.3f), radius = size.width * 0.76f, center = c)
         listOf(0.30f, 0.52f, 0.76f).forEach {
-            drawCircle(Color(0xFF8D3EDD).copy(alpha = 0.22f), radius = size.width * it, center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx()))
+            drawCircle(Color.White.copy(alpha = 0.45f), radius = size.width * it, center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx()))
         }
         rotateDraw(degrees = angle, pivot = c) {
             drawArc(
-                brush = Brush.sweepGradient(0f to Color.Transparent, 0.12f to Color(0xFF8D3EDD).copy(alpha = 0.32f), 0.121f to Color.Transparent, center = c),
+                brush = Brush.sweepGradient(0f to Color.Transparent, 0.12f to Color(0xFF8D3EDD).copy(alpha = 0.85f), 0.121f to Color.Transparent, center = c),
                 startAngle = 0f, sweepAngle = 360f, useCenter = true,
                 topLeft = androidx.compose.ui.geometry.Offset(c.x - size.width * 0.76f, c.y - size.width * 0.76f),
                 size = androidx.compose.ui.geometry.Size(size.width * 1.52f, size.width * 1.52f)
@@ -545,3 +516,97 @@ private val CleanGreen = Color(0xFF7ED8A0)
 
 private fun cleanColor(t: Float): Color =
     if (t > 0.35f) heatColor(t) else lerp(CleanGreen, HeatPeach, (t / 0.35f).coerceIn(0f, 1f))
+
+@Composable
+private fun JunkList(
+    modifier: Modifier,
+    cleaning: JunkUiState.Cleaning?,
+    cleanFraction: Float,
+    result: JunkUiState.Result?,
+    scanning: Boolean,
+    progress: com.phonecleaner.aicleaner.domain.model.ScanProgress?,
+    revealed: List<JunkItem>,
+    stepsDone: Int,
+    start: Boolean,
+    expanded: Set<JunkGroup>,
+    onExpandedChange: (Set<JunkGroup>) -> Unit,
+    viewModel: JunkViewModel
+) {
+        LazyColumn(
+    modifier = modifier,
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)
+            ) {
+                if (cleaning != null) {
+                    val ordered = JunkGroup.entries.reversed().flatMap { g -> cleaning.targets.filter { it.category in g.categories }.reversed() }
+                    val indexOf = ordered.withIndex().associate { it.value.path to it.index }
+                    val position = ordered.size * cleanFraction
+                    JunkGroup.entries.forEach { group ->
+                        val rem = cleaning.targets.filter { it.category in group.categories && (indexOf[it.path] ?: 0) + 1 > position }
+                        if (rem.isNotEmpty()) {
+                            item(key = group.name) {
+                                Box(Modifier.animateItem()) {
+                                    GroupRow(group, rem.sumOf { it.sizeBytes }, false, false, false, true, true, {}, {})
+                                }
+                            }
+                            val shownRem = rem.take(200)
+                            items(shownRem.size, key = { "c_" + shownRem[it].path }) { idx ->
+                                val p = (position - (indexOf[shownRem[idx].path] ?: 0)).coerceIn(0f, 1f)
+                                Box(
+                                    Modifier.animateItem().graphicsLayer {
+                                        translationX = -p * size.width * 0.45f
+                                        alpha = 1f - p
+                                    }
+                                ) { ItemRow(shownRem[idx], true) {} }
+                            }
+                        }
+                    }
+                } else JunkGroup.entries.forEachIndexed { groupIndex, group ->
+                    val items = result?.groups?.get(group).orEmpty()
+                    val groupBytes = if (cleaning != null) {
+                        ((cleaning.groupBytes[group] ?: 0L) * (1f - cleanFraction)).toLong()
+                    } else if (scanning) {
+                        group.categories.sumOf { progress?.categoryBytes?.get(it) ?: 0L }
+                    } else {
+                        items.sumOf { it.sizeBytes }
+                    }
+                    val isOpen = group in expanded
+                    item(key = group.name) {
+                        Box(Modifier.animateItem()) { GroupRow(
+                            group = group,
+                            bytes = groupBytes,
+                            scanning = scanning,
+                            stepDone = scanning && stepsDone >= groupIndex + 1,
+                            hideSize = start,
+                            expandable = !scanning && items.isNotEmpty(),
+                            open = isOpen,
+                            checked = !scanning && items.isNotEmpty() && items.all { it.path in result!!.selected },
+                            onToggleOpen = { onExpandedChange(if (isOpen) expanded - group else expanded + group) },
+                            onToggleChecked = { viewModel.toggleGroup(group) }
+                        ) }
+                    }
+                    if (scanning) {
+                        val shownNow = revealed.filter { it.category in group.categories }
+                        items(shownNow.size, key = { "r_${group.name}_${shownNow[it].path}" }) { idx ->
+                            Box(Modifier.animateItem()) { RevealRow(shownNow[idx]) }
+                        }
+                    }
+                    if (!scanning && isOpen) {
+                        val shown = items.take(MAX_LISTED)
+                        items(shown.size, key = { "${group.name}_${shown[it].path}" }) { index ->
+                            val item = shown[index]
+                            ItemRow(item, item.path in result!!.selected) { viewModel.toggleItem(item) }
+                        }
+                        if (items.size > MAX_LISTED) {
+                            item(key = "${group.name}_more") {
+                                Text(
+                                    "+${items.size - MAX_LISTED}",
+                                    modifier = Modifier.padding(start = 36.dp, bottom = 8.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    style = TextStyle(fontSize = 12.sp, fontFamily = medium)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+}

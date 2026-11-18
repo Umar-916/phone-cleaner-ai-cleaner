@@ -2,15 +2,12 @@ package com.phonecleaner.aicleaner.data.whatsapp
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
-import android.media.MediaScannerConnection
-import android.media.ThumbnailUtils
-import android.os.Build
-import android.os.Environment
 import android.os.SystemClock
-import android.util.Size
+import com.phonecleaner.aicleaner.data.media.MediaThumbs
+import com.phonecleaner.aicleaner.data.storage.DocumentWalker
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.domain.model.CleanResult
+import com.phonecleaner.aicleaner.domain.model.MediaFile
 import com.phonecleaner.aicleaner.domain.model.WaCategory
 import com.phonecleaner.aicleaner.domain.model.WaFile
 import com.phonecleaner.aicleaner.domain.model.WaPreviewKind
@@ -22,45 +19,31 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.RandomAccessFile
+import java.io.FileInputStream
 import java.security.MessageDigest
-import kotlin.math.max
 
 class WhatsAppScanner(private val context: Context) {
 
     fun scan(): Flow<WaScanEvent> = flow {
-        val roots = mediaRoots()
+        val root = FolderAccess.whatsAppRoot(context)
         val files = ArrayList<WaFile>()
         var bytes = 0L
         var lastEmit = 0L
 
-        for (root in roots) {
-            val categoryDirs = root.listFiles { file -> file.isDirectory }.orEmpty()
-            for (dir in categoryDirs) {
-                val category = categoryFor(dir.name) ?: continue
-                val stack = ArrayDeque<File>()
-                stack.addLast(dir)
-                while (stack.isNotEmpty()) {
-                    currentCoroutineContext().ensureActive()
-                    for (child in stack.removeLast().listFiles().orEmpty()) {
-                        if (child.isDirectory) {
-                            stack.addLast(child)
-                        } else if (child.name != ".nomedia" && child.length() > 0) {
-                            files += WaFile(child.absolutePath, child.name, child.length(), child.lastModified(), category, false)
-                            bytes += child.length()
-                        }
-                    }
-                    val now = SystemClock.elapsedRealtime()
-                    if (now - lastEmit >= EMIT_INTERVAL_MS) {
-                        lastEmit = now
-                        emit(WaScanEvent.Progress(files.size, bytes))
-                    }
+        if (root != null) {
+            DocumentWalker.walk(context, root, showHidden = true) { doc ->
+                val category = doc.path.split('/').firstNotNullOfOrNull { categoryFor(it) } ?: return@walk
+                files += WaFile(doc.uri, doc.path, doc.name, doc.sizeBytes, doc.modifiedMs, category, false)
+                bytes += doc.sizeBytes
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastEmit >= EMIT_INTERVAL_MS) {
+                    lastEmit = now
+                    emit(WaScanEvent.Progress(files.size, bytes))
                 }
             }
         }
-
-        emit(WaScanEvent.Finished(markDuplicates(files), roots.isNotEmpty()))
+        emit(WaScanEvent.Progress(files.size, bytes))
+        emit(WaScanEvent.Finished(markDuplicates(files), root != null))
     }.flowOn(Dispatchers.IO)
 
     suspend fun delete(files: List<WaFile>, onProgress: (Int) -> Unit): CleanResult = withContext(Dispatchers.IO) {
@@ -68,45 +51,22 @@ class WhatsAppScanner(private val context: Context) {
         val removed = ArrayList<String>()
         files.forEachIndexed { index, file ->
             ensureActive()
-            if (File(file.path).delete()) {
+            if (DocumentWalker.delete(context, file.uri)) {
                 freed += file.sizeBytes
                 removed += file.path
             }
             onProgress(index + 1)
         }
-        if (removed.isNotEmpty()) {
-            MediaScannerConnection.scanFile(context, removed.toTypedArray(), null, null)
-        }
         CleanResult(freed, removed.size, removed)
     }
 
-    fun thumbnail(file: WaFile, sizePx: Int): Bitmap? = runCatching {
-        val source = File(file.path)
-        when (file.previewKind) {
-            WaPreviewKind.IMAGE -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ThumbnailUtils.createImageThumbnail(source, Size(sizePx, sizePx), null)
-            } else {
-                decodeSampled(source, sizePx)
-            }
-
-            WaPreviewKind.VIDEO -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ThumbnailUtils.createVideoThumbnail(source, Size(sizePx, sizePx), null)
-            } else {
-                videoFrame(source, sizePx)
-            }
-
-            WaPreviewKind.NONE -> null
-        }
-    }.getOrNull()
-
-    private fun mediaRoots(): List<File> {
-        val external = Environment.getExternalStorageDirectory()
-        return listOf(
-            File(external, "Android/media/com.whatsapp/WhatsApp/Media"),
-            File(external, "WhatsApp/Media"),
-            File(external, "Android/media/com.whatsapp.w4b/WhatsApp Business/Media"),
-            File(external, "WhatsApp Business/Media")
-        ).filter { it.isDirectory }
+    fun thumbnail(file: WaFile, sizePx: Int): Bitmap? = when (file.previewKind) {
+        WaPreviewKind.NONE -> null
+        else -> MediaThumbs.load(
+            context,
+            MediaFile(0L, file.uri, file.name, file.sizeBytes, file.modifiedMs, file.previewKind == WaPreviewKind.VIDEO, 0, 0, 0L),
+            sizePx
+        )
     }
 
     private fun categoryFor(folderName: String): WaCategory? {
@@ -140,39 +100,24 @@ class WhatsAppScanner(private val context: Context) {
 
     private fun hash(file: WaFile): String? = runCatching {
         val digest = MessageDigest.getInstance("SHA-256")
-        RandomAccessFile(file.path, "r").use { raf ->
-            val buffer = ByteArray(CHUNK)
-            val offsets = if (file.sizeBytes <= FULL_HASH_LIMIT) {
-                generateSequence(0L) { it + CHUNK }.takeWhile { it < file.sizeBytes }.toList()
-            } else {
-                listOf(0L, file.sizeBytes / 2, file.sizeBytes - CHUNK)
+        context.contentResolver.openFileDescriptor(file.uri, "r")?.use { pfd ->
+            FileInputStream(pfd.fileDescriptor).channel.use { channel ->
+                val buffer = java.nio.ByteBuffer.allocate(CHUNK)
+                val offsets = if (file.sizeBytes <= FULL_HASH_LIMIT) {
+                    generateSequence(0L) { it + CHUNK }.takeWhile { it < file.sizeBytes }.toList()
+                } else {
+                    listOf(0L, file.sizeBytes / 2, file.sizeBytes - CHUNK)
+                }
+                offsets.forEach { offset ->
+                    buffer.clear()
+                    channel.position(offset)
+                    val read = channel.read(buffer)
+                    if (read > 0) digest.update(buffer.array(), 0, read)
+                }
             }
-            offsets.forEach { offset ->
-                raf.seek(offset)
-                val read = raf.read(buffer)
-                if (read > 0) digest.update(buffer, 0, read)
-            }
-        }
+        } ?: return null
         digest.digest().joinToString("") { "%02x".format(it) }
     }.getOrNull()
-
-    private fun decodeSampled(file: File, size: Int): Bitmap? {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.path, bounds)
-        var sample = 1
-        while (max(bounds.outWidth, bounds.outHeight) / (sample * 2) >= size) sample *= 2
-        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
-    }
-
-    private fun videoFrame(file: File, size: Int): Bitmap? {
-        val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(file.path)
-            retriever.getFrameAtTime(0)?.let { Bitmap.createScaledBitmap(it, size, size, true) }
-        } finally {
-            retriever.release()
-        }
-    }
 
     private companion object {
         const val EMIT_INTERVAL_MS = 120L

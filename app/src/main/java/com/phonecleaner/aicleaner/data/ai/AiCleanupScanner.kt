@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 
-enum class AiKind { VIDEOS, AUDIO, LARGE_FILES, SCREENSHOTS, OLD_DOWNLOADS, BLURRY }
+enum class AiKind { VIDEOS, AUDIO, SCREENSHOTS, BLURRY }
 
 data class AiGroup(val kind: AiKind, val files: List<FileEntry>) {
     val bytes: Long get() = files.sumOf { it.sizeBytes }
@@ -32,22 +32,22 @@ sealed interface AiEvent {
 
 class AiCleanupScanner(private val context: Context, private val files: FilesRepository) {
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val scanDispatcher = Dispatchers.Default.limitedParallelism(2)
+
     fun analyze(): Flow<AiEvent> = channelFlow {
+        files.refresh()
         send(AiEvent.Progress(AiPhase.COLLECTING, 0, 0))
         val now = System.currentTimeMillis()
         val images = files.list(FileCategory.IMAGES, showHidden = false)
         val videos = files.list(FileCategory.VIDEO, showHidden = false)
-        val downloads = files.list(FileCategory.DOWNLOAD, showHidden = false)
 
         val screenshots = images.filter { it.path.contains("/Screenshots/", ignoreCase = true) && now - it.modifiedMs > SCREENSHOT_AGE_MS }
         val largeVideos = videos.sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
         val audio = files.list(FileCategory.AUDIO, showHidden = false).sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
-        val largeFiles = (files.list(FileCategory.DOCUMENTS, showHidden = false) + files.list(FileCategory.APK, showHidden = false))
-            .filter { it.sizeBytes >= LARGE_FILE_BYTES }.sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
-        val oldDownloads = downloads.filter { now - it.modifiedMs > DOWNLOAD_AGE_MS }.sortedByDescending { it.sizeBytes }
 
         val candidates = images
-            .filter { it.path.contains("/DCIM/", ignoreCase = true) && !it.path.contains("/Screenshots/", ignoreCase = true) }
+            .filter { !it.path.contains("/Screenshots/", ignoreCase = true) }
             .take(MAX_BLUR_CANDIDATES)
         val blurry = ArrayList<FileEntry>()
         var done = 0
@@ -55,7 +55,7 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
             coroutineContext.ensureActive()
             val results = coroutineScope {
                 batch.map { entry ->
-                    async(Dispatchers.Default) {
+                    async(scanDispatcher) {
                         val bitmap = MediaThumbs.load(context, MediaFile(entry.id, entry.uri, entry.name, entry.sizeBytes, entry.modifiedMs, false, 0, 0, 0L), BLUR_SIZE)
                         entry to (bitmap?.let { sharpness(it) } ?: Double.MAX_VALUE)
                     }
@@ -71,9 +71,7 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
                 listOf(
                     AiGroup(AiKind.VIDEOS, largeVideos),
                     AiGroup(AiKind.AUDIO, audio),
-                    AiGroup(AiKind.LARGE_FILES, largeFiles),
                     AiGroup(AiKind.SCREENSHOTS, screenshots),
-                    AiGroup(AiKind.OLD_DOWNLOADS, oldDownloads),
                     AiGroup(AiKind.BLURRY, blurry)
                 ).filter { it.files.isNotEmpty() }
             )
@@ -104,11 +102,9 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
 
     private companion object {
         const val SCREENSHOT_AGE_MS = 30L * 24 * 60 * 60 * 1000
-        const val DOWNLOAD_AGE_MS = 60L * 24 * 60 * 60 * 1000
-        const val LARGE_FILE_BYTES = 5L * 1024 * 1024
         const val MAX_LISTED = 60
-        const val MAX_BLUR_CANDIDATES = 600
-        const val BATCH = 16
+        const val MAX_BLUR_CANDIDATES = 240
+        const val BATCH = 8
         const val BLUR_SIZE = 128
         const val BLUR_THRESHOLD = 40.0
     }

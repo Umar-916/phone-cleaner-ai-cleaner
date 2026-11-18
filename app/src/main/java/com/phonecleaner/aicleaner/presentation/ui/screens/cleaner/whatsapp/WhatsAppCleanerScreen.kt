@@ -67,7 +67,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.phonecleaner.aicleaner.domain.model.WaTab
 import com.phonecleaner.aicleaner.domain.model.hasSentTab
-import com.phonecleaner.aicleaner.presentation.ui.screens.files.openPath
+import com.phonecleaner.aicleaner.presentation.ui.screens.files.openUri
+import com.phonecleaner.aicleaner.presentation.ui.screens.files.mimeFor
 import com.phonecleaner.aicleaner.domain.model.WaPreviewKind
 import com.phonecleaner.aicleaner.core.common.tapEvent
 import com.phonecleaner.aicleaner.core.common.tapPlainClickable
@@ -101,10 +102,9 @@ import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.PillChip
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
-import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
-import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
+import com.phonecleaner.aicleaner.presentation.ui.components.FolderAccessPrompt
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
-import com.phonecleaner.aicleaner.core.common.StoragePermission
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.domain.WaData
 import com.phonecleaner.aicleaner.domain.WaUiState
@@ -157,23 +157,7 @@ fun WhatsAppCleanerScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = StoragePermission.isGranted(context)
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        granted = StoragePermission.isGranted(context)
-    }
-    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        granted = StoragePermission.isGranted(context)
-    }
+    var granted by remember { mutableStateOf(FolderAccess.whatsAppRoot(context) != null) }
 
     LaunchedEffect(granted, state is WaUiState.Idle) {
         if (granted && state is WaUiState.Idle) {
@@ -206,7 +190,7 @@ fun WhatsAppCleanerScreen(
     )
 
     val loading = state is WaUiState.Scanning || state is WaUiState.Cleaning ||
-        (state is WaUiState.Result && !revealed) || (state is WaUiState.Done && !doneReady)
+        (state is WaUiState.Result && !revealed) || (state is WaUiState.Done && !doneReady) || state is WaUiState.NotFound
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -240,13 +224,7 @@ fun WhatsAppCleanerScreen(
         Box(modifier = Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 WaUiState.Idle -> if (!granted) {
-                    StoragePermissionPrompt(onDismiss = onBack, accent = Brand.WhatsApp, body = stringResource(R.string.wa_permission_body)) {
-                        if (StoragePermission.usesSettingsScreen) {
-                            settingsLauncher.launch(StoragePermission.settingsIntent(context))
-                        } else {
-                            legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
-                        }
-                    }
+                    FolderAccessPrompt(onDismiss = onBack, onGranted = { granted = FolderAccess.whatsAppRoot(context) != null }, accent = Brand.WhatsApp, hint = FolderAccess.whatsAppHint(), body = stringResource(R.string.folder_body_wa))
                 }
 
                 is WaUiState.Scanning -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
@@ -255,7 +233,7 @@ fun WhatsAppCleanerScreen(
                     label = stringResource(R.string.wa_scanning),
                     p = scanAnim
                 )
-                WaUiState.NotFound -> NotFoundView(viewModel::reset)
+                WaUiState.NotFound -> com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(stringResource(R.string.congrats_text)) { viewModel.reset(); onTaskCompleted("") }
                 is WaUiState.Result -> if (!revealed) {
                     com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.wa_scanning), scanAnim) { revealed = true }
                 } else ResultView(current.data, viewModel) {
@@ -338,7 +316,7 @@ private fun ResultView(data: WaData, viewModel: WhatsAppViewModel, onDelete: () 
 @Composable
 private fun Overview(data: WaData, viewModel: WhatsAppViewModel) {
     val context = LocalContext.current
-    val totalStorage = remember { android.os.Environment.getExternalStorageDirectory().totalSpace }
+    val totalStorage = remember { android.os.StatFs(android.os.Environment.getDataDirectory().path).totalBytes }
     val categories = WaCategory.entries.filter { data.byCategory[it].orEmpty().isNotEmpty() }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -387,7 +365,7 @@ private fun Overview(data: WaData, viewModel: WhatsAppViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(files.sortedByDescending { it.sizeBytes }.take(PREVIEW_COUNT), key = { it.path }) { file ->
-                        WaThumb(file, viewModel, Modifier.size(92.dp).clip(RoundedCornerShape(14.dp)).tapClickable("wa_open_preview") { openPath(context, file.path) })
+                        WaThumb(file, viewModel, Modifier.size(92.dp).clip(RoundedCornerShape(14.dp)).tapClickable("wa_open_preview") { openUri(context, file.uri, mimeFor(file.name)) })
                     }
                 }
             }
@@ -445,7 +423,7 @@ private fun CategoryDetail(data: WaData, viewModel: WhatsAppViewModel) {
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(14.dp))
                                 .combinedClickable(
-                                    onClick = { tapEvent("wa_file_open"); if (data.isSelecting) viewModel.toggle(file) else openPath(context, file.path) },
+                                    onClick = { tapEvent("wa_file_open"); if (data.isSelecting) viewModel.toggle(file) else openUri(context, file.uri, mimeFor(file.name)) },
                                     onLongClick = { viewModel.toggle(file) }
                                 )
                         )
@@ -472,7 +450,7 @@ private fun CategoryDetail(data: WaData, viewModel: WhatsAppViewModel) {
 private fun WaThumb(file: WaFile, viewModel: WhatsAppViewModel, modifier: Modifier) {
     val thumb by produceState(initialValue = thumbCache[file.path], file.path) {
         if (value == null) {
-            value = withContext(Dispatchers.IO) { viewModel.thumbnail(file, 320)?.asImageBitmap() }
+            value = withContext(Dispatchers.IO) { viewModel.thumbnail(file, 224)?.asImageBitmap() }
                 ?.also { thumbCache.put(file.path, it) }
         }
     }
@@ -508,26 +486,3 @@ private fun WaThumb(file: WaFile, viewModel: WhatsAppViewModel, modifier: Modifi
 }
 
 private const val PREVIEW_COUNT = 8
-
-@Composable
-private fun NotFoundView(onRescan: () -> Unit) {
-    CenteredColumn {
-        Icon(Icons.Rounded.SearchOff, null, tint = WhatsAppGreen, modifier = Modifier.size(80.dp))
-        Spacer(Modifier.height(20.dp))
-        Text(
-            stringResource(R.string.wa_not_found_title),
-            color = MaterialTheme.colorScheme.tertiary,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.wa_not_found_body),
-            color = MaterialTheme.colorScheme.surface,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 14.sp, lineHeight = 21.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(28.dp))
-        PrimaryButton(stringResource(R.string.junk_rescan), onRescan)
-    }
-}

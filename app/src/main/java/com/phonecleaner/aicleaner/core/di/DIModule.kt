@@ -3,6 +3,8 @@ package com.phonecleaner.aicleaner.core.di
 import com.phonecleaner.aicleaner.core.datastore.AppDataStore
 import com.phonecleaner.aicleaner.data.apps.AppsRepository
 import com.phonecleaner.aicleaner.data.media.DuplicateScanner
+import com.phonecleaner.aicleaner.data.scanner.JunkScanner
+import com.phonecleaner.aicleaner.domain.JunkViewModel
 import com.phonecleaner.aicleaner.data.image.PhotoCompressor
 import com.phonecleaner.aicleaner.data.ai.AiCleanupScanner
 import com.phonecleaner.aicleaner.data.battery.BatteryRepository
@@ -10,7 +12,6 @@ import com.phonecleaner.aicleaner.data.device.DeviceInfoRepository
 import com.phonecleaner.aicleaner.data.files.FilesRepository
 import com.phonecleaner.aicleaner.data.whatsapp.WhatsAppScanner
 import com.phonecleaner.aicleaner.data.process.ProcessRepository
-import com.phonecleaner.aicleaner.data.scanner.JunkScanner
 import com.phonecleaner.aicleaner.core.remote.SplashDesignProvider
 import com.phonecleaner.aicleaner.core.remote.SplashDesignProviderImpl
 import com.phonecleaner.aicleaner.core.utils.NetworkObserver
@@ -19,7 +20,6 @@ import com.phonecleaner.aicleaner.domain.AppsViewModel
 import com.phonecleaner.aicleaner.domain.DuplicatesViewModel
 import com.phonecleaner.aicleaner.domain.FeedbackViewModel
 import com.phonecleaner.aicleaner.domain.HomeViewModel
-import com.phonecleaner.aicleaner.domain.JunkViewModel
 import com.phonecleaner.aicleaner.domain.LanguageViewModel
 import com.phonecleaner.aicleaner.domain.ProcessViewModel
 import com.phonecleaner.aicleaner.domain.WhatsAppViewModel
@@ -28,7 +28,6 @@ import com.phonecleaner.aicleaner.domain.AiCategoryViewModel
 import com.phonecleaner.aicleaner.domain.AiCleanupViewModel
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FilesViewModel
-import com.phonecleaner.aicleaner.domain.StorageBrowserViewModel
 import com.phonecleaner.aicleaner.domain.SettingViewModel
 import com.phonecleaner.aicleaner.domain.viewmodel.BannerAdViewModel
 import com.phonecleaner.aicleaner.domain.viewmodel.LanguageAdsViewModel
@@ -42,10 +41,10 @@ import org.koin.dsl.module
 
 val databaseModule = module {
     single<AppDataStore> { AppDataStore(androidContext()) }
-    single { JunkScanner(androidContext()) }
     single { AppsRepository(androidContext()) }
     single { ProcessRepository(androidContext()) }
-    single { DuplicateScanner(androidContext()) }
+    single { JunkScanner(androidContext()) }
+    single { DuplicateScanner(androidContext(), get()) }
     single { WhatsAppScanner(androidContext()) }
     single { PhotoCompressor(androidContext()) }
     single { FilesRepository(androidContext()) }
@@ -64,7 +63,6 @@ val viewModelModule = module {
     viewModel { LanguageAdsViewModel() }
     viewModel { FeedbackViewModel() }
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { JunkViewModel(get()) }
     viewModel { AppsViewModel(get()) }
     viewModel { ProcessViewModel(get()) }
     viewModel { DuplicatesViewModel(get()) }
@@ -72,7 +70,7 @@ val viewModelModule = module {
     viewModel { PhotoCompressorViewModel(get()) }
     viewModel { FilesViewModel(get(), get()) }
     viewModel { FileCategoryViewModel(get(), get()) }
-    viewModel { StorageBrowserViewModel(get(), get()) }
+    viewModel { JunkViewModel(get()) }
     viewModel { AiCleanupViewModel(get()) }
     viewModel { AiCategoryViewModel(get()) }
 }

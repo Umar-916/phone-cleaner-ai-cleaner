@@ -41,6 +41,7 @@ class AiCleanupViewModel(private val scanner: AiCleanupScanner) : ViewModel() {
         }
     }
 
+
     fun reset() {
         job?.cancel()
         _state.value = AiUiState.Idle

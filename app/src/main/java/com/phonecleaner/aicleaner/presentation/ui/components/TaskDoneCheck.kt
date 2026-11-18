@@ -54,12 +54,12 @@ import kotlin.math.sin
 private class Confetti(val angle: Float, val radius: Float, val kind: Int, val color: Color, val spin: Float)
 
 private val pieces = listOf(
-    Confetti(-100f, 63f, 0, Color(0xFFA8F0C8), 20f), Confetti(-60f, 70f, 2, Color(0xFFFFE27A), 40f),
-    Confetti(-15f, 63f, 1, Color(0xFFFFB3C9), 0f), Confetti(20f, 68f, 3, Color(0xFFFF9FB5), 60f),
-    Confetti(55f, 65f, 2, Color(0xFFFFE27A), 15f), Confetti(95f, 68f, 3, Color(0xFF8FEFB0), 30f),
-    Confetti(130f, 62f, 0, Color(0xFF9FE9F4), 70f), Confetti(170f, 68f, 2, Color(0xFFFFE27A), 5f),
-    Confetti(-135f, 67f, 0, Color(0xFF8FEFB0), 80f), Confetti(-170f, 63f, 1, Color(0xFFFFB3C9), 0f),
-    Confetti(-80f, 76f, 1, Color(0xFFC8F5D6), 0f), Confetti(150f, 74f, 3, Color(0xFFFF9FB5), 50f)
+    Confetti(-100f, 82f, 0, Color(0xFFA8F0C8), 20f), Confetti(-60f, 90f, 2, Color(0xFFFFE27A), 40f),
+    Confetti(-15f, 82f, 1, Color(0xFFFFB3C9), 0f), Confetti(20f, 88f, 3, Color(0xFFFF9FB5), 60f),
+    Confetti(55f, 84f, 2, Color(0xFFFFE27A), 15f), Confetti(95f, 88f, 3, Color(0xFF8FEFB0), 30f),
+    Confetti(130f, 80f, 0, Color(0xFF9FE9F4), 70f), Confetti(170f, 88f, 2, Color(0xFFFFE27A), 5f),
+    Confetti(-135f, 86f, 0, Color(0xFF8FEFB0), 80f), Confetti(-170f, 82f, 1, Color(0xFFFFB3C9), 0f),
+    Confetti(-80f, 98f, 1, Color(0xFFC8F5D6), 0f), Confetti(150f, 96f, 3, Color(0xFFFF9FB5), 50f)
 )
 
 @Composable
@@ -81,7 +81,7 @@ fun ConfettiBurst(modifier: Modifier = Modifier, centerY: Dp = (-40).dp, onFinis
             val r = far + (p.radius.dp.toPx() - far) * fly.value
             val pos = Offset(c.x + dir.x * r, c.y + dir.y * r)
             val a = fade.value * (0.35f + 0.65f * fly.value)
-            val s = 5.dp.toPx()
+            val s = 6.dp.toPx()
             rotate(p.spin + 220f * (1f - fly.value), pivot = pos) {
                 when (p.kind) {
                     0 -> drawRoundRect(p.color.copy(alpha = a), Offset(pos.x - s * 1.2f, pos.y - s * 0.4f), Size(s * 2.4f, s * 0.8f), CornerRadius(s * 0.4f))
@@ -121,15 +121,6 @@ fun TaskDoneCheck(label: String = stringResource(R.string.done_text), caption: S
                 .background(Brush.verticalGradient(listOf(Color(0xFF3CC074), Color(0xFF1FAD5E)))),
             contentAlignment = Alignment.Center
         ) { Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(70.dp)) }
-        if (caption != null) {
-            Text(
-                caption,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center).offset(y = 62.dp).padding(horizontal = 40.dp),
-                color = MaterialTheme.colorScheme.surface,
-                style = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontFamily = FontFamily(Font(R.font.google_sans_flex_medium)))
-            )
-        }
         if (caption != null) {
             Text(
                 caption,

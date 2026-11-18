@@ -93,7 +93,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.math.PI
-import kotlin.math.roundToInt
 import kotlin.math.sin
 
 private val bold = AppFonts.Bold
@@ -137,6 +136,8 @@ fun BatteryOptimizeScreen(
     var phase by remember { mutableStateOf<Phase>(Phase.Idle) }
     var job by remember { mutableStateOf<Job?>(null) }
     var needsPermission by remember { mutableStateOf(false) }
+    var needsPolicy by remember { mutableStateOf(false) }
+    var policyAsked by remember { mutableStateOf(false) }
     var stopSheet by remember { mutableStateOf(false) }
     val summary = stringResource(R.string.bm_done_summary)
 
@@ -145,18 +146,19 @@ fun BatteryOptimizeScreen(
             needsPermission = true
             return
         }
+        if (!repository.hasPolicyAccess() && !policyAsked) {
+            policyAsked = true
+            needsPolicy = true
+            return
+        }
         context.postAnalytic("battery_optimize_start")
         job = scope.launch {
             items.forEachIndexed { index, item ->
-                val reduction = repository.reduction(item.step)
                 val before = index * 100 / items.size
-                phase = Phase.Running(index, before, reduction.format(reduction.from))
-                delay(500)
-                Animatable(reduction.from.toFloat()).animateTo(reduction.to.toFloat(), tween(1600, easing = FastOutSlowInEasing)) {
-                    phase = Phase.Running(index, before, reduction.format(value.roundToInt()))
-                }
+                phase = Phase.Running(index, before)
+                delay(1800)
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repository.applySaver(item.step) }
-                phase = Phase.Running(index, (index + 1) * 100 / items.size, reduction.format(reduction.to))
+                phase = Phase.Running(index, (index + 1) * 100 / items.size)
                 delay(500)
             }
             TaskTracker.mark(MainTask.BATTERY)
@@ -185,6 +187,23 @@ fun BatteryOptimizeScreen(
                 tryCatch { context.startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, "package:${context.packageName}".toUri())) }
             },
             onDismiss = { needsPermission = false }
+        )
+    }
+
+    if (needsPolicy) {
+        PermissionPrompt(
+            icon = Icons.Rounded.Settings,
+            title = stringResource(R.string.battery_policy_title),
+            body = stringResource(R.string.battery_policy_body),
+            bullets = listOf(stringResource(R.string.battery_policy_b1), stringResource(R.string.battery_policy_b2)),
+            allowLabel = stringResource(R.string.perm_allow),
+            notNowLabel = stringResource(R.string.perm_not_now),
+            accent = Brand.Battery,
+            onAllow = {
+                needsPolicy = false
+                tryCatch { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) }
+            },
+            onDismiss = { needsPolicy = false; start() }
         )
     }
 

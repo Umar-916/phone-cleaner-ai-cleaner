@@ -28,6 +28,7 @@ enum class WaFilter(@StringRes val label: Int) {
 enum class WaPreviewKind { IMAGE, VIDEO, NONE }
 
 data class WaFile(
+    val uri: android.net.Uri,
     val path: String,
     val name: String,
     val sizeBytes: Long,
@@ -58,3 +59,4 @@ sealed interface WaScanEvent {
     data class Progress(val count: Int, val bytes: Long) : WaScanEvent
     data class Finished(val files: List<WaFile>, val foundFolders: Boolean) : WaScanEvent
 }
+

@@ -92,11 +92,11 @@ class DuplicatesViewModel(private val scanner: DuplicateScanner) : ViewModel() {
 
     fun deselectAll() = updateData { it.copy(selected = emptySet()) }
 
-    fun deleteLegacy() {
+    fun deleteSelected() {
         val data = (_state.value as? DuplicatesUiState.Result)?.data ?: return
         val targets = data.selectedFiles
         viewModelScope.launch {
-            val removed = scanner.deleteLegacy(targets)
+            val removed = scanner.delete(targets)
             onDeleted(removed.toSet())
         }
     }

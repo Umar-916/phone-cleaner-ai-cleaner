@@ -21,6 +21,7 @@ enum class JunkGroup(@StringRes val label: Int, val categories: List<JunkCategor
 }
 
 data class JunkItem(
+    val uri: android.net.Uri?,
     val path: String,
     val name: String,
     val sizeBytes: Long,
