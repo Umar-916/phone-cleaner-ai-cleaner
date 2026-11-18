@@ -6,10 +6,3 @@ data class MemoryStats(val totalBytes: Long = 0L, val availableBytes: Long = 0L)
 }
 
 data class BoostResult(val freedBytes: Long, val appsCount: Int)
-
-data class RecentApp(
-    val packageName: String,
-    val label: String,
-    val lastUsedAt: Long,
-    val foregroundMs: Long
-)

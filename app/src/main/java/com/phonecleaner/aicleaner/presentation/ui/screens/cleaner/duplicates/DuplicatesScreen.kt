@@ -4,10 +4,8 @@ import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapEvent
 import com.phonecleaner.aicleaner.core.common.tapClickable
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -78,7 +76,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -87,9 +84,14 @@ import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
 import com.phonecleaner.aicleaner.presentation.ui.components.FeatureProgress
-import com.phonecleaner.aicleaner.presentation.ui.components.MediaPermissionPrompt
 import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
+import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import com.phonecleaner.aicleaner.presentation.ui.components.RoundCheck
+import com.phonecleaner.aicleaner.presentation.ui.screens.files.openUri
+import androidx.compose.material.icons.rounded.PlayCircle
 import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
+import com.phonecleaner.aicleaner.presentation.ui.components.StoragePermissionPrompt
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tryCatch
 import com.phonecleaner.aicleaner.data.media.recoverableBytes
@@ -113,14 +115,6 @@ private val medium = AppFonts.Medium
 private val bold = AppFonts.Bold
 private val Gold = Color(0xFFF5B301)
 
-private fun requiredPermissions(): Array<String> = when {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-        arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
-
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-    else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DuplicatesScreen(
@@ -130,8 +124,7 @@ fun DuplicatesScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var granted by remember { mutableStateOf(hasPermissions(context)) }
-    var requestedOnce by rememberSaveable { mutableStateOf(false) }
+    var granted by remember { mutableStateOf(StoragePermission.isGranted(context)) }
     var revealed by remember { mutableStateOf(false) }
     val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(state) { if (state is DuplicatesUiState.Idle) { revealed = false; scanAnim.snapTo(0f) } }
@@ -139,16 +132,14 @@ fun DuplicatesScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = hasPermissions(context)
+            if (event == Lifecycle.Event.ON_RESUME) granted = StoragePermission.isGranted(context)
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        requestedOnce = true
-        granted = hasPermissions(context)
-    }
+    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = StoragePermission.isGranted(context) }
+    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { granted = StoragePermission.isGranted(context) }
 
     val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) viewModel.onDeleted()
@@ -182,18 +173,10 @@ fun DuplicatesScreen(
         Box(modifier = Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 DuplicatesUiState.Idle -> if (!granted) {
-                    MediaPermissionPrompt(
-                        showSettings = requestedOnce,
-                        onDismiss = onBack,
-                        onAllow = {
-                            if (requestedOnce) {
-                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
-                                tryCatch { context.startActivity(intent) }
-                            } else {
-                                permissionLauncher.launch(requiredPermissions())
-                            }
-                        }
-                    )
+                    StoragePermissionPrompt(onDismiss = onBack, accent = Brand.Duplicates) {
+                        if (StoragePermission.usesSettingsScreen) settingsLauncher.launch(StoragePermission.settingsIntent(context))
+                        else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
+                    }
                 }
 
                 is DuplicatesUiState.Scanning -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
@@ -241,9 +224,6 @@ fun DuplicatesScreen(
 
 }
 
-private fun hasPermissions(context: android.content.Context): Boolean =
-    requiredPermissions().all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
-
 @Composable
 private fun CenteredColumn(content: @Composable () -> Unit) {
     Column(
@@ -285,23 +265,24 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
+        val bestShots = data.selected.isNotEmpty()
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                .tapClickable("duplicates_keep_best") { if (bestShots) viewModel.deselectAll() else viewModel.selectAllButKeepers() }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                stringResource(R.string.dup_original_hint),
+                stringResource(R.string.dup_keep_best),
                 modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.surface,
-                style = TextStyle(fontSize = 12.sp, lineHeight = 17.sp, fontFamily = medium)
+                color = MaterialTheme.colorScheme.tertiary,
+                style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
             )
-            TextButton(onClick = { tapEvent("result_view_tap"); if (data.selected.isEmpty()) viewModel.selectAllButKeepers() else viewModel.deselectAll() }) {
-                Text(
-                    stringResource(if (data.selected.isEmpty()) R.string.dup_select_all_but_one else R.string.junk_deselect_all),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-                )
-            }
+            RoundCheck(bestShots)
         }
 
         if (groups.isEmpty()) {
@@ -315,11 +296,11 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 items(groups, key = { it.id }) { group ->
-                    GroupCard(group, data, viewModel)
+                    GroupSection(group, data, viewModel)
                 }
             }
         }
@@ -335,44 +316,33 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
             } else {
                 stringResource(R.string.dup_delete_selected, data.selected.size, Formatter.formatFileSize(context, data.selectedBytes))
             }
-            PrimaryButton(label, onClick = { tapEvent("result_view_tap_2"); if (data.selected.isNotEmpty()) onDelete() })
+            PrimaryButton(label, onClick = { tapEvent("duplicates_delete"); if (data.selected.isNotEmpty()) onDelete() })
         }
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun GroupCard(group: DuplicateGroup, data: DuplicatesData, viewModel: DuplicatesViewModel) {
+private fun GroupSection(group: DuplicateGroup, data: DuplicatesData, viewModel: DuplicatesViewModel) {
     val context = LocalContext.current
     val keeper = data.keeperOf(group)
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.secondary)
-            .padding(vertical = 12.dp)
-    ) {
-        Row(modifier = Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(
-                        if (group.kind == DuplicateKind.EXACT) R.string.dup_kind_exact else R.string.dup_kind_similar,
-                        group.files.size
-                    ),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-                )
-                Text(
-                    stringResource(R.string.dup_group_savings, Formatter.formatFileSize(context, group.recoverableBytes())),
-                    color = MaterialTheme.colorScheme.surface,
-                    style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                )
-            }
-        }
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            group.files.firstOrNull()?.name.orEmpty(),
+            maxLines = 2,
+            overflow = TextOverflow.MiddleEllipsis,
+            color = MaterialTheme.colorScheme.tertiary,
+            style = TextStyle(fontSize = 14.sp, lineHeight = 19.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+        )
+        Text(
+            stringResource(R.string.dup_group_savings, Formatter.formatFileSize(context, group.recoverableBytes())),
+            color = MaterialTheme.colorScheme.surface,
+            style = TextStyle(fontSize = 12.sp, fontFamily = medium)
+        )
         Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             group.files.forEach { file ->
                 MediaCell(
@@ -396,14 +366,20 @@ private fun MediaCell(
     onKeep: () -> Unit
 ) {
     val context = LocalContext.current
-    Column(modifier = Modifier.width(112.dp)) {
+    Column(modifier = Modifier.width(104.dp)) {
         Box(
             modifier = Modifier
-                .size(112.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .tapClickable("media_cell_click", onClick = onToggle)
+                .size(104.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .tapClickable("duplicates_open_item") { openUri(context, file.uri, if (file.isVideo) "video/*" else "image/*") }
         ) {
             MediaThumbnail(file, Modifier.fillMaxSize())
+            if (file.isVideo) {
+                Icon(
+                    Icons.Rounded.PlayCircle, null, tint = Color.White,
+                    modifier = Modifier.align(Alignment.Center).size(30.dp)
+                )
+            }
             if (isKeeper) {
                 Row(
                     modifier = Modifier
@@ -422,34 +398,27 @@ private fun MediaCell(
                         style = TextStyle(fontSize = 10.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
                     )
                 }
-            } else {
-                AppCheckbox(
-                    checked = isSelected,
-                    onCheckedChange = { onToggle() },
-                    modifier = Modifier.align(Alignment.TopStart).size(40.dp)
-                )
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(
-            file.name,
-            maxLines = 1,
-            overflow = TextOverflow.MiddleEllipsis,
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 11.sp, fontFamily = medium)
-        )
-        Text(
-            Formatter.formatShortFileSize(context, file.sizeBytes) + " · " +
-                DateFormat.getMediumDateFormat(context).format(Date(file.addedAtMs)),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.surface,
-            style = TextStyle(fontSize = 10.sp, fontFamily = medium)
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                Formatter.formatShortFileSize(context, file.sizeBytes),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.tertiary,
+                style = TextStyle(fontSize = 12.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+            )
+            if (!isKeeper) {
+                Box(Modifier.size(30.dp).tapPlainClickable("duplicates_select_item", onClick = onToggle), contentAlignment = Alignment.Center) {
+                    RoundCheck(isSelected, size = 22.dp)
+                }
+            }
+        }
         if (!isKeeper) {
             Text(
                 stringResource(R.string.dup_make_original),
-                modifier = Modifier.clip(RoundedCornerShape(10.dp)).tapClickable("media_cell_click_2", onClick = onKeep).padding(vertical = 4.dp),
+                modifier = Modifier.clip(RoundedCornerShape(10.dp)).tapClickable("duplicates_make_original", onClick = onKeep).padding(vertical = 4.dp),
                 color = MaterialTheme.colorScheme.primary,
                 style = TextStyle(fontSize = 11.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
             )

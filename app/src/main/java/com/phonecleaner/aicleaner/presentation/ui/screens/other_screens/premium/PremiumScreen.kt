@@ -215,7 +215,7 @@ private fun ComparisonTable() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor().copy(alpha = 0.92f))
+            .background(if (com.phonecleaner.aicleaner.presentation.ui.theme.isDarkSurface()) com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor() else Color.White.copy(alpha = 0.6f))
     ) {
         Row(Modifier.matchParentSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.weight(1f))
@@ -225,7 +225,7 @@ private fun ComparisonTable() {
                     .fillMaxHeight()
                     .padding(vertical = 6.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer)
+                    .background(if (com.phonecleaner.aicleaner.presentation.ui.theme.isDarkSurface()) androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer else Color(0xFFE7D2F9))
             )
             Spacer(Modifier.width(56.dp))
         }

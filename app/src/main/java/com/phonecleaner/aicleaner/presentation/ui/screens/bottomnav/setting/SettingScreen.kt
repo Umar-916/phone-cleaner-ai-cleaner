@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.phonecleaner.aicleaner.BuildConfig
 import com.phonecleaner.aicleaner.R
@@ -267,8 +268,8 @@ fun SettingScreen(
         if (showAbout) {
             AppAlertDialog(
                 onDismissRequest = { showAbout = false },
-                title = { Text(stringResource(R.string.app_name)) },
-                text = { Text(stringResource(R.string.about_body, BuildConfig.VERSION_NAME)) },
+                title = { Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 20.sp, fontFamily = AppFonts.Bold, fontWeight = FontWeight.Bold)) },
+                text = { Text(stringResource(R.string.about_body, BuildConfig.VERSION_NAME), color = MaterialTheme.colorScheme.surface, style = TextStyle(fontSize = 15.sp, lineHeight = 22.sp, fontFamily = AppFonts.Medium)) },
                 confirmButton = { TextButton(onClick = { tapEvent("setting_screen_tap_10"); showAbout = false }) { Text(stringResource(R.string.junk_done_action), color = MaterialTheme.colorScheme.primary) } }
             )
         }

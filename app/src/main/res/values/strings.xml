@@ -580,7 +580,7 @@ GO PREMIUM</string>
     <string name="ai_savings">%1$s can be freed</string>
     <string name="ai_savings_sub">Suggestions are made on your device from file age, size, folder and image sharpness. Review them before you clean.</string>
     <string name="ai_kind_screenshots">Old screenshots</string>
-    <string name="ai_kind_videos">Large videos</string>
+    <string name="ai_kind_videos">Video</string>
     <string name="ai_kind_blurry">Blurry photos</string>
     <string name="ai_kind_downloads">Old downloads</string>
     <string name="ai_reason_screenshots">Older than 30 days</string>
@@ -607,6 +607,7 @@ GO PREMIUM</string>
     <string name="terms_of_service">Terms of service</string>
     <string name="about">About</string>
     <string name="about_body">Version %1$s
+
 Clean junk, manage apps, free memory and keep your phone healthy.</string>
     <string name="splash_tagline">Clean. Optimize. Boost.</string>
     <string name="share_via">Share via</string>

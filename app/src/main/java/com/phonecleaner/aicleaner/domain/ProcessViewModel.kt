@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.phonecleaner.aicleaner.data.process.ProcessRepository
 import com.phonecleaner.aicleaner.domain.model.BoostResult
 import com.phonecleaner.aicleaner.domain.model.MemoryStats
-import com.phonecleaner.aicleaner.domain.model.RecentApp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,10 +22,7 @@ sealed interface BoostState {
 
 data class ProcessUiState(
     val memory: MemoryStats = MemoryStats(),
-    val boost: BoostState = BoostState.Idle,
-    val hasUsageAccess: Boolean = false,
-    val recentApps: List<RecentApp> = emptyList(),
-    val recentLoaded: Boolean = false
+    val boost: BoostState = BoostState.Idle
 )
 
 class ProcessViewModel(private val repository: ProcessRepository) : ViewModel() {
@@ -49,14 +45,6 @@ class ProcessViewModel(private val repository: ProcessRepository) : ViewModel() 
 
     fun stopPolling() {
         pollJob?.cancel()
-    }
-
-    fun refreshUsage() {
-        viewModelScope.launch {
-            val access = repository.hasUsageAccess()
-            val apps = if (access) repository.recentApps() else emptyList()
-            _state.update { it.copy(hasUsageAccess = access, recentApps = apps, recentLoaded = true) }
-        }
     }
 
     fun boost() {

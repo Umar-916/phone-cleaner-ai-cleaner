@@ -48,6 +48,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Vibration
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -86,6 +93,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.math.PI
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 private val bold = AppFonts.Bold
@@ -98,19 +106,22 @@ private class Item(
     @StringRes val title: Int,
     @StringRes val sub: Int,
     @StringRes val running: Int,
-    @DrawableRes val icon: Int
+    @DrawableRes val icon: Int,
+    val vector: androidx.compose.ui.graphics.vector.ImageVector,
+    val tint: Color
 )
 
 private val items = listOf(
-    Item(BatteryRepository.SaverStep.TIMEOUT, R.string.bm_timeout, R.string.bm_timeout_sub, R.string.bm_run_timeout, R.drawable.bat_timer),
-    Item(BatteryRepository.SaverStep.SOUND, R.string.bm_sound, R.string.bm_sound_sub, R.string.bm_run_sound, R.drawable.bat_sound),
-    Item(BatteryRepository.SaverStep.BRIGHTNESS, R.string.bm_brightness, R.string.bm_brightness_sub, R.string.bm_run_brightness, R.drawable.bat_bright),
-    Item(BatteryRepository.SaverStep.VIBRATION, R.string.bm_vibration, R.string.bm_vibration_sub, R.string.bm_run_vibration, R.drawable.bat_vib)
+    Item(BatteryRepository.SaverStep.TIMEOUT, R.string.bm_timeout, R.string.bm_timeout_sub, R.string.bm_run_timeout, R.drawable.bat_timer, Icons.Rounded.Timer, Color(0xFFF5A623)),
+    Item(BatteryRepository.SaverStep.SOUND, R.string.bm_sound, R.string.bm_sound_sub, R.string.bm_run_sound, R.drawable.bat_sound, Icons.Rounded.VolumeUp, Color(0xFF4DB6AC)),
+    Item(BatteryRepository.SaverStep.BRIGHTNESS, R.string.bm_brightness, R.string.bm_brightness_sub, R.string.bm_run_brightness, R.drawable.bat_bright, Icons.Rounded.WbSunny, Color(0xFFEF6F6C)),
+    Item(BatteryRepository.SaverStep.VIBRATION, R.string.bm_vibration, R.string.bm_vibration_sub, R.string.bm_run_vibration, R.drawable.bat_vib, Icons.Rounded.Vibration, Color(0xFF8E6CE0)),
+    Item(BatteryRepository.SaverStep.BACKGROUND, R.string.bm_apps, R.string.bm_apps_sub, R.string.bm_run_apps, R.drawable.bat_apps, Icons.Rounded.Apps, Color(0xFF7C5CFC))
 )
 
 private sealed interface Phase {
     data object Idle : Phase
-    data class Running(val index: Int, val percent: Int) : Phase
+    data class Running(val index: Int, val percent: Int, val value: String = "") : Phase
     data object Done : Phase
 }
 
@@ -137,11 +148,16 @@ fun BatteryOptimizeScreen(
         context.postAnalytic("battery_optimize_start")
         job = scope.launch {
             items.forEachIndexed { index, item ->
-                phase = Phase.Running(index, index * 100 / items.size)
-                delay(900)
+                val reduction = repository.reduction(item.step)
+                val before = index * 100 / items.size
+                phase = Phase.Running(index, before, reduction.format(reduction.from))
+                delay(500)
+                Animatable(reduction.from.toFloat()).animateTo(reduction.to.toFloat(), tween(1600, easing = FastOutSlowInEasing)) {
+                    phase = Phase.Running(index, before, reduction.format(value.roundToInt()))
+                }
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repository.applySaver(item.step) }
-                phase = Phase.Running(index, (index + 1) * 100 / items.size)
-                delay(700)
+                phase = Phase.Running(index, (index + 1) * 100 / items.size, reduction.format(reduction.to))
+                delay(500)
             }
             TaskTracker.mark(MainTask.BATTERY)
             phase = Phase.Done
@@ -175,7 +191,7 @@ fun BatteryOptimizeScreen(
     when (val p = phase) {
         is Phase.Running -> {
             val item = items[p.index]
-            BoostRunningView(percent = p.percent, label = stringResource(item.running), badge = item.icon)
+            BoostRunningView(percent = p.percent, label = stringResource(item.running), badge = item.icon, valueText = p.value)
         }
         Phase.Done -> TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(main = com.phonecleaner.aicleaner.domain.MainTask.BATTERY)) { onFinished(summary) }
         Phase.Idle -> com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme {
@@ -191,39 +207,52 @@ fun BatteryOptimizeScreen(
                     BatteryArt()
                     Spacer(Modifier.height(18.dp))
                     items.forEachIndexed { index, item -> ListItem(item, index) }
+                    Spacer(Modifier.height(12.dp))
                 }
+                val listDone = remember { androidx.compose.runtime.mutableStateOf(false) }
+                LaunchedEffect(Unit) { delay(450L + (items.size - 1) * 780L + 620L); listDone.value = true }
                 Box(
-                    Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+                    Modifier.fillMaxWidth().height(70.dp).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 14.dp)
                 ) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = listDone.value,
+                        enter = androidx.compose.animation.fadeIn(tween(450))
+                    ) {
                     Box(
-                        Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(26.dp)).background(Color(0xFF7425CF)).tapClickable("start_click") { start() },
+                        Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(24.dp)).background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), Color(0xFF7425CF)))).tapClickable("start_click") { start() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(stringResource(R.string.bm_continue), color = Color.White, style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.bm_continue), color = Color.White, style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                    }
+                }
                     }
                 }
             }
         }
         }
     }
-}
 
 @Composable
 private fun ListItem(item: Item, index: Int) {
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        delay(220L + index * 140L)
-        enter.animateTo(1f, tween(450, easing = FastOutSlowInEasing))
+        delay(450L + index * 780L)
+        enter.animateTo(1f, tween(560, easing = androidx.compose.animation.core.CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp)
-            .graphicsLayer { alpha = enter.value; translationY = (1f - enter.value) * 28.dp.toPx() },
+            .padding(vertical = 8.dp)
+            .graphicsLayer {
+                alpha = enter.value
+                translationX = (1f - enter.value) * 90.dp.toPx()
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(painterResource(item.icon), null, modifier = Modifier.size(42.dp), contentScale = ContentScale.Fit)
-        Spacer(Modifier.size(14.dp))
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            androidx.compose.material3.Icon(item.vector, null, tint = item.tint, modifier = Modifier.size(24.dp))
+        }
+        Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
             Text(stringResource(item.title), color = Plum, style = TextStyle(fontSize = 15.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
             Text(stringResource(item.sub), color = Color(0xFF8B6BC0), style = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontFamily = medium))

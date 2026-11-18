@@ -68,7 +68,7 @@ fun AppTopBar(
 ) {
     TopAppBar(
         modifier = modifier,
-        title = { androidx.compose.foundation.layout.Box(Modifier.padding(start = if (onBack != null) 6.sdp else 0.sdp)) { title() } },
+        title = { androidx.compose.foundation.layout.Box(Modifier.padding(start = if (onBack != null) 8.3.sdp else 0.sdp)) { title() } },
         navigationIcon = {
             if (onBack != null) {
                 AppBackButton(onClick = onBack.tapped("app_top_bar_tap"))
@@ -94,25 +94,25 @@ fun AppTopBarTitle(
 
     when (style) {
         AppTopBarTitleStyle.MainTab -> {
-            fontSize = 24.ssp
+            fontSize = 20.sp
             font = Font(R.font.google_sans_flex_bold)
             weight = FontWeight.Bold
         }
 
         AppTopBarTitleStyle.Detail -> {
-            fontSize = 20.ssp
+            fontSize = 20.sp
             font = Font(R.font.google_sans_flex_bold)
             weight = FontWeight.Bold
         }
 
         AppTopBarTitleStyle.DetailSemi -> {
-            fontSize = 20.ssp
+            fontSize = 20.sp
             font = Font(R.font.google_sans_flex_semi)
             weight = FontWeight.SemiBold
         }
 
         AppTopBarTitleStyle.Song -> {
-            fontSize = 18.ssp
+            fontSize = 20.sp
             font = Font(R.font.google_sans_flex_semi)
             weight = FontWeight.SemiBold
         }

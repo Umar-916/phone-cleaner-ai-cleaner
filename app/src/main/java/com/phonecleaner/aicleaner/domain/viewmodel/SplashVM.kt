@@ -307,7 +307,7 @@ class SplashVM(
     }
 
     private fun configureProgress() {
-        val adEnabled = !isPremiumUser() && app.isNetworkAvailable()
+        val adEnabled = Constants.ADS_ENABLED && !isPremiumUser() && app.isNetworkAvailable()
         maxProgress = 1.0f
         val steps = if (adEnabled) 10 else 2
         jump = maxProgress / steps
@@ -321,7 +321,7 @@ class SplashVM(
                 override fun run() {
                     ticks++
 
-                    val shouldSkip = isPremiumUser() ||
+                    val shouldSkip = !Constants.ADS_ENABLED || isPremiumUser() ||
                             InterstitialAdManager.interstitialAd != null ||
                             InterstitialAdManager.isInterstitialAdFailed
 

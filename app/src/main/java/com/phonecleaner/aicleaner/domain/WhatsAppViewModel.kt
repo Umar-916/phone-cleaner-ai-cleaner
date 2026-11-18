@@ -6,6 +6,8 @@ import com.phonecleaner.aicleaner.data.whatsapp.WhatsAppScanner
 import com.phonecleaner.aicleaner.domain.model.WaCategory
 import com.phonecleaner.aicleaner.domain.model.WaFile
 import com.phonecleaner.aicleaner.domain.model.WaFilter
+import com.phonecleaner.aicleaner.domain.model.WaTab
+import com.phonecleaner.aicleaner.domain.model.hasSentTab
 import com.phonecleaner.aicleaner.domain.model.WaScanEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,8 +20,11 @@ data class WaData(
     val files: List<WaFile>,
     val selected: Set<String> = emptySet(),
     val openCategory: WaCategory? = null,
-    val filter: WaFilter = WaFilter.ALL
+    val filter: WaFilter = WaFilter.ALL,
+    val tab: WaTab = WaTab.RECEIVED
 ) {
+    val isSelecting: Boolean get() = selected.isNotEmpty()
+
     val byCategory: Map<WaCategory, List<WaFile>> by lazy {
         files.groupBy { it.category }
     }
@@ -27,8 +32,10 @@ data class WaData(
     val visibleFiles: List<WaFile>
         get() {
             val now = System.currentTimeMillis()
-            return byCategory[openCategory].orEmpty()
+            val category = openCategory
+            return byCategory[category].orEmpty()
                 .filter { it.matches(filter, now) }
+                .filter { category?.hasSentTab != true || it.isSent == (tab == WaTab.SENT) }
                 .sortedByDescending { it.sizeBytes }
         }
 
@@ -68,7 +75,9 @@ class WhatsAppViewModel(private val scanner: WhatsAppScanner) : ViewModel() {
         }
     }
 
-    fun openCategory(category: WaCategory?) = updateData { it.copy(openCategory = category, filter = WaFilter.ALL) }
+    fun openCategory(category: WaCategory?) = updateData { it.copy(openCategory = category, filter = WaFilter.ALL, tab = WaTab.RECEIVED, selected = emptySet()) }
+
+    fun setTab(tab: WaTab) = updateData { it.copy(tab = tab, selected = emptySet()) }
 
     fun setFilter(filter: WaFilter) = updateData { it.copy(filter = filter) }
 

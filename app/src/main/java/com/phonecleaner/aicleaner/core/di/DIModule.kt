@@ -24,6 +24,7 @@ import com.phonecleaner.aicleaner.domain.LanguageViewModel
 import com.phonecleaner.aicleaner.domain.ProcessViewModel
 import com.phonecleaner.aicleaner.domain.WhatsAppViewModel
 import com.phonecleaner.aicleaner.domain.PhotoCompressorViewModel
+import com.phonecleaner.aicleaner.domain.AiCategoryViewModel
 import com.phonecleaner.aicleaner.domain.AiCleanupViewModel
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FilesViewModel
@@ -48,7 +49,7 @@ val databaseModule = module {
     single { WhatsAppScanner(androidContext()) }
     single { PhotoCompressor(androidContext()) }
     single { FilesRepository(androidContext()) }
-    single { BatteryRepository(androidContext()) }
+    single { BatteryRepository(androidContext(), get()) }
     single { DeviceInfoRepository(androidContext()) }
     single { AiCleanupScanner(androidContext(), get()) }
 }
@@ -72,7 +73,8 @@ val viewModelModule = module {
     viewModel { FilesViewModel(get(), get()) }
     viewModel { FileCategoryViewModel(get(), get()) }
     viewModel { StorageBrowserViewModel(get(), get()) }
-    viewModel { AiCleanupViewModel(get(), get()) }
+    viewModel { AiCleanupViewModel(get()) }
+    viewModel { AiCategoryViewModel(get()) }
 }
 
 val utilsModule = module {

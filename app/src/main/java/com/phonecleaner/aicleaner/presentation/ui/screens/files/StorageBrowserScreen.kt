@@ -61,6 +61,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.core.utils.AppBackButton
 import com.phonecleaner.aicleaner.presentation.ui.components.AppAlertDialog
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -129,16 +130,14 @@ fun StorageBrowserScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
         Row(modifier = Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            BarIcon(if (state.isSelecting) Icons.Rounded.Close else Icons.Rounded.ArrowBack) {
-                if (state.isSelecting) viewModel.clearSelection() else if (!viewModel.up()) onBack()
-            }
+            if (state.isSelecting) BarIcon(Icons.Rounded.Close) { viewModel.clearSelection() } else AppBackButton(onClick = { if (!viewModel.up()) onBack() })
             Text(
                 when {
                     state.isSelecting -> stringResource(R.string.files_selected_count, state.selected.size)
                     state.isRoot -> stringResource(R.string.files_manager_title)
                     else -> state.directory.substringAfterLast('/')
                 },
-                modifier = Modifier.weight(1f).padding(start = 6.dp),
+                modifier = Modifier.weight(1f).padding(start = 8.3.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.tertiary,

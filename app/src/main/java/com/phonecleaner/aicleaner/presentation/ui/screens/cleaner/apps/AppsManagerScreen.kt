@@ -93,17 +93,6 @@ private val semiBold = AppFonts.SemiBold
 private val medium = AppFonts.Medium
 private val bold = AppFonts.Bold
 
-private fun hasUsageAccess(context: Context): Boolean {
-    val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-    val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-    } else {
-        @Suppress("DEPRECATION")
-        ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-    }
-    return mode == AppOpsManager.MODE_ALLOWED
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppsManagerScreen(
@@ -114,7 +103,6 @@ fun AppsManagerScreen(
     val state by viewModel.state.collectAsState()
     var selected by remember { mutableStateOf(setOf<String>()) }
     var queue by remember { mutableStateOf(listOf<String>()) }
-    var usageGranted by remember { mutableStateOf(hasUsageAccess(context)) }
 
     val apps = state.apps
     val present = remember(apps) { apps.map { it.packageName }.toSet() }
@@ -138,7 +126,6 @@ fun AppsManagerScreen(
         var firstResume = true
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                usageGranted = hasUsageAccess(context)
                 if (firstResume) firstResume = false else viewModel.refresh()
             }
         }
@@ -180,11 +167,6 @@ fun AppsManagerScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (!usageGranted) {
-                PermissionBanner {
-                    tryCatch { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                }
-            }
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 when {
                     state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.primary)
@@ -250,33 +232,6 @@ fun AppsManagerScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PermissionBanner(onAllow: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(softCardColor())
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Rounded.Warning, null, tint = Color(0xFFFFB400), modifier = Modifier.size(24.dp))
-        Spacer(Modifier.size(12.dp))
-        Text(
-            stringResource(R.string.apps_permission_banner),
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 13.sp, lineHeight = 17.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.size(10.dp))
-        Box(
-            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.primary).tapClickable("permission_banner_click", onClick = onAllow).padding(horizontal = 20.dp, vertical = 9.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(stringResource(R.string.apps_allow), color = Color.White, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
         }
     }
 }

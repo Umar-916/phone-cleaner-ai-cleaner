@@ -60,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.core.utils.AppBackButton
 import com.phonecleaner.aicleaner.presentation.ui.components.AppAlertDialog
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -277,12 +278,12 @@ private fun Header(
         modifier = Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconAction(if (state.isSelecting) Icons.Rounded.Close else Icons.Rounded.ArrowBack, onBack)
+        if (state.isSelecting) IconAction(Icons.Rounded.Close, onBack) else AppBackButton(onClick = onBack)
         when {
             state.isSelecting -> {
                 Text(
                     stringResource(R.string.files_selected_count, state.selected.size),
-                    modifier = Modifier.weight(1f).padding(start = 6.dp),
+                    modifier = Modifier.weight(1f).padding(start = 8.3.dp),
                     color = MaterialTheme.colorScheme.tertiary,
                     style = TextStyle(fontSize = 19.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
@@ -322,9 +323,9 @@ private fun Header(
             else -> {
                 Text(
                     title,
-                    modifier = Modifier.weight(1f).padding(start = 6.dp),
+                    modifier = Modifier.weight(1f).padding(start = 8.3.dp),
                     color = MaterialTheme.colorScheme.tertiary,
-                    style = TextStyle(fontSize = 22.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                    style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
                 IconAction(Icons.Rounded.Search, onSearchToggle)
                 IconAction(Icons.Rounded.MoreVert, onMore)

@@ -187,7 +187,7 @@ fun FilesScreen(
                 stringResource(R.string.nav_files),
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.tertiary,
-                style = TextStyle(fontSize = 24.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
             )
             Box(Modifier.size(40.dp).clip(CircleShape).tapClickable("files_screen_click", onClick = onSettings), contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.Settings, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))

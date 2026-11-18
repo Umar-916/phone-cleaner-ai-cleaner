@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.core.utils.AppBackButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -127,9 +128,7 @@ fun TaskCompletedScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(44.dp).clip(CircleShape).tapClickable("task_completed_screen_click", onClick = onSkip), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.ArrowBack, null, tint = MaterialTheme.colorScheme.tertiary)
-            }
+            AppBackButton(onClick = onSkip)
             Spacer(Modifier.weight(1f))
             Text(
                 stringResource(R.string.task_skip),

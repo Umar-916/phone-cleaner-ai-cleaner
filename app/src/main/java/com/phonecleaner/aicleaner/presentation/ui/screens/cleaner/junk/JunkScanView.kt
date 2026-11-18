@@ -1,6 +1,9 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk
 
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
+import com.phonecleaner.aicleaner.presentation.ui.theme.HeatPeach
+import com.phonecleaner.aicleaner.presentation.ui.theme.HeatRed
+import com.phonecleaner.aicleaner.presentation.ui.theme.heatColor
 import com.phonecleaner.aicleaner.core.common.tapPlainClickable
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapClickable
@@ -52,6 +55,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.core.utils.AppBackButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.graphicsLayer
@@ -128,18 +132,24 @@ fun JunkScanView(
     val scanning = state is JunkUiState.Scanning || cleaning != null
     val result = state as? JunkUiState.Result
     val progress = (state as? JunkUiState.Scanning)?.progress
+    val revealed = (state as? JunkUiState.Scanning)?.items.orEmpty()
     val cleanTimed = remember { androidx.compose.animation.core.Animatable(0f) }
     androidx.compose.runtime.LaunchedEffect(cleaning != null) {
-        if (cleaning != null) cleanTimed.animateTo(1f, tween(4200, easing = androidx.compose.animation.core.LinearEasing))
+        if (cleaning != null) cleanTimed.animateTo(1f, tween(6200, easing = androidx.compose.animation.core.LinearEasing))
     }
     val cleanFraction = cleanTimed.value
 
     val timed = remember { androidx.compose.animation.core.Animatable(0f) }
     androidx.compose.runtime.LaunchedEffect(scanning, cleaning == null) {
-        if (scanning && cleaning == null) timed.animateTo(0.99f, tween(2800, easing = androidx.compose.animation.core.LinearEasing))
+        if (scanning && cleaning == null) timed.animateTo(0.99f, tween(6200, easing = androidx.compose.animation.core.LinearEasing))
+    }
+    val scanFraction = if (revealed.isNotEmpty() && progress != null) {
+        0.35f + 0.6f * (progress.fraction / 0.95f).coerceIn(0f, 1f)
+    } else {
+        minOf(timed.value, 0.35f)
     }
     val fraction by animateFloatAsState(
-        if (cleaning != null) 1f - cleanFraction else if (scanning) timed.value else 1f,
+        if (cleaning != null) 1f - cleanFraction else if (scanning) scanFraction else 1f,
         tween(300), label = "junkFraction"
     )
     val isDone = state is JunkUiState.Done
@@ -155,9 +165,10 @@ fun JunkScanView(
         scanning -> fraction.coerceIn(0f, 1f)
         else -> 1f
     }
-    val headerColor by animateColorAsState(if (cleaning != null || isDone) cleanColor(heat) else heatColor(heat), tween(500, easing = androidx.compose.animation.core.LinearEasing), label = "junkHeader")
-    val onHeader = lerp(Ink, Color.White, ((heat - 0.7f) / 0.3f).coerceIn(0f, 1f))
-    val checkColor by animateColorAsState(lerp(OnboardingPalette.purple, Color(0xFFE23B3B), ((heat - 0.7f) / 0.3f).coerceIn(0f, 1f)), tween(500), label = "checkColor")
+    val shade = if (cleaning != null || isDone) heat else Math.pow(heat.toDouble(), 2.6).toFloat()
+    val headerColor by animateColorAsState(if (cleaning != null || isDone) cleanColor(shade) else heatColor(shade), tween(500, easing = androidx.compose.animation.core.LinearEasing), label = "junkHeader")
+    val onHeader = lerp(Ink, Color.White, ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f))
+    val checkColor by animateColorAsState(lerp(OnboardingPalette.purple, Color(0xFFE23B3B), ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f)), tween(500), label = "checkColor")
     val (number, unit) = splitSize(totalBytes)
 
     var confirm by rememberSaveable { mutableStateOf(false) }
@@ -182,15 +193,11 @@ fun JunkScanView(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 run {
-                    Box(
-                        modifier = Modifier.size(44.dp).clip(CircleShape).tapClickable("junk_scan_view_click", enabled = !scanning, onClick = onBack),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (!scanning) Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = onHeader, modifier = Modifier.size(24.dp))
-                    }
+                    if (!scanning) AppBackButton(onClick = onBack) else Spacer(Modifier.size(44.dp))
                 }
                 Text(
                     stringResource(R.string.junk_header_title),
+                    modifier = Modifier.padding(start = 8.3.dp),
                     color = onHeader,
                     style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                 )
@@ -220,15 +227,21 @@ fun JunkScanView(
                 )
                 Spacer(Modifier.height(10.dp))
                 if (scanning) {
-                    Text(
-                        if (cleaning != null) stringResource(R.string.junk_cleaning_label) else stringResource(R.string.junk_scanning_file, progress?.currentPath?.substringAfterLast('/').orEmpty()),
-                        modifier = Modifier.padding(horizontal = 32.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = onHeader.copy(alpha = 0.75f),
-                        style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                    )
+                    val stageRes = listOf(R.string.junk_stage_1, R.string.junk_stage_2, R.string.junk_stage_3, R.string.junk_stage_4, R.string.junk_stage_5)
+                    androidx.compose.animation.Crossfade(
+                        targetState = if (cleaning != null) -1 else (fraction * stageRes.size).toInt().coerceIn(0, stageRes.lastIndex),
+                        label = "junkStage"
+                    ) { stage ->
+                        Text(
+                            if (stage < 0) stringResource(R.string.junk_cleaning_label) else stringResource(stageRes[stage]) + "…",
+                            modifier = Modifier.padding(horizontal = 32.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = onHeader.copy(alpha = 0.8f),
+                            style = TextStyle(fontSize = 13.sp, fontFamily = medium)
+                        )
+                    }
                 } else {
                     Row(
                         modifier = Modifier
@@ -298,17 +311,23 @@ fun JunkScanView(
                         }
                         val isOpen = group in expanded
                         item(key = group.name) {
-                            GroupRow(
+                            Box(Modifier.animateItem()) { GroupRow(
                                 group = group,
                                 bytes = groupBytes,
                                 scanning = scanning,
                                 stepDone = scanning && fraction >= (groupIndex + 1) * 0.23f,
                                 expandable = !scanning && items.isNotEmpty(),
                                 open = isOpen,
-                                checked = !scanning && items.isNotEmpty() && items.all { it.path in result!!.selected },
+                                checked = !scanning && (items.isEmpty() || items.all { it.path in result!!.selected }),
                                 onToggleOpen = { expanded = if (isOpen) expanded - group else expanded + group },
                                 onToggleChecked = { viewModel.toggleGroup(group) }
-                            )
+                            ) }
+                        }
+                        if (scanning) {
+                            val shownNow = revealed.filter { it.category in group.categories }
+                            items(shownNow.size, key = { "r_${group.name}_${shownNow[it].path}" }) { idx ->
+                                Box(Modifier.animateItem()) { RevealRow(shownNow[idx]) }
+                            }
                         }
                         if (!scanning && isOpen) {
                             val shown = items.take(MAX_LISTED)
@@ -331,7 +350,7 @@ fun JunkScanView(
                 }
 
                 if (isDone) {
-                    Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 16.dp + getBannerOverlayHeight())) {
+                    Box(Modifier.fillMaxWidth().padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 22.dp + getBannerOverlayHeight())) {
                         Box(
                             modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp))
                                 .background(Brush.horizontalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
@@ -345,8 +364,7 @@ fun JunkScanView(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 16.dp + getBannerOverlayHeight())
+                            .padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 22.dp + getBannerOverlayHeight())
                     ) {
                         Box(
                             modifier = Modifier
@@ -440,6 +458,18 @@ private fun GroupRow(
 }
 
 @Composable
+private fun RevealRow(item: JunkItem) {
+    val enter = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { enter.animateTo(1f, tween(420, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+    Box(
+        Modifier.graphicsLayer {
+            alpha = enter.value
+            translationX = (1f - enter.value) * size.width * 0.3f
+        }
+    ) { ItemRow(item, true) {} }
+}
+
+@Composable
 private fun ItemRow(item: JunkItem, checked: Boolean, onToggle: () -> Unit) {
     val context = LocalContext.current
     Row(
@@ -510,16 +540,6 @@ private fun RoundCheck(checked: Boolean, onToggle: () -> Unit) {
     }
 }
 
-private val HeatLavender = Color(0xFFEBDDFB)
-private val HeatPeach = Color(0xFFFFE0D2)
-private val HeatPink = Color(0xFFF08A9C)
-private val HeatRed = Color(0xFFE23B3B)
-
-private fun heatColor(t: Float): Color = when {
-    t < 0.35f -> lerp(HeatLavender, HeatPeach, t / 0.35f)
-    t < 0.7f -> lerp(HeatPeach, HeatPink, (t - 0.35f) / 0.35f)
-    else -> lerp(HeatPink, HeatRed, ((t - 0.7f) / 0.3f).coerceIn(0f, 1f))
-}
 
 private val CleanGreen = Color(0xFF7ED8A0)
 

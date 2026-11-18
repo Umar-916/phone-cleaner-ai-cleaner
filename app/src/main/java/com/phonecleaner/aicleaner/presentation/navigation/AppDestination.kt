@@ -47,13 +47,13 @@ sealed class AppDestination : NavKey {
     data object AiCleanup : AppDestination()
 
     @Serializable
+    data class AiCategory(val kind: String) : AppDestination()
+
+    @Serializable
     data object BatteryOptimize : AppDestination()
 
     @Serializable
     data object DeviceInfo : AppDestination()
-
-    @Serializable
-    data object AllDone : AppDestination()
 
     @Serializable
     data class TaskCompleted(val summary: String) : AppDestination()

@@ -14,6 +14,10 @@ enum class WaCategory(@StringRes val label: Int) {
     STATUS(R.string.wa_cat_status)
 }
 
+enum class WaTab { RECEIVED, SENT }
+
+val WaCategory.hasSentTab: Boolean get() = this != WaCategory.STICKERS && this != WaCategory.STATUS
+
 enum class WaFilter(@StringRes val label: Int) {
     ALL(R.string.wa_filter_all),
     LARGE(R.string.wa_filter_large),
@@ -31,6 +35,7 @@ data class WaFile(
     val category: WaCategory,
     val isDuplicate: Boolean
 ) {
+    val isSent: Boolean get() = path.contains("/Sent/", ignoreCase = true)
     val previewKind: WaPreviewKind
         get() = when (name.substringAfterLast('.', "").lowercase()) {
             "jpg", "jpeg", "png", "webp", "gif" -> WaPreviewKind.IMAGE

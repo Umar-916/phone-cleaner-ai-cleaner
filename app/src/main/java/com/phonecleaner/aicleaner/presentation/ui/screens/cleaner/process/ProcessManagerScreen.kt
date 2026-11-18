@@ -1,13 +1,14 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.process
 
-import android.content.Intent
-import android.provider.Settings
-import android.text.format.DateUtils
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,16 +18,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,41 +50,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
 import com.phonecleaner.aicleaner.core.common.postAnalytic
 import com.phonecleaner.aicleaner.core.common.tapClickable
-import com.phonecleaner.aicleaner.core.common.tryCatch
 import com.phonecleaner.aicleaner.domain.BoostState
 import com.phonecleaner.aicleaner.domain.MainTask
 import com.phonecleaner.aicleaner.domain.ProcessViewModel
-import com.phonecleaner.aicleaner.domain.model.RecentApp
+import com.phonecleaner.aicleaner.domain.model.MemoryStats
 import com.phonecleaner.aicleaner.presentation.navigation.getBannerOverlayHeight
-import com.phonecleaner.aicleaner.presentation.ui.components.AppIcon
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBar
 import com.phonecleaner.aicleaner.presentation.ui.components.AppTopBarTitle
 import com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet
 import com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck
 import com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
-import com.phonecleaner.aicleaner.presentation.ui.theme.softCardColor
+import com.phonecleaner.aicleaner.presentation.ui.theme.HeatRed
+import com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette
+import com.phonecleaner.aicleaner.core.utils.AppBackButton
 import org.koin.compose.viewmodel.koinViewModel
 
-private const val MAX_RECENT = 8
 private val bold = AppFonts.Bold
 private val semiBold = AppFonts.SemiBold
 private val medium = AppFonts.Medium
+private val Ink = Color(0xFF250B3B)
 
 @Composable
 fun ProcessManagerScreen(
@@ -92,16 +96,12 @@ fun ProcessManagerScreen(
     val state by viewModel.state.collectAsState()
     var info by remember { mutableStateOf(false) }
     var stopSheet by remember { mutableStateOf(false) }
-    var started by rememberSaveable { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                    viewModel.startPolling()
-                    viewModel.refreshUsage()
-                }
+                Lifecycle.Event.ON_RESUME -> viewModel.startPolling()
                 Lifecycle.Event.ON_PAUSE -> viewModel.stopPolling()
                 else -> Unit
             }
@@ -113,15 +113,9 @@ fun ProcessManagerScreen(
         }
     }
 
-    val start = {
+    val kill = {
         context.postAnalytic("process_boost_click")
         viewModel.boost()
-    }
-    LaunchedEffect(Unit) {
-        if (autoStart && !started) {
-            started = true
-            start()
-        }
     }
 
     val boost = state.boost
@@ -150,55 +144,120 @@ fun ProcessManagerScreen(
                 viewModel.resetBoost()
             }
         }
-        BoostState.Idle -> if (autoStart && !started) {
-            BoostRunningView(0, "")
+        BoostState.Idle -> if (info) {
+            InfoContent(onInfo = { info = false }, onBack = { info = false })
         } else {
-            MemoryContent(
-                info = info,
-                onInfo = { info = !info },
-                onBack = { if (info) info = false else onBack() },
-                usedPercent = (state.memory.usedFraction * 100).toInt(),
-                freeText = Formatter.formatFileSize(context, state.memory.availableBytes),
-                hasUsageAccess = state.hasUsageAccess,
-                recentLoaded = state.recentLoaded,
-                recentApps = state.recentApps,
-                onBoost = start
+            RamContent(
+                memory = state.memory,
+                autoKill = autoStart,
+                onInfo = { info = true },
+                onBack = onBack,
+                onKill = kill
             )
         }
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun MemoryContent(
-    info: Boolean,
+private fun RamContent(
+    memory: MemoryStats,
+    autoKill: Boolean,
     onInfo: () -> Unit,
     onBack: () -> Unit,
-    usedPercent: Int,
-    freeText: String,
-    hasUsageAccess: Boolean,
-    recentLoaded: Boolean,
-    recentApps: List<RecentApp>,
-    onBoost: () -> Unit
+    onKill: () -> Unit
 ) {
     val context = LocalContext.current
+    val target = remember { memory.usedFraction }
+    val progress = remember { Animatable(0f) }
+    var counted by remember { mutableStateOf(false) }
+    var autoDone by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        progress.animateTo(target, tween(3400, easing = FastOutSlowInEasing))
+        counted = true
+    }
+    LaunchedEffect(counted) {
+        if (counted && autoKill && !autoDone) {
+            autoDone = true
+            onKill()
+        }
+    }
+
+    val usedColor = lerp(MaterialTheme.colorScheme.primary, HeatRed, (progress.value * 1.7f).coerceIn(0f, 1f))
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(OnboardingPalette.top, OnboardingPalette.bottom)))
+            .statusBarsPadding()
+            .navigationBarsPadding()
+    ) {
+        Row(Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            AppBackButton(onClick = onBack)
+            Text(
+                stringResource(R.string.feature_process_manager),
+                modifier = Modifier.weight(1f).padding(start = 8.3.dp),
+                color = MaterialTheme.colorScheme.tertiary,
+                style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+            )
+            Box(Modifier.size(40.dp).clip(CircleShape).tapClickable("process_info_icon", onClick = onInfo), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Info, stringResource(R.string.device_info_title), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        ProcessArt(excited = false, modifier = Modifier.padding(horizontal = 4.dp))
+        Spacer(Modifier.weight(1f))
+        MemoryHeadline(
+            usedPercent = (progress.value * 100).toInt(),
+            freeText = Formatter.formatFileSize(context, memory.availableBytes),
+            note = stringResource(R.string.pm_caption),
+            usedColor = usedColor,
+            modifier = Modifier.offset(y = (-10).dp)
+        )
+        Spacer(Modifier.height(10.dp))
+        Box(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 20.dp)) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = counted && !autoKill,
+                enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 2 }
+            ) {
+                TaskKillerButton(onKill)
+            }
+        }
+        Spacer(Modifier.height(24.dp + getBannerOverlayHeight()))
+    }
+}
+
+@Composable
+private fun TaskKillerButton(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(Brush.horizontalGradient(listOf(Color(0xFFF0605F), HeatRed)))
+            .tapClickable("process_task_killer", onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            stringResource(R.string.process_task_killer),
+            color = Color.White,
+            style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun InfoContent(onInfo: () -> Unit, onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             AppTopBar(
-                title = { AppTopBarTitle(stringResource(R.string.feature_process_manager)) },
+                title = { AppTopBarTitle(stringResource(R.string.info_center_title)) },
                 onBack = onBack,
                 actions = {
-                    Box(
-                        Modifier.padding(end = 12.dp).size(40.dp).clip(CircleShape).tapClickable("process_info_icon", onClick = onInfo),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            if (info) Icons.Rounded.Info else Icons.Outlined.Info,
-                            stringResource(R.string.device_info_title),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(26.dp)
-                        )
+                    Box(Modifier.padding(end = 12.dp).size(40.dp).clip(CircleShape).tapClickable("process_info_icon_close", onClick = onInfo), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Info, stringResource(R.string.device_info_title), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
                     }
                 }
             )
@@ -208,134 +267,13 @@ private fun MemoryContent(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val pad by animateDpAsState(if (info) 64.dp else 8.dp, tween(500, easing = FastOutSlowInEasing), label = "artPad")
-            ProcessArt(excited = info, modifier = Modifier.padding(horizontal = pad))
-            if (info) {
-                Spacer(Modifier.height(12.dp))
-                ProcessInfoChat()
-                Spacer(Modifier.height(24.dp + getBannerOverlayHeight()))
-                return@Column
-            }
-            MemoryHeadline(usedPercent, freeText, stringResource(R.string.pm_caption))
-            Spacer(Modifier.height(20.dp))
-            BoostButton(onBoost)
-            Spacer(Modifier.height(28.dp))
-            Text(
-                stringResource(R.string.process_recent_title),
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.tertiary,
-                style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-            )
-            Spacer(Modifier.height(10.dp))
-            when {
-                !hasUsageAccess && recentLoaded -> UsageAccessCard {
-                    tryCatch { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
-                }
-                recentApps.isEmpty() && recentLoaded -> Text(
-                    stringResource(R.string.process_recent_empty),
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
-                    style = TextStyle(fontSize = 14.sp, fontFamily = medium)
-                )
-                else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    recentApps.take(MAX_RECENT).forEach { RecentAppRow(it) }
-                }
-            }
+            val pad by animateDpAsState(64.dp, tween(500, easing = FastOutSlowInEasing), label = "artPad")
+            ProcessArt(excited = true, modifier = Modifier.padding(horizontal = pad))
+            Spacer(Modifier.height(40.dp))
+            Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(1.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.07f)))
+            Spacer(Modifier.height(30.dp))
+            ProcessInfoChat()
             Spacer(Modifier.height(24.dp + getBannerOverlayHeight()))
-        }
-    }
-}
-
-@Composable
-private fun BoostButton(onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFFA66BF0), Color(0xFF7425CF))))
-            .tapClickable("process_free_up", onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            stringResource(R.string.process_boost_action),
-            color = Color.White,
-            style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
-    }
-}
-
-@Composable
-private fun UsageAccessCard(onGrant: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(softCardColor()).padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(Icons.Rounded.Insights, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
-        Spacer(Modifier.height(14.dp))
-        Text(
-            stringResource(R.string.process_usage_body),
-            color = MaterialTheme.colorScheme.tertiary,
-            textAlign = TextAlign.Center,
-            style = TextStyle(fontSize = 15.sp, lineHeight = 22.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .clip(RoundedCornerShape(25.dp))
-                .background(MaterialTheme.colorScheme.primary)
-                .tapClickable("process_usage_access", onClick = onGrant),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(stringResource(R.string.process_usage_grant), color = Color.White, style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
-        }
-    }
-}
-
-@Composable
-private fun RecentAppRow(app: RecentApp) {
-    val context = LocalContext.current
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(softCardColor()).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AppIcon(app.packageName, Modifier.size(44.dp))
-        Spacer(Modifier.size(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                app.label,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.tertiary,
-                style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-            )
-            Text(
-                stringResource(
-                    R.string.process_recent_detail,
-                    DateUtils.getRelativeTimeSpanString(app.lastUsedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),
-                    DateUtils.formatElapsedTime(app.foregroundMs / 1000)
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.surface,
-                style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-            )
-        }
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                .tapClickable("process_recent_manage") {
-                    tryCatch {
-                        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${app.packageName}".toUri()))
-                    }
-                }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(stringResource(R.string.process_manage), color = MaterialTheme.colorScheme.primary, style = TextStyle(fontSize = 12.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
         }
     }
 }

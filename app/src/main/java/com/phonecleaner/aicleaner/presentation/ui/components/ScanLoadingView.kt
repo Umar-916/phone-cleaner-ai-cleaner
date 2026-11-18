@@ -11,6 +11,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.background
@@ -66,6 +69,7 @@ private fun ScanLoadingContent(
     onFull: () -> Unit
 ) {
     val percent = (p.value * 100).toInt()
+    val accent = LocalScanAccent.current
 
     LaunchedEffect(finished, progress) {
         when {
@@ -83,28 +87,51 @@ private fun ScanLoadingContent(
     val sway by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(1900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sway")
     val bob by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "bob")
     val breathe by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1700, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
+    val hoverX by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(2300, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "hoverX")
+    val hoverY by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(1700, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "hoverY")
+    val hoverZ by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1300, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "hoverZ")
 
     Column(
-        Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.top, com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.bottom))).statusBarsPadding(),
+        Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.top, accent?.color ?: com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.top, 0.04f), com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.bottom))).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.weight(0.8f))
-        Image(
-            painter = painterResource(R.drawable.loading_art),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxWidth(0.78f)
-                .aspectRatio(500f / 440f)
-                .graphicsLayer {
-                    translationX = sway * 12.dp.toPx()
-                    translationY = bob * 8.dp.toPx()
-                    rotationZ = sway * 2f
-                    val s = 1f + breathe * 0.03f
-                    scaleX = s; scaleY = s
-                }
-                .featheredEdges(0.14f)
-        )
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth(0.86f).aspectRatio(accent?.art?.let { accent.ratio } ?: (400f / 380f))) {
+            val genericBase = accent?.art == null
+            Image(
+                painter = painterResource(accent?.art ?: R.drawable.load_files_base),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationX = sway * 10.dp.toPx()
+                        translationY = bob * 8.dp.toPx()
+                        rotationZ = sway * 1.5f
+                        val s = 1f + breathe * 0.03f
+                        scaleX = s; scaleY = s
+                    }
+                    .featheredEdges(0.10f)
+            )
+            if (genericBase) {
+                // Only the magnifier hovers over the folder and swells a little, as if searching.
+                Image(
+                    painter = painterResource(R.drawable.load_files_mag),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            translationX = sway * 10.dp.toPx() + hoverX * 7.dp.toPx()
+                            translationY = bob * 8.dp.toPx() + hoverY * 6.dp.toPx()
+                            rotationZ = sway * 1.5f + hoverX * 3f
+                            val s = (1f + breathe * 0.03f) * (1f + 0.07f * hoverZ)
+                            scaleX = s; scaleY = s
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
+                        }
+                )
+            }
+        }
         Spacer(Modifier.weight(1f))
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
             Text(
@@ -126,4 +153,13 @@ private fun ScanLoadingContent(
         )
         Spacer(Modifier.height(120.dp))
     }
+}
+
+class ScanAccent(val color: androidx.compose.ui.graphics.Color, val icon: androidx.compose.ui.graphics.vector.ImageVector, @androidx.annotation.DrawableRes val art: Int? = null, val ratio: Float = 1f)
+
+val LocalScanAccent = androidx.compose.runtime.compositionLocalOf<ScanAccent?> { null }
+
+@Composable
+fun ProvideScanAccent(color: androidx.compose.ui.graphics.Color, icon: androidx.compose.ui.graphics.vector.ImageVector, art: Int? = null, ratio: Float = 1f, content: @Composable () -> Unit) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalScanAccent provides ScanAccent(color, icon, art, ratio), content = content)
 }

@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 sealed interface JunkUiState {
     data object Idle : JunkUiState
-    data class Scanning(val progress: ScanProgress) : JunkUiState
+    data class Scanning(val progress: ScanProgress, val items: List<JunkItem> = emptyList()) : JunkUiState
     data class Result(val items: List<JunkItem>, val selected: Set<String>) : JunkUiState {
         val grouped: Map<JunkCategory, List<JunkItem>> by lazy {
             items.groupBy { it.category }.toSortedMap(compareBy { it.ordinal })
@@ -42,8 +42,10 @@ sealed interface JunkUiState {
 
 class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
-    private companion object { const val MIN_SCAN_MS = 3000L
-        const val MIN_CLEAN_MS = 5000L }
+    private companion object { const val MIN_SCAN_MS = 6500L
+        const val MIN_CLEAN_MS = 6500L
+        const val MIN_REVEAL_MS = 2500L
+        const val REVEAL_LIMIT = 45 }
 
     private val _state = MutableStateFlow<JunkUiState>(JunkUiState.Idle)
     val state: StateFlow<JunkUiState> = _state.asStateFlow()
@@ -61,19 +63,29 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
                         val previous = (_state.value as? JunkUiState.Scanning)?.progress?.fraction ?: 0f
                         _state.value = JunkUiState.Scanning(event.progress.copy(fraction = maxOf(previous, event.progress.fraction)))
                     }
-                    is ScanEvent.Finished -> {
-                        val byCat = event.items.groupBy { it.category }.mapValues { e -> e.value.sumOf { it.sizeBytes } }
-                        _state.value = JunkUiState.Scanning(ScanProgress("", event.items.sumOf { it.sizeBytes }, event.items.size, 0.9f, byCat))
-                        val wait = MIN_SCAN_MS - (android.os.SystemClock.elapsedRealtime() - startedAt)
-                        if (wait > 0) kotlinx.coroutines.delay(wait)
-                        _state.value = JunkUiState.Result(
-                        items = event.items,
-                        selected = event.items.filter { it.category.selectedByDefault }.map { it.path }.toSet()
-                    )
-                    }
+                    is ScanEvent.Finished -> reveal(event.items, startedAt)
                 }
             }
         }
+    }
+
+    private suspend fun reveal(items: List<JunkItem>, startedAt: Long) {
+        val totalBytes = items.sumOf { it.sizeBytes }
+        val byCategory = items.groupBy { it.category }.mapValues { e -> e.value.sumOf { it.sizeBytes } }
+        val shown = items.sortedBy { item -> JunkGroup.entries.indexOfFirst { item.category in it.categories } }.take(REVEAL_LIMIT)
+        val remaining = (MIN_SCAN_MS - (android.os.SystemClock.elapsedRealtime() - startedAt)).coerceAtLeast(MIN_REVEAL_MS)
+        val stepDelay = if (shown.isEmpty()) remaining else (remaining / shown.size).coerceIn(95L, 170L)
+        for (i in 1..shown.size) {
+            val ratio = i.toFloat() / shown.size
+            val progress = ScanProgress("", (totalBytes * ratio).toLong(), (items.size * ratio).toInt(), ratio * 0.95f, byCategory.mapValues { (it.value * ratio).toLong() })
+            _state.value = JunkUiState.Scanning(progress, shown.take(i))
+            kotlinx.coroutines.delay(stepDelay)
+        }
+        if (shown.isEmpty()) kotlinx.coroutines.delay(remaining)
+        _state.value = JunkUiState.Result(
+            items = items,
+            selected = shown.filter { it.category in JunkGroup.entries.first().categories }.map { it.path }.toSet()
+        )
     }
 
     fun toggleItem(item: JunkItem) = updateSelection { _, selected ->

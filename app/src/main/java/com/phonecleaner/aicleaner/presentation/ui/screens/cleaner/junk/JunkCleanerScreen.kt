@@ -107,7 +107,6 @@ private val bold = AppFonts.Bold
 fun JunkCleanerScreen(
     onBack: () -> Unit,
     onTaskCompleted: (String) -> Unit = {},
-    onAllClean: () -> Unit = {},
     viewModel: JunkViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -150,7 +149,7 @@ fun JunkCleanerScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val showsScan = state is JunkUiState.Scanning || state is JunkUiState.Cleaning || state is JunkUiState.Done || (state is JunkUiState.Result && (state as JunkUiState.Result).items.isNotEmpty())
+            val showsScan = state is JunkUiState.Scanning || state is JunkUiState.Cleaning || state is JunkUiState.Done || state is JunkUiState.Result
             if (!showsScan) {
                 AppTopBar(
                     title = { AppTopBarTitle(stringResource(R.string.feature_junk_cleaner)) },
@@ -173,10 +172,15 @@ fun JunkCleanerScreen(
 
                 is JunkUiState.Scanning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Result -> if (current.items.isEmpty()) {
-                    EmptyView(onRescan = {
-                        val d = com.phonecleaner.aicleaner.domain.TaskTracker.done.value
-                        if (com.phonecleaner.aicleaner.domain.MainTask.PROCESS in d && com.phonecleaner.aicleaner.domain.MainTask.BATTERY in d) onAllClean() else viewModel.reset()
-                    })
+                    val summary = stringResource(R.string.junk_already_summary)
+                    androidx.compose.runtime.LaunchedEffect(Unit) { com.phonecleaner.aicleaner.domain.TaskTracker.mark(com.phonecleaner.aicleaner.domain.MainTask.JUNK) }
+                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(
+                        label = stringResource(R.string.junk_already_title),
+                        caption = stringResource(R.string.junk_already_caption)
+                    ) {
+                        onTaskCompleted(summary)
+                        viewModel.reset()
+                    }
                 } else {
                     JunkScanView(current, viewModel, onBack)
                 }
@@ -184,7 +188,7 @@ fun JunkCleanerScreen(
                 is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack)
                 is JunkUiState.Done -> {
                     val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck {
+                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(caption = summary) {
                         viewModel.reset()
                         onTaskCompleted(summary)
                     }
@@ -388,27 +392,6 @@ private fun CategoryCard(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun EmptyView(onRescan: () -> Unit) {
-    CenteredColumn {
-        Icon(Icons.Rounded.FolderOff, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
-        Spacer(Modifier.height(20.dp))
-        Text(
-            stringResource(R.string.junk_empty_title),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.junk_empty_body),
-            color = MaterialTheme.colorScheme.surface,
-            style = TextStyle(fontSize = 14.sp, fontFamily = medium)
-        )
-        Spacer(Modifier.height(28.dp))
-        PrimaryButton(stringResource(R.string.junk_rescan), onRescan)
     }
 }
 

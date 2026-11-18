@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Process
 import com.phonecleaner.aicleaner.domain.model.BoostResult
 import com.phonecleaner.aicleaner.domain.model.MemoryStats
-import com.phonecleaner.aicleaner.domain.model.RecentApp
 import com.phonecleaner.aicleaner.core.common.tryCatch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -27,31 +26,12 @@ class ProcessRepository(private val context: Context) {
         return MemoryStats(totalBytes = info.totalMem, availableBytes = info.availMem)
     }
 
-    fun hasUsageAccess(): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-        } else {
-            @Suppress("DEPRECATION")
-            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
+    fun userAppCount(): Int = userPackages().size
 
-    suspend fun recentApps(): List<RecentApp> = withContext(Dispatchers.IO) {
-        if (!hasUsageAccess()) return@withContext emptyList()
-        val usage = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val now = System.currentTimeMillis()
-        usage.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - RECENT_WINDOW_MS, now)
-            .asSequence()
-            .filter { it.lastTimeUsed > 0 && it.packageName != context.packageName }
-            .groupBy { it.packageName }
-            .mapNotNull { (pkg, stats) ->
-                if (packageManager.getLaunchIntentForPackage(pkg) == null) return@mapNotNull null
-                val label = runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() }.getOrNull() ?: return@mapNotNull null
-                RecentApp(pkg, label, stats.maxOf { it.lastTimeUsed }, stats.sumOf { it.totalTimeInForeground })
-            }
-            .sortedByDescending { it.lastUsedAt }
+    fun killBackground(): Int {
+        val targets = userPackages()
+        targets.forEach { pkg -> tryCatch { activityManager.killBackgroundProcesses(pkg) } }
+        return targets.size
     }
 
     suspend fun boost(onProgress: (percent: Int, label: String) -> Unit = { _, _ -> }): BoostResult = withContext(Dispatchers.IO) {

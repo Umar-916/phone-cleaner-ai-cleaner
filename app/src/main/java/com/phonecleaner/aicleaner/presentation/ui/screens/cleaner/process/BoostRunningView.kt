@@ -54,12 +54,12 @@ private val bold = AppFonts.Bold
 private val semiBold = AppFonts.SemiBold
 
 @Composable
-fun BoostRunningView(percent: Int, label: String, @DrawableRes badge: Int? = null) {
-    com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme { BoostRunningContent(percent, label, badge) }
+fun BoostRunningView(percent: Int, label: String, @DrawableRes badge: Int? = null, valueText: String = "") {
+    com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme { BoostRunningContent(percent, label, badge, valueText) }
 }
 
 @Composable
-private fun BoostRunningContent(percent: Int, label: String, @DrawableRes badge: Int?) {
+private fun BoostRunningContent(percent: Int, label: String, @DrawableRes badge: Int?, valueText: String) {
     val t = rememberInfiniteTransition(label = "boostRipple")
     val ripple by t.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "ripple")
     val bob by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "bob")
@@ -127,6 +127,10 @@ private fun BoostRunningContent(percent: Int, label: String, @DrawableRes badge:
                 color = ink,
                 style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
             )
+        }
+        if (valueText.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Text(valueText, color = MaterialTheme.colorScheme.primary, style = TextStyle(fontSize = 28.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
         }
         Spacer(Modifier.weight(1f))
         Text("$shown %", color = ink, style = TextStyle(fontSize = 34.sp, fontFamily = bold, fontWeight = FontWeight.Bold))

@@ -172,11 +172,10 @@ fun PhotoCompressorScreen(
                     EditorView(state, viewModel, pickImages, startCompress)
                 }
 
-                is CompressPhase.Processing -> FeatureProgress(
-                    title = stringResource(R.string.pc_processing),
+                is CompressPhase.Processing -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
                     progress = if (phase.total == 0) 0f else phase.done.toFloat() / phase.total,
-                    subtitle = "${phase.done} / ${phase.total}",
-                    accent = Brand.Photo
+                    finished = false,
+                    label = stringResource(R.string.pc_processing)
                 )
                 is CompressPhase.Done -> {
                     val savedBytes = (phase.files.sumOf { it.originalBytes } - phase.files.sumOf { it.newBytes }).coerceAtLeast(0L)

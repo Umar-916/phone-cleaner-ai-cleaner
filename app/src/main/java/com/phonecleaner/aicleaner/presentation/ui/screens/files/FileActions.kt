@@ -66,3 +66,11 @@ fun formatDateTime(context: Context, millis: Long): String =
 
 fun List<FileEntry>.groupedByDay(context: Context): List<Pair<String, List<FileEntry>>> =
     groupBy { formatDay(context, it.modifiedMs) }.toList()
+
+fun openUri(context: Context, uri: Uri, mime: String) {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, mime)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    tryCatch { context.startActivity(Intent.createChooser(intent, null)) }
+}

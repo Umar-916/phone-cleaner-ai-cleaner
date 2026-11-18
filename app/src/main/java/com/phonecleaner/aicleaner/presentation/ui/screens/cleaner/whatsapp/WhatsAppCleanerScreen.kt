@@ -65,6 +65,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.phonecleaner.aicleaner.domain.model.WaTab
+import com.phonecleaner.aicleaner.domain.model.hasSentTab
+import com.phonecleaner.aicleaner.presentation.ui.screens.files.openPath
+import com.phonecleaner.aicleaner.domain.model.WaPreviewKind
+import com.phonecleaner.aicleaner.core.common.tapEvent
+import com.phonecleaner.aicleaner.core.common.tapPlainClickable
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -181,7 +193,11 @@ fun WhatsAppCleanerScreen(
     val busy = state is WaUiState.Scanning || state is WaUiState.Cleaning
     var stopSheet by remember { mutableStateOf(false) }
     BackHandler(enabled = busy || data?.openCategory != null) {
-        if (busy) stopSheet = true else viewModel.openCategory(null)
+        when {
+            busy -> stopSheet = true
+            data?.isSelecting == true -> viewModel.clearSelection()
+            else -> viewModel.openCategory(null)
+        }
     }
     androidx.compose.runtime.LaunchedEffect(busy) { if (!busy) stopSheet = false }
     if (stopSheet) com.phonecleaner.aicleaner.presentation.ui.components.StopProcessSheet(
@@ -194,7 +210,22 @@ fun WhatsAppCleanerScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            if (!loading) AppTopBar(
+            if (!loading && data?.isSelecting == true) {
+                androidx.compose.material3.TopAppBar(
+                    title = { Text(stringResource(R.string.files_selected_count, data.selected.size), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        Box(Modifier.padding(start = 8.dp).size(44.dp).clip(CircleShape).tapClickable("wa_clear_selection", onClick = viewModel::clearSelection), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.Close, null, tint = MaterialTheme.colorScheme.tertiary)
+                        }
+                    },
+                    actions = {
+                        Box(Modifier.padding(end = 12.dp).size(44.dp).tapPlainClickable("wa_select_all", onClick = viewModel::toggleVisible), contentAlignment = Alignment.Center) {
+                            com.phonecleaner.aicleaner.presentation.ui.components.RoundCheck(data.selected.containsAll(data.visibleFiles.map { it.path }) && data.visibleFiles.isNotEmpty())
+                        }
+                    },
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+            } else if (!loading) AppTopBar(
                 title = {
                     AppTopBarTitle(
                         stringResource(data?.openCategory?.label ?: R.string.feature_whatsapp)
@@ -284,21 +315,17 @@ private fun ResultView(data: WaData, viewModel: WhatsAppViewModel, onDelete: () 
     val context = LocalContext.current
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f)) {
-            if (data.openCategory == null) {
-                Overview(data, viewModel)
-            } else {
-                CategoryDetail(data, viewModel)
-            }
+            if (data.openCategory == null) Overview(data, viewModel) else CategoryDetail(data, viewModel)
         }
         if (data.selected.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp + getBannerOverlayHeight())
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 14.dp + getBannerOverlayHeight())
             ) {
                 PrimaryButton(
-                    stringResource(R.string.wa_delete_selected, data.selected.size, Formatter.formatFileSize(context, data.selectedBytes)),
+                    stringResource(R.string.ai_delete_selected, data.selected.size, Formatter.formatShortFileSize(context, data.selectedBytes)),
                     onDelete
                 )
             }
@@ -311,124 +338,130 @@ private fun ResultView(data: WaData, viewModel: WhatsAppViewModel, onDelete: () 
 @Composable
 private fun Overview(data: WaData, viewModel: WhatsAppViewModel) {
     val context = LocalContext.current
+    val totalStorage = remember { android.os.Environment.getExternalStorageDirectory().totalSpace }
     val categories = WaCategory.entries.filter { data.byCategory[it].orEmpty().isNotEmpty() }
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF25D366), Color(0xFF128C7E))))
-                    .padding(20.dp)
-            ) {
-                Text(
-                    Formatter.formatFileSize(context, data.totalBytes),
-                    color = Color.White,
-                    style = TextStyle(fontSize = 30.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+        item {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.files_mascot),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(width = 150.dp, height = 136.dp)
                 )
-                Text(
-                    stringResource(R.string.wa_total_summary, data.files.size),
-                    color = Color.White.copy(alpha = 0.9f),
-                    style = TextStyle(fontSize = 14.sp, fontFamily = medium)
-                )
+                Spacer(Modifier.size(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    WaStat(stringResource(R.string.wa_stat_whatsapp), Formatter.formatFileSize(context, data.totalBytes), WhatsAppGreen)
+                    WaStat(stringResource(R.string.ai_stat_total), Formatter.formatFileSize(context, totalStorage), MaterialTheme.colorScheme.surface)
+                }
             }
         }
         items(categories, key = { it.name }) { category ->
             val files = data.byCategory[category].orEmpty()
-            val selectedCount = files.count { it.path in data.selected }
-            Column(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MaterialTheme.colorScheme.secondary)
-                    .tapClickable("overview_click") { viewModel.openCategory(category) }
-                    .padding(14.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(category.icon(), null, tint = category.tint(), modifier = Modifier.size(26.dp))
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(category.label), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                        Text(Formatter.formatShortFileSize(context, files.sumOf { it.sizeBytes }), color = Color(0xFFE5484D), style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
+                    }
                     Box(
-                        modifier = Modifier.size(44.dp).clip(CircleShape).background(category.tint().copy(alpha = 0.15f)),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .tapClickable("wa_view_all_${category.name.lowercase()}") { viewModel.openCategory(category) }
+                            .padding(horizontal = 20.dp, vertical = 9.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(category.icon(), null, tint = category.tint(), modifier = Modifier.size(24.dp))
+                        Text(stringResource(R.string.ai_view_all), color = Color.White, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
                     }
-                    Spacer(Modifier.weight(1f))
-                    AppCheckbox(
-                        checked = selectedCount == files.size,
-                        onCheckedChange = { viewModel.toggleCategory(category) },
-                        modifier = Modifier.size(32.dp)
-                    )
                 }
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    stringResource(category.label),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    style = TextStyle(fontSize = 15.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-                )
-                Text(
-                    stringResource(R.string.wa_category_summary, files.size, Formatter.formatShortFileSize(context, files.sumOf { it.sizeBytes })),
-                    color = MaterialTheme.colorScheme.surface,
-                    style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                )
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.foundation.lazy.LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(files.sortedByDescending { it.sizeBytes }.take(PREVIEW_COUNT), key = { it.path }) { file ->
+                        WaThumb(file, viewModel, Modifier.size(92.dp).clip(RoundedCornerShape(14.dp)).tapClickable("wa_open_preview") { openPath(context, file.path) })
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
+private fun WaStat(label: String, value: String, dot: Color) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
+            Spacer(Modifier.size(8.dp))
+            Text(label, color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 14.sp, fontFamily = medium))
+        }
+        Text(value, modifier = Modifier.padding(start = 16.dp), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 20.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
 private fun CategoryDetail(data: WaData, viewModel: WhatsAppViewModel) {
+    val context = LocalContext.current
+    val category = data.openCategory ?: return
     val visible = data.visibleFiles
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            WaFilter.entries.forEach { filter ->
-                PillChip(stringResource(filter.label), data.filter == filter, { viewModel.setFilter(filter) })
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                stringResource(R.string.wa_files_count, visible.size),
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.surface,
-                style = TextStyle(fontSize = 13.sp, fontFamily = medium)
+        if (category.hasSentTab) {
+            com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs(
+                options = listOf(stringResource(R.string.wa_tab_received), stringResource(R.string.wa_tab_sent)),
+                selectedIndex = if (data.tab == WaTab.RECEIVED) 0 else 1,
+                onSelect = { viewModel.setTab(if (it == 0) WaTab.RECEIVED else WaTab.SENT) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
             )
-            if (visible.isNotEmpty()) {
-                val allSelected = data.selected.containsAll(visible.map { it.path })
-                TextButton(onClick = viewModel::toggleVisible.tapped("category_detail_tap")) {
-                    Text(
-                        stringResource(if (allSelected) R.string.junk_deselect_all else R.string.junk_select_all),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
-                    )
-                }
-            }
         }
-
         if (visible.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    stringResource(R.string.wa_no_files_filter),
-                    color = MaterialTheme.colorScheme.surface,
-                    style = TextStyle(fontSize = 15.sp, fontFamily = medium)
-                )
+            Column(Modifier.fillMaxSize().padding(bottom = 80.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Image(painterResource(R.drawable.files_mascot), null, contentScale = ContentScale.Fit, modifier = Modifier.size(width = 190.dp, height = 172.dp))
+                Spacer(Modifier.height(16.dp))
+                Text(stringResource(R.string.wa_no_file_found), color = MaterialTheme.colorScheme.tertiary, style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
             }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 items(visible, key = { it.path }) { file ->
-                    FileCell(file, file.path in data.selected, viewModel) { viewModel.toggle(file) }
+                    val selected = file.path in data.selected
+                    Column {
+                        WaThumb(
+                            file, viewModel,
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(14.dp))
+                                .combinedClickable(
+                                    onClick = { tapEvent("wa_file_open"); if (data.isSelecting) viewModel.toggle(file) else openPath(context, file.path) },
+                                    onLongClick = { viewModel.toggle(file) }
+                                )
+                        )
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                Formatter.formatShortFileSize(context, file.sizeBytes),
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                style = TextStyle(fontSize = 12.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+                            )
+                            Box(Modifier.size(32.dp).tapPlainClickable("wa_file_select") { viewModel.toggle(file) }, contentAlignment = Alignment.Center) {
+                                com.phonecleaner.aicleaner.presentation.ui.components.RoundCheck(selected, size = 22.dp)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -436,21 +469,14 @@ private fun CategoryDetail(data: WaData, viewModel: WhatsAppViewModel) {
 }
 
 @Composable
-private fun FileCell(file: WaFile, selected: Boolean, viewModel: WhatsAppViewModel, onToggle: () -> Unit) {
-    val context = LocalContext.current
+private fun WaThumb(file: WaFile, viewModel: WhatsAppViewModel, modifier: Modifier) {
     val thumb by produceState(initialValue = thumbCache[file.path], file.path) {
         if (value == null) {
-            value = withContext(Dispatchers.IO) { viewModel.thumbnail(file, 256)?.asImageBitmap() }
+            value = withContext(Dispatchers.IO) { viewModel.thumbnail(file, 320)?.asImageBitmap() }
                 ?.also { thumbCache.put(file.path, it) }
         }
     }
-    Box(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(12.dp))
-            .background(file.category.tint().copy(alpha = 0.12f))
-            .tapClickable("file_cell_click", onClick = onToggle)
-    ) {
+    Box(modifier.background(file.category.tint().copy(alpha = 0.12f))) {
         val image = thumb
         if (image != null) {
             Image(bitmap = image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -460,7 +486,7 @@ private fun FileCell(file: WaFile, selected: Boolean, viewModel: WhatsAppViewMod
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(file.category.icon(), null, tint = file.category.tint(), modifier = Modifier.size(30.dp))
+                Icon(file.category.icon(), null, tint = file.category.tint(), modifier = Modifier.size(32.dp))
                 Spacer(Modifier.height(4.dp))
                 Text(
                     file.name,
@@ -472,24 +498,16 @@ private fun FileCell(file: WaFile, selected: Boolean, viewModel: WhatsAppViewMod
                 )
             }
         }
-        AppCheckbox(
-            checked = selected,
-            onCheckedChange = { onToggle() },
-            modifier = Modifier.align(Alignment.TopStart).size(36.dp)
-        )
-        Text(
-            Formatter.formatShortFileSize(context, file.sizeBytes),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(4.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color.Black.copy(alpha = 0.55f))
-                .padding(horizontal = 5.dp, vertical = 1.dp),
-            color = Color.White,
-            style = TextStyle(fontSize = 10.sp, fontFamily = semiBold)
-        )
+        if (file.previewKind == WaPreviewKind.VIDEO) {
+            Box(
+                Modifier.align(Alignment.Center).size(30.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Rounded.PlayArrow, null, tint = Color.White, modifier = Modifier.size(20.dp)) }
+        }
     }
 }
+
+private const val PREVIEW_COUNT = 8
 
 @Composable
 private fun NotFoundView(onRescan: () -> Unit) {

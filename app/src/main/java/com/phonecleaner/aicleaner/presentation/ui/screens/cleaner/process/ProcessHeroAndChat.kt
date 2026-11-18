@@ -44,9 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -72,14 +74,12 @@ private val bold = AppFonts.Bold
 private val semiBold = AppFonts.SemiBold
 private val medium = AppFonts.Medium
 
-private const val ART_W = 590f
-private const val ART_H = 470f
+private const val ART_W = 568f
+private const val ART_H = 530f
 
 @Composable
 fun ProcessArt(excited: Boolean, modifier: Modifier = Modifier) {
     val base = ImageBitmap.imageResource(R.drawable.pm_art)
-    val green = ImageBitmap.imageResource(R.drawable.pm_planet_g)
-    val yellow = ImageBitmap.imageResource(R.drawable.pm_planet_y)
     val t = rememberInfiniteTransition(label = "pmArt")
     val float by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "float")
     val orbit by t.animateFloat(0f, 1f, infiniteRepeatable(tween(4200, easing = LinearEasing)), label = "orbit")
@@ -105,20 +105,21 @@ fun ProcessArt(excited: Boolean, modifier: Modifier = Modifier) {
     ) {
         val k = size.width / ART_W
         scale(1f + 0.05f * pop, pivot = Offset(size.width / 2f, size.height / 2f)) {
-            drawImage(base, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
-            drawPlanet(green, 18f, 135f, k, sin(2f * PI.toFloat() * orbit) * 5f, sin(2f * PI.toFloat() * (orbit + 0.25f)) * 4f)
-            drawPlanet(yellow, 389f, 330f, k, sin(2f * PI.toFloat() * (orbit + 0.5f)) * 4f, sin(2f * PI.toFloat() * (orbit + 0.75f)) * 5f)
-            sparkle(448f, 78f, 11f, k, twinkle)
-            sparkle(140f, 242f, 9f, k, 1f - twinkle)
-            sparkle(493f, 270f, 10f, k, twinkle)
-            sparkle(526f, 130f, 8f, k, 1f - twinkle)
+            val tap = sin(2f * PI.toFloat() * orbit)
+            drawCircle(
+                Color(0xFFFF8FB1).copy(alpha = 0.10f + 0.14f * (tap * 0.5f + 0.5f)),
+                radius = 58f * k * (1f + 0.08f * tap),
+                center = Offset(398f * k, 188f * k)
+            )
+            // The whole picture leans a touch towards the chip, like the robot pointing at it.
+            rotate(tap * 0.9f, pivot = Offset(size.width * 0.35f, size.height * 0.7f)) {
+                drawImage(base, dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.High)
+            }
+            sparkle(320f, 108f, 10f, k, twinkle)
+            sparkle(448f, 228f, 8f, k, 1f - twinkle)
+            sparkle(55f, 318f, 9f, k, twinkle)
+            sparkle(100f, 366f, 7f, k, 1f - twinkle)
         }
-    }
-}
-
-private fun DrawScope.drawPlanet(bmp: ImageBitmap, x: Float, y: Float, k: Float, dx: Float, dy: Float) {
-    translate(left = dx * k, top = dy * k) {
-        drawImage(bmp, dstOffset = IntOffset((x * k).toInt(), (y * k).toInt()), dstSize = IntSize((bmp.width * k).toInt(), (bmp.height * k).toInt()))
     }
 }
 
@@ -138,18 +139,18 @@ private fun DrawScope.sparkle(cx: Float, cy: Float, r: Float, k: Float, phase: F
 }
 
 @Composable
-fun MemoryHeadline(usedPercent: Int, freeText: String, note: String) {
+fun MemoryHeadline(usedPercent: Int, freeText: String, note: String, usedColor: Color = MaterialTheme.colorScheme.primary, modifier: Modifier = Modifier) {
     val (freeNumber, freeUnit) = freeText.split(" ").let { it.getOrElse(0) { freeText } to it.getOrElse(1) { "" } }
-    val accent = MaterialTheme.colorScheme.primary
+    val accent = usedColor
     val ink = MaterialTheme.colorScheme.tertiary
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(R.string.process_used_memory), color = accent, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
                 Spacer(Modifier.height(4.dp))
                 Text("$usedPercent%", color = accent, style = TextStyle(fontSize = 30.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
             }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(R.string.process_free_memory), color = ink, style = TextStyle(fontSize = 14.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold))
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
@@ -159,7 +160,7 @@ fun MemoryHeadline(usedPercent: Int, freeText: String, note: String) {
             }
         }
         Spacer(Modifier.height(14.dp))
-        Text(note, color = MaterialTheme.colorScheme.surface, textAlign = TextAlign.Center, style = TextStyle(fontSize = 13.sp, fontFamily = medium))
+        Text(note, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), textAlign = TextAlign.Center, style = TextStyle(fontSize = 13.sp, fontFamily = medium))
     }
 }
 
@@ -194,7 +195,7 @@ fun ProcessInfoChat(modifier: Modifier = Modifier) {
         for (i in 1..text.length) { typedAnswer = i; delay(16) }
     }
 
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Column(modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
         BotRow {
             Text(
                 greeting.take(typedGreeting),
@@ -202,11 +203,11 @@ fun ProcessInfoChat(modifier: Modifier = Modifier) {
                 style = TextStyle(fontSize = 15.sp, lineHeight = 21.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
             )
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(22.dp))
         val alpha by animateFloatAsState(if (showTopics) 1f else 0f, tween(450), label = "topicsAlpha")
-        Column(Modifier.graphicsLayer { this.alpha = alpha; translationY = (1f - alpha) * 16.dp.toPx() }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.graphicsLayer { this.alpha = alpha; translationY = (1f - alpha) * 16.dp.toPx() }, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             topics.chunked(2).forEachIndexed { row, pair ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     pair.forEachIndexed { col, topic ->
                         val index = row * 2 + col
                         TopicChip(stringResource(topic.question), selected == index, Modifier.weight(1f), index) {
@@ -216,7 +217,7 @@ fun ProcessInfoChat(modifier: Modifier = Modifier) {
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(26.dp))
         if (selected >= 0) {
             BotRow {
                 Text(

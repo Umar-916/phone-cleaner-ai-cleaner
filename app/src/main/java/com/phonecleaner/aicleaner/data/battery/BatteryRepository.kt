@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import com.phonecleaner.aicleaner.data.process.ProcessRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -37,7 +38,7 @@ enum class VolumeStream(val stream: Int) {
 
 data class VolumeLevel(val stream: VolumeStream, val current: Int, val max: Int)
 
-class BatteryRepository(private val context: Context) {
+class BatteryRepository(private val context: Context, private val processes: ProcessRepository) {
 
     private val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -97,7 +98,32 @@ class BatteryRepository(private val context: Context) {
         }
     }
 
-    enum class SaverStep { TIMEOUT, SOUND, BRIGHTNESS, VIBRATION }
+    enum class SaverStep { TIMEOUT, SOUND, BRIGHTNESS, VIBRATION, BACKGROUND }
+
+    class Reduction(val from: Int, val to: Int, val unit: String) {
+        fun format(value: Int) = "$value$unit"
+    }
+
+    fun reduction(step: SaverStep): Reduction = when (step) {
+        SaverStep.TIMEOUT -> {
+            val now = (screenTimeoutMs() / 1000).coerceAtLeast(0)
+            Reduction(now, minOf(now, 30), " s")
+        }
+        SaverStep.SOUND -> {
+            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+            val now = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) * 100 / max
+            Reduction(now, minOf(now, 60), "%")
+        }
+        SaverStep.BRIGHTNESS -> {
+            val now = brightness() * 100 / 255
+            Reduction(now, minOf(now, 40), "%")
+        }
+        SaverStep.VIBRATION -> {
+            val on = runCatching { Settings.System.getInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED) == 1 }.getOrDefault(false)
+            Reduction(if (on) 100 else 0, 0, "%")
+        }
+        SaverStep.BACKGROUND -> Reduction(processes.userAppCount(), 0, " apps")
+    }
 
     fun applySaver(step: SaverStep): Boolean = runCatching {
         when (step) {
@@ -109,7 +135,12 @@ class BatteryRepository(private val context: Context) {
                 }
                 true
             }
-            SaverStep.BRIGHTNESS -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC)
+            SaverStep.BRIGHTNESS -> canWriteSettings() && run {
+                val target = 102
+                Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+                if (brightness() > target) Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, target) else true
+            }
+            SaverStep.BACKGROUND -> processes.killBackground() >= 0
             SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
         }
     }.getOrDefault(false)

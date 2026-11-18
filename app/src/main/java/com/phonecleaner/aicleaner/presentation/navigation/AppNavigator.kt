@@ -31,6 +31,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -73,6 +76,7 @@ import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.duplicates.Dup
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk.JunkCleanerScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FileCategoryScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai.AiCleanupScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai.AiCategoryScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.completed.TaskCompletedScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.completed.OtherFeature
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.battery.BatteryOptimizeScreen
@@ -104,6 +108,7 @@ fun AppNavigator(
     var showExitDialog by remember { mutableStateOf(false) }
     var showOnboardingAdLoading by remember { mutableStateOf(false) }
     val navGuard = rememberClickGuard()
+    val backGuard = rememberClickGuard(350L)
     val context = LocalContext.current
     val activity = LocalActivity.current
     val onboardingScope = rememberCoroutineScope()
@@ -159,9 +164,15 @@ fun AppNavigator(
     }
 
     fun navigateBack() {
-        tryCatch {
-            if (backStack.size > 1) {
-                backStack.removeLastOrNull()
+        backGuard.run {
+            tryCatch {
+                when {
+                    backStack.size > 1 -> backStack.removeLastOrNull()
+                    backStack.lastOrNull().let { it != null && it != AppDestination.Home && it != AppDestination.Splash } -> {
+                        backStack.clear()
+                        backStack.add(AppDestination.Home)
+                    }
+                }
             }
         }
     }
@@ -175,7 +186,7 @@ fun AppNavigator(
                 else -> null
             }
             val extra = when (top) {
-                is AppDestination.AiCleanup -> ExtraTask.AI
+                is AppDestination.AiCleanup, is AppDestination.AiCategory -> ExtraTask.AI
                 is AppDestination.WhatsAppCleaner -> ExtraTask.WHATSAPP
                 is AppDestination.Duplicates -> ExtraTask.DUPLICATES
                 else -> null
@@ -332,11 +343,11 @@ fun AppNavigator(
                             }
 
                             is AppDestination.WhatsAppCleaner -> NavEntry(route) {
-                                WhatsAppCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
+                                com.phonecleaner.aicleaner.presentation.ui.components.ProvideScanAccent(com.phonecleaner.aicleaner.presentation.ui.theme.Brand.WhatsApp, androidx.compose.material.icons.Icons.Rounded.Forum, com.phonecleaner.aicleaner.R.drawable.load_wa, 520f / 410f) { WhatsAppCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) }) }
                             }
 
                             is AppDestination.Duplicates -> NavEntry(route) {
-                                DuplicatesScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
+                                com.phonecleaner.aicleaner.presentation.ui.components.ProvideScanAccent(com.phonecleaner.aicleaner.presentation.ui.theme.Brand.Duplicates, androidx.compose.material.icons.Icons.Rounded.ContentCopy) { DuplicatesScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) }) }
                             }
 
                             is AppDestination.ProcessManager -> NavEntry(route) {
@@ -348,7 +359,7 @@ fun AppNavigator(
                             }
 
                             is AppDestination.JunkCleaner -> NavEntry(route) {
-                                JunkCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) }, onAllClean = { replaceTop(AppDestination.AllDone) })
+                                JunkCleanerScreen(onBack = { navigateBack() }, onTaskCompleted = { finishTask(it) })
                             }
 
                             is AppDestination.Setting -> NavEntry(route) {
@@ -386,11 +397,19 @@ fun AppNavigator(
                             }
 
                             is AppDestination.AiCleanup -> NavEntry(route) {
-                                AiCleanupScreen(
+                                com.phonecleaner.aicleaner.presentation.ui.components.ProvideScanAccent(com.phonecleaner.aicleaner.presentation.ui.theme.Brand.Ai, androidx.compose.material.icons.Icons.Rounded.AutoAwesome, com.phonecleaner.aicleaner.R.drawable.load_ai, 500f / 390f) { AiCleanupScreen(
                                     onBack = { navigateBack() },
                                     onOpenDuplicates = { replaceTop(AppDestination.Duplicates) },
+                                    onOpenCategory = { navigateTo(AppDestination.AiCategory(it.name)) }
+                                ) }
+                            }
+
+                            is AppDestination.AiCategory -> NavEntry(route) {
+                                com.phonecleaner.aicleaner.presentation.ui.components.ProvideScanAccent(com.phonecleaner.aicleaner.presentation.ui.theme.Brand.Ai, androidx.compose.material.icons.Icons.Rounded.AutoAwesome, com.phonecleaner.aicleaner.R.drawable.load_ai, 500f / 390f) { AiCategoryScreen(
+                                    kind = com.phonecleaner.aicleaner.data.ai.AiKind.valueOf(route.kind),
+                                    onBack = { navigateBack() },
                                     onFinished = { finishTask(it) }
-                                )
+                                ) }
                             }
 
                             is AppDestination.BatteryOptimize -> NavEntry(route) {
@@ -420,18 +439,6 @@ fun AppNavigator(
                                     }
                                 )
                             }
-
-                            is AppDestination.AllDone -> NavEntry(route) {
-                                com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(
-                                    label = stringResource(R.string.congrats_text)
-                                ) {
-                                    tryCatch {
-                                        while (backStack.size > 1 && backStack.lastOrNull() != AppDestination.Home) backStack.removeLastOrNull()
-                                        if (backStack.lastOrNull() != AppDestination.Home) { backStack.clear(); backStack.add(AppDestination.Home) }
-                                    }
-                                }
-                            }
-
                             is AppDestination.DeviceInfo -> NavEntry(route) {
                                 com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme {
                                     DeviceInfoScreen(
