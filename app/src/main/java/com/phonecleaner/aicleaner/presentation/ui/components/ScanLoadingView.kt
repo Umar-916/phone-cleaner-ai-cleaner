@@ -95,8 +95,8 @@ private fun ScanLoadingContent(
         Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.top, accent?.color ?: com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.top, 0.04f), com.phonecleaner.aicleaner.presentation.ui.theme.OnboardingPalette.bottom))).statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.weight(0.8f))
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth(0.86f).aspectRatio(accent?.art?.let { accent.ratio } ?: (400f / 380f))) {
+        Spacer(Modifier.weight(0.45f))
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth(if (accent?.art != null) 0.74f else 0.62f).aspectRatio(accent?.art?.let { accent.ratio } ?: (400f / 380f))) {
             val genericBase = accent?.art == null
             Image(
                 painter = painterResource(accent?.art ?: R.drawable.load_files_base),
