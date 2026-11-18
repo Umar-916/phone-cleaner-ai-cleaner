@@ -75,9 +75,5 @@
     <string name="folder_choose">Choose folder</string>
     <string name="home_orb_title">Phone Boost</string>
     <string name="home_orb_action">Boost</string>
-    <string name="battery_policy_title">Allow Do Not Disturb access</string>
-    <string name="battery_policy_body">To switch your ringer to vibrate while saving power, Android needs you to allow Do Not Disturb access for this app.</string>
-    <string name="battery_policy_b1">Only the ringer mode is changed</string>
-    <string name="battery_policy_b2">Your calls and messages are never read</string>
     <string name="junk_start_title">Scanning.</string>
 </resources>

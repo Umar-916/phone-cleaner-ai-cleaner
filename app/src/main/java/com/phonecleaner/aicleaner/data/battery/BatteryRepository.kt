@@ -57,10 +57,6 @@ class BatteryRepository(private val context: Context, private val processes: Pro
 
     fun canWriteSettings(): Boolean = Settings.System.canWrite(context)
 
-    private val notificationManager get() = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-
-    fun hasPolicyAccess(): Boolean = notificationManager.isNotificationPolicyAccessGranted
-
     fun screenTimeoutMs(): Int = runCatching { Settings.System.getInt(resolver, Settings.System.SCREEN_OFF_TIMEOUT) }.getOrDefault(0)
 
     fun setScreenTimeout(ms: Int): Boolean = canWriteSettings() &&
@@ -107,16 +103,13 @@ class BatteryRepository(private val context: Context, private val processes: Pro
 
     fun applySaver(step: SaverStep): Boolean = runCatching {
         when (step) {
-            SaverStep.TIMEOUT -> setScreenTimeout(5_000)
             SaverStep.SOUND -> {
-                listOf(AudioManager.STREAM_MUSIC, AudioManager.STREAM_RING, AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
+                listOf(AudioManager.STREAM_MUSIC, AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
                     .forEach { stream -> runCatching { audioManager.setStreamVolume(stream, 0, 0) } }
-                if (hasPolicyAccess() && audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) runCatching { audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE }
                 true
             }
             SaverStep.BRIGHTNESS -> setBrightness(0)
-            SaverStep.BACKGROUND -> processes.killBackground() >= 0
-            SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
+            SaverStep.TIMEOUT, SaverStep.VIBRATION, SaverStep.BACKGROUND -> true
         }
     }.getOrDefault(false)
 

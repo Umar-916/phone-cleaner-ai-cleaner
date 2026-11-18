@@ -136,19 +136,13 @@ fun BatteryOptimizeScreen(
     var phase by remember { mutableStateOf<Phase>(Phase.Idle) }
     var job by remember { mutableStateOf<Job?>(null) }
     var needsPermission by remember { mutableStateOf(false) }
-    var needsPolicy by remember { mutableStateOf(false) }
-    var policyAsked by remember { mutableStateOf(false) }
+    var pendingStart by remember { mutableStateOf(false) }
     var stopSheet by remember { mutableStateOf(false) }
     val summary = stringResource(R.string.bm_done_summary)
 
     fun start() {
         if (!repository.canWriteSettings()) {
             needsPermission = true
-            return
-        }
-        if (!repository.hasPolicyAccess() && !policyAsked) {
-            policyAsked = true
-            needsPolicy = true
             return
         }
         context.postAnalytic("battery_optimize_start")
@@ -164,6 +158,18 @@ fun BatteryOptimizeScreen(
             TaskTracker.mark(MainTask.BATTERY)
             phase = Phase.Done
         }
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && pendingStart) {
+                pendingStart = false
+                if (repository.canWriteSettings() && phase is Phase.Idle) start()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val running = phase is Phase.Running
@@ -184,26 +190,10 @@ fun BatteryOptimizeScreen(
             accent = Brand.Battery,
             onAllow = {
                 needsPermission = false
+                pendingStart = true
                 tryCatch { context.startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, "package:${context.packageName}".toUri())) }
             },
             onDismiss = { needsPermission = false }
-        )
-    }
-
-    if (needsPolicy) {
-        PermissionPrompt(
-            icon = Icons.Rounded.Settings,
-            title = stringResource(R.string.battery_policy_title),
-            body = stringResource(R.string.battery_policy_body),
-            bullets = listOf(stringResource(R.string.battery_policy_b1), stringResource(R.string.battery_policy_b2)),
-            allowLabel = stringResource(R.string.perm_allow),
-            notNowLabel = stringResource(R.string.perm_not_now),
-            accent = Brand.Battery,
-            onAllow = {
-                needsPolicy = false
-                tryCatch { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) }
-            },
-            onDismiss = { needsPolicy = false; start() }
         )
     }
 
