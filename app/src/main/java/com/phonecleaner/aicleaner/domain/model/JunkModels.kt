@@ -35,7 +35,8 @@ data class ScanProgress(
     val foundBytes: Long,
     val foundCount: Int,
     val fraction: Float = 0f,
-    val categoryBytes: Map<JunkCategory, Long> = emptyMap()
+    val categoryBytes: Map<JunkCategory, Long> = emptyMap(),
+    val sample: List<JunkItem> = emptyList()
 )
 
 sealed interface ScanEvent {

@@ -62,12 +62,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.rotate as rotateDraw
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.withStyle
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +98,9 @@ private val PeachTop = Color(0xFFFFE0D2)
 private val PinkTop = Color(0xFFF9D4EA)
 private val PurpleTop = Color(0xFFB985F0)
 private const val MAX_LISTED = 1000
+private const val RADAR_SCALE = 0.8f // 1f = old size
+private val ENTER_EASING = androidx.compose.animation.core.CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+private const val ROW_STAGGER_MS = 110L
 
 private fun groupIcon(group: JunkGroup): Pair<ImageVector, Color> = when (group) {
     JunkGroup.RESIDUALS -> Icons.Rounded.Description to Color(0xFFB5179E)
@@ -103,15 +109,28 @@ private fun groupIcon(group: JunkGroup): Pair<ImageVector, Color> = when (group)
     JunkGroup.TRASH -> Icons.Rounded.Delete to Color(0xFFC62828)
 }
 
-private fun splitSize(bytes: Long): Pair<String, String> {
-    val units = listOf("B", "KB", "MB", "GB", "TB")
-    var value = bytes.toDouble()
-    var unit = 0
-    while (value >= 1000 && unit < units.lastIndex) {
-        value /= 1024.0
-        unit++
+// Same formatter as the group rows and the Clean button, so every number on screen matches.
+private fun splitSize(context: android.content.Context, bytes: Long): Pair<String, String> {
+    val text = Formatter.formatFileSize(context, bytes)
+    val cut = text.lastIndexOfAny(charArrayOf(' ', ' ', ' '))
+    return if (cut < 0) text to "" else text.substring(0, cut) to text.substring(cut + 1)
+}
+
+/** "Scanning" + 1..3 animated dots; unseen dots are transparent so the text never shifts. */
+@Composable
+private fun animatedDots(base: String): androidx.compose.ui.text.AnnotatedString {
+    val v by androidx.compose.animation.core.rememberInfiniteTransition(label = "dots").animateFloat(
+        0f, 3f,
+        androidx.compose.animation.core.infiniteRepeatable(tween(1500, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "dotsValue"
+    )
+    val n = v.toInt().coerceIn(0, 2) + 1
+    val clean = base.trimEnd('.', '…', ' ')
+    return androidx.compose.ui.text.buildAnnotatedString {
+        append(clean)
+        append(".".repeat(n))
+        withStyle(androidx.compose.ui.text.SpanStyle(color = Color.Transparent)) { append(".".repeat(3 - n)) }
     }
-    return (if (unit == 0) "%.0f".format(value) else "%.1f".format(value)) to units[unit]
 }
 
 @Composable
@@ -119,7 +138,8 @@ fun JunkScanView(
     state: JunkUiState,
     viewModel: JunkViewModel,
     onBack: () -> Unit,
-    onDone: () -> Unit = {}
+    onDone: () -> Unit = {},
+    onJunkFree: () -> Unit = {}
 ) {
     val context = LocalContext.current
     androidx.compose.runtime.LaunchedEffect(state is JunkUiState.Done) {
@@ -157,10 +177,11 @@ fun JunkScanView(
     androidx.compose.runtime.LaunchedEffect(scanning, cleaning == null) {
         if (scanning && cleaning == null) timed.animateTo(0.99f, tween(6200, easing = androidx.compose.animation.core.LinearEasing))
     }
-    val scanFraction = if (revealed.isNotEmpty() && progress != null) {
-        0.35f + 0.65f * (progress.fraction / 0.95f).coerceIn(0f, 1f)
+    // Follows the real scan; the timer only creeps a little until the first progress arrives.
+    val scanFraction = if (progress != null && progress.fraction > 0f) {
+        (progress.fraction / 0.95f).coerceIn(0f, 1f) * 0.99f
     } else {
-        minOf(timed.value, 0.35f)
+        minOf(timed.value, 0.04f)
     }
     val fraction by animateFloatAsState(
         if (cleaning != null) 1f - cleanFraction else if (scanning) scanFraction else 1f,
@@ -170,21 +191,27 @@ fun JunkScanView(
     val totalBytes = when {
         isDone -> 0L
         cleaning != null -> (cleaning.totalBytes * (1f - cleanFraction)).toLong()
-        scanning -> progress?.foundBytes ?: 0L
+        // Header = sum of the group rows, so the top number always matches what is listed below.
+        scanning -> progress?.categoryBytes?.values?.sum() ?: 0L
         else -> result?.totalBytes ?: 0L
     }
+    // Nothing found (already cleaned): the result is "junk free", shown in the calm green header.
+    val junkFree = result != null && result.items.isEmpty()
     val heat = when {
-        isDone -> 0f
+        isDone || junkFree -> 0f
         cleaning != null -> 1f - cleanFraction
-        scanning -> fraction.coerceIn(0f, 1f)
+        // No junk found so far: keep the header calm instead of heating up to red.
+        scanning -> if (totalBytes == 0L) minOf(fraction, 0.3f) else fraction.coerceIn(0f, 1f)
         else -> 1f
     }
-    val shade = if (cleaning != null || isDone) heat else Math.pow(heat.toDouble(), 2.6).toFloat()
-    val headerColor by animateColorAsState(if (cleaning != null || isDone) cleanColor(shade) else lerp(Color(0xFFE2CDF8), heatColor(shade), if (start) 0f else (shade * 6f).coerceIn(0f, 1f)), tween(500, easing = androidx.compose.animation.core.LinearEasing), label = "junkHeader")
-    val onHeader by animateColorAsState(lerp(Ink, Color.White, ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f)), tween(600, easing = androidx.compose.animation.core.LinearEasing), label = "junkOnHeader")
+    val shade = if (cleaning != null || isDone || junkFree) heat else Math.pow(heat.toDouble(), 2.6).toFloat()
+    val headerColor by animateColorAsState(if (cleaning != null || isDone || junkFree) cleanColor(shade) else lerp(Color(0xFFE2CDF8), heatColor(shade), if (start) 0f else (shade * 6f).coerceIn(0f, 1f)), tween(500, easing = androidx.compose.animation.core.LinearEasing), label = "junkHeader")
+    // Pick text colour from the header's actual luminance: a hard switch avoids the muddy
+    // in-between colours a blend produced on pink/red backgrounds.
+    val onHeader = if (headerColor.luminance() < 0.2f) Color.White else Ink
     val checkColor by animateColorAsState(lerp(OnboardingPalette.purple, Color(0xFFE23B3B), ((shade - 0.7f) / 0.3f).coerceIn(0f, 1f)), tween(500), label = "checkColor")
-    val shownBytes by animateFloatAsState(totalBytes.toFloat(), tween(1300, easing = androidx.compose.animation.core.LinearEasing), label = "junkBytes")
-    val (number, unit) = splitSize(shownBytes.toLong())
+    val shownBytes by animateFloatAsState(totalBytes.toFloat(), tween(450, easing = androidx.compose.animation.core.LinearEasing), label = "junkBytes")
+    val (number, unit) = if (junkFree) "0" to "MB" else splitSize(context, shownBytes.toLong())
 
     var confirm by rememberSaveable { mutableStateOf(false) }
     var expanded by remember(result?.items?.size) {
@@ -220,13 +247,13 @@ fun JunkScanView(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                androidx.compose.animation.Crossfade(targetState = start, animationSpec = tween(380), label = "junkStart") { isStart ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                androidx.compose.animation.Crossfade(targetState = start, modifier = Modifier.fillMaxWidth().height(100.dp), animationSpec = tween(450), label = "junkStart") { isStart ->
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (isStart) {
-                    Text("1%", color = onHeader, style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                    Text("${(fraction * 100).toInt().coerceAtLeast(1)}%", color = onHeader, style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        stringResource(R.string.junk_start_title),
+                        animatedDots(stringResource(R.string.junk_start_title)),
                         color = onHeader,
                         style = TextStyle(fontSize = 32.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                     )
@@ -248,9 +275,9 @@ fun JunkScanView(
                     )
                     Text(
                         unit,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 12.dp),
+                        modifier = Modifier.padding(start = 3.dp, bottom = 10.dp),
                         color = onHeader,
-                        style = TextStyle(fontSize = 16.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+                        style = TextStyle(fontSize = 11.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
                     )
                 }
                 Text(
@@ -262,14 +289,22 @@ fun JunkScanView(
                 }
                 }
                 Spacer(Modifier.height(10.dp))
-                if (start) Unit else if (scanning) {
+                // Fixed-height slot so the sheet below never jumps between intro / scanning / result.
+                Box(Modifier.fillMaxWidth().height(64.dp), contentAlignment = Alignment.TopCenter) {
+                androidx.compose.animation.Crossfade(
+                    targetState = if (start) 0 else if (scanning) 1 else 2,
+                    animationSpec = tween(450),
+                    label = "junkSubHeader"
+                ) { mode ->
+                if (mode == 0) Unit else if (mode == 1) {
+                  Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     val stageRes = listOf(R.string.junk_stage_1, R.string.junk_stage_2, R.string.junk_stage_3, R.string.junk_stage_4, R.string.junk_stage_5)
                     androidx.compose.animation.Crossfade(
                         targetState = if (cleaning != null) -1 else (fraction * stageRes.size).toInt().coerceIn(0, stageRes.lastIndex),
                         label = "junkStage"
                     ) { stage ->
                         Text(
-                            if (stage < 0) stringResource(R.string.junk_cleaning_label) else stringResource(stageRes[stage]) + "…",
+                            animatedDots(if (stage < 0) stringResource(R.string.junk_cleaning_label) else stringResource(stageRes[stage])),
                             modifier = Modifier.padding(horizontal = 32.dp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -278,6 +313,16 @@ fun JunkScanView(
                             style = TextStyle(fontSize = 13.sp, fontFamily = medium)
                         )
                     }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        progress?.currentPath?.substringAfterLast('/').orEmpty(),
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.MiddleEllipsis,
+                        color = onHeader.copy(alpha = 0.65f),
+                        style = TextStyle(fontSize = 11.sp, fontFamily = medium)
+                    )
+                  }
                 } else {
                     Row(
                         modifier = Modifier
@@ -288,14 +333,26 @@ fun JunkScanView(
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Rounded.Info, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Text(
-                            stringResource(R.string.junk_no_personal_data),
-                            modifier = Modifier.padding(start = 10.dp),
-                            color = Color.White,
-                            style = TextStyle(fontSize = 12.sp, fontFamily = medium)
-                        )
+                        if (junkFree) {
+                            Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Text(
+                                stringResource(R.string.junk_free_banner),
+                                modifier = Modifier.padding(start = 10.dp),
+                                color = Color.White,
+                                style = TextStyle(fontSize = 13.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+                            )
+                        } else {
+                            Icon(Icons.Rounded.Info, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Text(
+                                stringResource(R.string.junk_no_personal_data),
+                                modifier = Modifier.padding(start = 10.dp),
+                                color = Color.White,
+                                style = TextStyle(fontSize = 12.sp, fontFamily = medium)
+                            )
+                        }
                     }
+                }
+                }
                 }
             }
 
@@ -308,7 +365,7 @@ fun JunkScanView(
                     .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                JunkList(
+                if (junkFree) JunkFreeBody(Modifier.weight(1f)) else JunkList(
                     modifier = Modifier.weight(1f),
                     cleaning = cleaning,
                     cleanFraction = if (cleaning != null) cleanFraction else 0f,
@@ -329,6 +386,17 @@ fun JunkScanView(
                             modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp))
                                 .background(Brush.horizontalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
                                 .tapClickable("junk_scan_view_click_2") { onDone() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(stringResource(R.string.junk_done_action), color = Color.White, style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
+                        }
+                    }
+                } else if (junkFree) {
+                    Box(Modifier.fillMaxWidth().padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 22.dp + getBannerOverlayHeight())) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp))
+                                .background(Brush.horizontalGradient(listOf(Color(0xFF8D3EDD), OnboardingPalette.purple)))
+                                .tapClickable("junk_scan_view_junk_free") { onJunkFree() },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(stringResource(R.string.junk_done_action), color = Color.White, style = TextStyle(fontSize = 17.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
@@ -371,6 +439,46 @@ fun JunkScanView(
     }
 }
 
+/** Shown when nothing is left to clean: a clear "0 MB, all cleared" message instead of empty rows. */
+@Composable
+private fun JunkFreeBody(modifier: Modifier) {
+    val pop = remember { androidx.compose.animation.core.Animatable(0.4f) }
+    val fade = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.coroutineScope {
+            launch { pop.animateTo(1f, androidx.compose.animation.core.spring(androidx.compose.animation.core.Spring.DampingRatioMediumBouncy, androidx.compose.animation.core.Spring.StiffnessLow)) }
+            launch { fade.animateTo(1f, tween(500)) }
+        }
+    }
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp).graphicsLayer { alpha = fade.value },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            Modifier.size(104.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+                .clip(CircleShape).background(Color(0xFF55C97E)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(60.dp))
+        }
+        Spacer(Modifier.height(24.dp))
+        Text(
+            stringResource(R.string.junk_free_title),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.tertiary,
+            style = TextStyle(fontSize = 22.sp, fontFamily = bold, fontWeight = FontWeight.Bold)
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.junk_free_caption),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.surface,
+            style = TextStyle(fontSize = 14.sp, fontFamily = medium)
+        )
+    }
+}
+
 @Composable
 private fun GroupRow(
     group: JunkGroup,
@@ -410,23 +518,29 @@ private fun GroupRow(
         }
         Spacer(Modifier.weight(1f))
         if (!hideSize) Text(
-            Formatter.formatShortFileSize(context, bytes),
+            Formatter.formatFileSize(context, bytes),
             color = MaterialTheme.colorScheme.tertiary,
             style = TextStyle(fontSize = 14.sp, fontFamily = medium)
         )
         Box(Modifier.padding(start = 6.dp).size(40.dp), contentAlignment = Alignment.Center) {
-            if (scanning && stepDone) {
-                Box(Modifier.size(24.dp).clip(CircleShape).background(Color(0xFF55C97E)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
+            androidx.compose.animation.Crossfade(
+                targetState = if (scanning && stepDone) 1 else if (scanning) 0 else 2,
+                animationSpec = tween(350),
+                label = "groupTrailing"
+            ) { mode ->
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    when (mode) {
+                        1 -> Box(Modifier.size(24.dp).clip(CircleShape).background(Color(0xFF55C97E)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
+                        0 -> CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.surface
+                        )
+                        else -> RoundCheck(checked, onToggleChecked)
+                    }
                 }
-            } else if (scanning) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.surface
-                )
-            } else {
-                RoundCheck(checked, onToggleChecked)
             }
         }
     }
@@ -434,12 +548,13 @@ private fun GroupRow(
 
 @Composable
 private fun RevealRow(item: JunkItem) {
+    // Same entrance as the battery list, but quicker and sliding in from the left.
     val enter = remember { androidx.compose.animation.core.Animatable(0f) }
-    androidx.compose.runtime.LaunchedEffect(Unit) { enter.animateTo(1f, tween(420, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { enter.animateTo(1f, tween(300, easing = ENTER_EASING)) }
     Box(
         Modifier.graphicsLayer {
             alpha = enter.value
-            translationX = (1f - enter.value) * size.width * 0.3f
+            translationX = -(1f - enter.value) * 90.dp.toPx()
         }
     ) { ItemRow(item, true) {} }
 }
@@ -462,7 +577,7 @@ private fun ItemRow(item: JunkItem, checked: Boolean, onToggle: () -> Unit) {
         }
         Text(
             if (item.isDirectory) stringResource(R.string.junk_empty_folder_label)
-            else Formatter.formatShortFileSize(context, item.sizeBytes),
+            else Formatter.formatFileSize(context, item.sizeBytes),
             modifier = Modifier.padding(horizontal = 8.dp),
             color = MaterialTheme.colorScheme.tertiary,
             style = TextStyle(fontSize = 12.sp, fontFamily = medium)
@@ -486,16 +601,18 @@ private fun junkColor(bytes: Long): Color {
 private fun RadarSweep(angle: Float) {
     androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
         val c = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height)
-        drawCircle(Color.White.copy(alpha = 0.3f), radius = size.width * 0.76f, center = c)
+        // Radar is drawn smaller than before (RADAR_SCALE); the header background is unchanged.
+        val r = size.width * RADAR_SCALE
+        drawCircle(Color.White.copy(alpha = 0.3f), radius = r * 0.76f, center = c)
         listOf(0.30f, 0.52f, 0.76f).forEach {
-            drawCircle(Color.White.copy(alpha = 0.45f), radius = size.width * it, center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx()))
+            drawCircle(Color.White.copy(alpha = 0.45f), radius = r * it, center = c, style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx()))
         }
         rotateDraw(degrees = angle, pivot = c) {
             drawArc(
                 brush = Brush.sweepGradient(0f to Color.Transparent, 0.12f to Color(0xFF8D3EDD).copy(alpha = 0.85f), 0.121f to Color.Transparent, center = c),
                 startAngle = 0f, sweepAngle = 360f, useCenter = true,
-                topLeft = androidx.compose.ui.geometry.Offset(c.x - size.width * 0.76f, c.y - size.width * 0.76f),
-                size = androidx.compose.ui.geometry.Size(size.width * 1.52f, size.width * 1.52f)
+                topLeft = androidx.compose.ui.geometry.Offset(c.x - r * 0.76f, c.y - r * 0.76f),
+                size = androidx.compose.ui.geometry.Size(r * 1.52f, r * 1.52f)
             )
         }
     }
@@ -570,7 +687,18 @@ private fun JunkList(
                     }
                     val isOpen = group in expanded
                     item(key = group.name) {
-                        Box(Modifier.animateItem()) { GroupRow(
+                        // When values start (intro over) the group rows slide in one by one, left to right.
+                        val enter = remember { androidx.compose.animation.core.Animatable(if (scanning && start) 0f else 1f) }
+                        androidx.compose.runtime.LaunchedEffect(start) {
+                            if (!start && enter.value < 1f) {
+                                kotlinx.coroutines.delay(groupIndex * ROW_STAGGER_MS)
+                                enter.animateTo(1f, tween(300, easing = ENTER_EASING))
+                            }
+                        }
+                        Box(Modifier.animateItem().graphicsLayer {
+                            alpha = enter.value
+                            translationX = -(1f - enter.value) * 90.dp.toPx()
+                        }) { GroupRow(
                             group = group,
                             bytes = groupBytes,
                             scanning = scanning,

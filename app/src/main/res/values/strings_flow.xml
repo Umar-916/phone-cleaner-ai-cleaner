@@ -22,6 +22,9 @@
     <string name="junk_already_title">Congratulations! Your storage is already clean</string>
     <string name="junk_already_caption">0 junk files found. Nothing to clean right now.</string>
     <string name="junk_already_summary">0 junk files found</string>
+    <string name="junk_free_title">Congratulations! Your phone is junk free</string>
+    <string name="junk_free_caption">All junk files are already cleared. There is nothing left to clean.</string>
+    <string name="junk_free_banner">0 MB of junk found</string>
     <string name="junk_stage_1">Checking app cache</string>
     <string name="junk_stage_2">Scanning residual files</string>
     <string name="junk_stage_3">Looking for obsolete files</string>

@@ -29,21 +29,26 @@ class JunkScanner(private val context: Context) {
         var lastEmit = 0L
         val roots = FolderAccess.mediaRoots(context)
 
+        suspend fun report(path: String, force: Boolean = false) {
+            val now = SystemClock.elapsedRealtime()
+            if (force || now - lastEmit >= EMIT_INTERVAL_MS) {
+                lastEmit = now
+                emit(ScanEvent.Progress(ScanProgress(path, foundBytes, items.size, 0.95f * visited / (visited + 2500f), HashMap(categoryBytes), items.take(SAMPLE_LIMIT))))
+            }
+        }
+
         suspend fun add(item: JunkItem) {
             items += item
             foundBytes += item.sizeBytes
             categoryBytes[item.category] = (categoryBytes[item.category] ?: 0L) + item.sizeBytes
-            val now = SystemClock.elapsedRealtime()
-            if (now - lastEmit >= EMIT_INTERVAL_MS) {
-                lastEmit = now
-                emit(ScanEvent.Progress(ScanProgress(item.path, foundBytes, items.size, 0.95f * visited / (visited + 400f), HashMap(categoryBytes))))
-            }
+            report(item.path)
         }
 
 
         roots.forEach { root ->
             DocumentWalker.walk(context, root, showHidden = true) { doc ->
                 visited++
+                report(doc.path)
                 classify(doc.path, doc.name, doc.sizeBytes, doc.modifiedMs)?.let { category ->
                     add(JunkItem(doc.uri, doc.path, doc.name, doc.sizeBytes, doc.modifiedMs, category))
                 }
@@ -91,7 +96,8 @@ class JunkScanner(private val context: Context) {
     }
 
     private companion object {
-        const val EMIT_INTERVAL_MS = 200L
+        const val EMIT_INTERVAL_MS = 120L
+        const val SAMPLE_LIMIT = 45
         const val LARGE_FILE_BYTES = 100L * 1024 * 1024
         val TEMP_EXTENSIONS = setOf("tmp", "temp", "log", "bak", "old", "cache", "dmp", "chk", "crdownload", "part")
     }

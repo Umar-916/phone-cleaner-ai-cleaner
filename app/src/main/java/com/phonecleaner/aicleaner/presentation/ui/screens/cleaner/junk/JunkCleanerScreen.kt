@@ -154,18 +154,17 @@ fun JunkCleanerScreen(
                 }
 
                 is JunkUiState.Scanning -> JunkScanView(current, viewModel, onBack = { if (busy) stopSheet = true else onBack() })
-                is JunkUiState.Result -> if (current.items.isEmpty()) {
-                    val summary = stringResource(R.string.junk_already_summary)
-                    androidx.compose.runtime.LaunchedEffect(Unit) { com.phonecleaner.aicleaner.domain.TaskTracker.mark(com.phonecleaner.aicleaner.domain.MainTask.JUNK) }
-                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(
-                        label = stringResource(R.string.junk_already_title),
-                        caption = stringResource(R.string.junk_already_caption)
-                    ) {
-                        onTaskCompleted(summary)
-                        viewModel.reset()
+                is JunkUiState.Result -> {
+                    // Already clean: show the result screen with 0 values instead of a dead-end.
+                    if (current.items.isEmpty()) {
+                        androidx.compose.runtime.LaunchedEffect(Unit) { com.phonecleaner.aicleaner.domain.TaskTracker.mark(com.phonecleaner.aicleaner.domain.MainTask.JUNK) }
                     }
-                } else {
-                    JunkScanView(current, viewModel, onBack = { if (busy) stopSheet = true else onBack() })
+                    val junkFreeSummary = stringResource(R.string.junk_already_summary)
+                    JunkScanView(
+                        current, viewModel,
+                        onBack = { if (busy) stopSheet = true else onBack() },
+                        onJunkFree = { onTaskCompleted(junkFreeSummary); viewModel.reset() }
+                    )
                 }
 
                 is JunkUiState.Cleaning -> JunkScanView(current, viewModel, onBack = { if (busy) stopSheet = true else onBack() })
