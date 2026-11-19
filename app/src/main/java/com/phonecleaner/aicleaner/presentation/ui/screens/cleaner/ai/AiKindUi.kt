@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.BlurOn
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Screenshot
 import androidx.compose.material.icons.rounded.Videocam
@@ -31,21 +33,27 @@ import com.phonecleaner.aicleaner.presentation.ui.theme.Brand
 fun AiKind.icon(): ImageVector = when (this) {
     AiKind.VIDEOS -> Icons.Rounded.Videocam
     AiKind.AUDIO -> Icons.Rounded.AudioFile
+    AiKind.LARGE_FILES -> Icons.Rounded.Description
     AiKind.SCREENSHOTS -> Icons.Rounded.Screenshot
+    AiKind.OLD_DOWNLOADS -> Icons.Rounded.Download
     AiKind.BLURRY -> Icons.Rounded.BlurOn
 }
 
 fun AiKind.tint(): Color = when (this) {
     AiKind.VIDEOS -> Brand.Duplicates
     AiKind.AUDIO -> Brand.Process
+    AiKind.LARGE_FILES -> Brand.Junk
     AiKind.SCREENSHOTS -> Brand.Photo
+    AiKind.OLD_DOWNLOADS -> Brand.Junk
     AiKind.BLURRY -> Brand.Ai
 }
 
 fun AiKind.titleRes(): Int = when (this) {
     AiKind.VIDEOS -> R.string.ai_kind_videos
     AiKind.AUDIO -> R.string.ai_kind_audio
+    AiKind.LARGE_FILES -> R.string.ai_kind_large_files
     AiKind.SCREENSHOTS -> R.string.ai_kind_screenshots
+    AiKind.OLD_DOWNLOADS -> R.string.ai_kind_downloads
     AiKind.BLURRY -> R.string.ai_kind_blurry
 }
 

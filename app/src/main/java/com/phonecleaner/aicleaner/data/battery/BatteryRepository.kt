@@ -101,14 +101,21 @@ class BatteryRepository(private val context: Context, private val processes: Pro
     enum class SaverStep { TIMEOUT, SOUND, BRIGHTNESS, VIBRATION, BACKGROUND }
 
 
+    private fun setAutoRotate(enabled: Boolean): Boolean = canWriteSettings() &&
+        runCatching { Settings.System.putInt(resolver, Settings.System.ACCELEROMETER_ROTATION, if (enabled) 1 else 0) }.getOrDefault(false)
+
     fun applySaver(step: SaverStep): Boolean = runCatching {
         when (step) {
             SaverStep.SOUND -> {
                 listOf(AudioManager.STREAM_MUSIC, AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
                     .forEach { stream -> runCatching { audioManager.setStreamVolume(stream, 0, 0) } }
+                if (canWriteSettings()) {
+                    listOf(Settings.System.SOUND_EFFECTS_ENABLED, "lockscreen_sounds_enabled", Settings.System.DTMF_TONE_WHEN_DIALING)
+                        .forEach { key -> runCatching { Settings.System.putInt(resolver, key, 0) } }
+                }
                 true
             }
-            SaverStep.BRIGHTNESS -> setBrightness(0)
+            SaverStep.BRIGHTNESS -> setBrightness(0) && setAutoRotate(false)
             SaverStep.TIMEOUT -> setScreenTimeout(5_000)
             SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
             SaverStep.BACKGROUND -> processes.killBackground() >= 0

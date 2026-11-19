@@ -134,8 +134,7 @@ fun JunkScanView(
     val sweep = remember { androidx.compose.animation.core.Animatable(0f) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         if (firstRun) {
-            sweep.animateTo(360f, tween(2000, easing = androidx.compose.animation.core.LinearEasing))
-            com.phonecleaner.aicleaner.domain.JunkIntro.radarPlayed = true
+            sweep.animateTo(360f, tween(4000, easing = androidx.compose.animation.core.LinearEasing))
         } else {
             kotlinx.coroutines.delay(600)
         }
@@ -575,7 +574,7 @@ private fun JunkList(
                             group = group,
                             bytes = groupBytes,
                             scanning = scanning,
-                            stepDone = scanning && stepsDone >= groupIndex + 1,
+                            stepDone = scanning && !start && stepsDone >= groupIndex + 1,
                             hideSize = start,
                             expandable = !scanning && items.isNotEmpty(),
                             open = isOpen,

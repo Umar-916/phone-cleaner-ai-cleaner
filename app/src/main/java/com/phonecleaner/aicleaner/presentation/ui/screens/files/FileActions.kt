@@ -16,7 +16,7 @@ fun mimeFor(name: String, fallback: String = ""): String =
 
 fun openEntry(context: Context, entry: FileEntry) {
     val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(entry.uri, mimeFor(entry.name, entry.mime))
+        setDataAndType(shareable(context, entry.uri), mimeFor(entry.name, entry.mime))
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     tryCatch { context.startActivity(Intent.createChooser(intent, null)) }
@@ -29,11 +29,11 @@ fun shareEntries(context: Context, entries: List<FileEntry>) {
 }
 
 
-private fun shareUris(context: Context, uris: List<Uri>, mime: String) {
+fun shareUris(context: Context, uris: List<Uri>, mime: String) {
     val intent = if (uris.size == 1) {
-        Intent(Intent.ACTION_SEND).apply { putExtra(Intent.EXTRA_STREAM, uris.first()) }
+        Intent(Intent.ACTION_SEND).apply { putExtra(Intent.EXTRA_STREAM, shareable(context, uris.first())) }
     } else {
-        Intent(Intent.ACTION_SEND_MULTIPLE).apply { putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris)) }
+        Intent(Intent.ACTION_SEND_MULTIPLE).apply { putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris.map { shareable(context, it) })) }
     }.apply {
         type = mime
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -51,8 +51,23 @@ fun List<FileEntry>.groupedByDay(context: Context): List<Pair<String, List<FileE
 
 fun openUri(context: Context, uri: Uri, mime: String) {
     val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, mime)
+        setDataAndType(shareable(context, uri), mime)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     tryCatch { context.startActivity(Intent.createChooser(intent, null)) }
 }
+
+fun shareable(context: Context, uri: Uri): Uri =
+    if (uri.scheme == "file") {
+        runCatching {
+            androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", java.io.File(uri.path.orEmpty()))
+        }.getOrDefault(uri)
+    } else {
+        uri
+    }
+
+fun openPath(context: Context, path: String) =
+    openUri(context, Uri.fromFile(java.io.File(path)), mimeFor(path.substringAfterLast('/')))
+
+fun sharePath(context: Context, path: String) =
+    shareUris(context, listOf(Uri.fromFile(java.io.File(path))), mimeFor(path.substringAfterLast('/')))

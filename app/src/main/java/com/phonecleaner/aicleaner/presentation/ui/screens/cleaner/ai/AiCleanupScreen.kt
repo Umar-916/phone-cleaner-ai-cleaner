@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.ai
 
+import com.phonecleaner.aicleaner.presentation.ui.components.OnResumeEffect
 import android.os.Environment
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
@@ -100,6 +101,7 @@ fun AiCleanupScreen(
     val state by viewModel.state.collectAsState()
     val groups by AiResultStore.groups.collectAsState()
     var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
+    OnResumeEffect { granted = FolderAccess.mediaRoots(context).isNotEmpty() }
     var revealed by remember { mutableStateOf(false) }
     var stopSheet by remember { mutableStateOf(false) }
     val scanAnim = remember { Animatable(0f) }
@@ -128,7 +130,7 @@ fun AiCleanupScreen(
         )
     }
 
-    val loading = analyzing || (state is AiUiState.Result && (!revealed || groups.isEmpty()))
+    val loading = analyzing || (state is AiUiState.Result && !revealed)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { if (!loading) AppTopBar(title = { AppTopBarTitle(stringResource(R.string.feature_ai_cleanup)) }, onBack = onBack) }
@@ -148,7 +150,7 @@ fun AiCleanupScreen(
 
                 AiUiState.Result -> when {
                     !revealed -> ScanLoadingView(null, true, stringResource(R.string.ai_analyzing), scanAnim) { revealed = true }
-                    groups.isEmpty() -> com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(stringResource(R.string.congrats_text)) { viewModel.reset(); onFinished("") }
+                    groups.isEmpty() -> com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(Icons.Rounded.CheckCircle, Brand.Good, stringResource(R.string.ai_none_title), stringResource(R.string.ai_none_body), stringResource(R.string.empty_done), onBack)
                     else -> ResultView(groups, onOpenCategory, onOpenDuplicates)
                 }
 

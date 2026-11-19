@@ -83,6 +83,7 @@ import com.phonecleaner.aicleaner.domain.MainTask
 import com.phonecleaner.aicleaner.domain.TaskTracker
 import com.phonecleaner.aicleaner.domain.ExtraTask
 import com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk.JunkCleanerScreen
+import com.phonecleaner.aicleaner.presentation.ui.screens.files.StorageBrowserScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.files.FilesScreen
 import com.phonecleaner.aicleaner.presentation.ui.screens.device.DeviceInfoScreen
 import com.phonecleaner.aicleaner.domain.model.FileCategory
@@ -149,6 +150,10 @@ fun AppNavigator(
 
     fun navigateTo(destination: NavKey) {
         if (backStack.lastOrNull() == destination) return
+        if (destination == AppDestination.WhatsAppCleaner && !com.phonecleaner.aicleaner.data.storage.FolderAccess.isWhatsAppInstalled(context)) {
+            android.widget.Toast.makeText(context, context.getString(com.phonecleaner.aicleaner.R.string.wa_missing_toast), android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         navGuard.run {
             tryCatch { backStack.add(destination) }
         }
@@ -375,6 +380,7 @@ fun AppNavigator(
                                 FilesScreen(
                                     onOpenCategory = { navigateTo(AppDestination.FileCategoryRoute(it.name)) },
                                     onSearch = { navigateTo(AppDestination.FileSearch) },
+                                    onBrowse = { navigateTo(AppDestination.StorageBrowser) },
                                     onSettings = { switchTab(AppDestination.Setting) }
                                 )
                             }
@@ -384,6 +390,10 @@ fun AppNavigator(
                                     category = FileCategory.valueOf(route.category),
                                     onBack = { navigateBack() }
                                 )
+                            }
+
+                            is AppDestination.StorageBrowser -> NavEntry(route) {
+                                StorageBrowserScreen(onBack = { navigateBack() }, onSearch = { navigateTo(AppDestination.FileSearch) })
                             }
 
                             is AppDestination.FileSearch -> NavEntry(route) {

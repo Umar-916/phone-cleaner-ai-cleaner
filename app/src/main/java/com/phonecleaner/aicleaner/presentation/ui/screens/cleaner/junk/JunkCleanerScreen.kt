@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.junk
 
+import com.phonecleaner.aicleaner.presentation.ui.components.OnResumeEffect
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapEvent
@@ -109,17 +110,20 @@ fun JunkCleanerScreen(
     viewModel: JunkViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsState()
+    val vmState by viewModel.state.collectAsState()
     var permissionGranted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
+    OnResumeEffect { permissionGranted = FolderAccess.mediaRoots(context).isNotEmpty() }
+    val rawState = vmState
 
 
-    LaunchedEffect(permissionGranted, state is JunkUiState.Idle) {
-        if (permissionGranted && state is JunkUiState.Idle) {
+    LaunchedEffect(permissionGranted, rawState is JunkUiState.Idle) {
+        if (permissionGranted && rawState is JunkUiState.Idle) {
             context.postAnalytic("junk_scan_start")
             viewModel.startScan()
         }
     }
 
+    val state = if (rawState is JunkUiState.Idle && permissionGranted) JunkUiState.Scanning(com.phonecleaner.aicleaner.domain.model.ScanProgress("", 0L, 0)) else rawState
     val busy = state is JunkUiState.Scanning || state is JunkUiState.Cleaning
     var stopSheet by remember { mutableStateOf(false) }
     BackHandler(enabled = busy) { stopSheet = true }

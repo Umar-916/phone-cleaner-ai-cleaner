@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.files
 
+import com.phonecleaner.aicleaner.presentation.ui.components.OnResumeEffect
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapEvent
@@ -79,6 +80,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.domain.model.DocumentType
 import com.phonecleaner.aicleaner.presentation.ui.components.PillChip
 import com.phonecleaner.aicleaner.presentation.ui.components.SegmentedTabs
 import com.phonecleaner.aicleaner.presentation.ui.components.AppCheckbox
@@ -113,6 +115,7 @@ fun FileCategoryScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
+    OnResumeEffect { granted = FolderAccess.mediaRoots(context).isNotEmpty() }
     var sheetEntry by remember { mutableStateOf<FileEntry?>(null) }
     var deleteTargets by remember { mutableStateOf<List<FileEntry>>(emptyList()) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -152,6 +155,16 @@ fun FileCategoryScreen(
             onMore = { menuOpen = true }
         )
 
+        if (!state.global && category == FileCategory.DOCUMENTS) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DocumentType.entries.forEach { type ->
+                    PillChip(stringResource(type.label), state.documentType == type, { viewModel.setDocumentType(type) })
+                }
+            }
+        }
         if (!state.global && (category == FileCategory.IMAGES || category == FileCategory.VIDEO) && !inAlbum) {
             SegmentedTabs(
                 options = listOf(stringResource(R.string.files_tab_all), stringResource(R.string.files_tab_album)),
@@ -194,7 +207,7 @@ fun FileCategoryScreen(
 
     sheetEntry?.let { entry ->
         FileItemSheet(
-            file = SheetFile(entry.name, entry.path, entry.sizeBytes, entry.modifiedMs, entry.mime, true),
+            file = SheetFile(entry.name, entry.path, entry.sizeBytes, entry.modifiedMs, entry.mime, entry.category != FileCategory.APK),
             onDismiss = { sheetEntry = null },
             onOpen = { openEntry(context, entry) },
             onShare = { shareEntries(context, listOf(entry)) },

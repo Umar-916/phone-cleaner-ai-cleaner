@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 
-enum class AiKind { VIDEOS, AUDIO, SCREENSHOTS, BLURRY }
+enum class AiKind { VIDEOS, AUDIO, LARGE_FILES, SCREENSHOTS, OLD_DOWNLOADS, BLURRY }
 
 data class AiGroup(val kind: AiKind, val files: List<FileEntry>) {
     val bytes: Long get() = files.sumOf { it.sizeBytes }
@@ -45,9 +45,13 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
         val screenshots = images.filter { it.path.contains("/Screenshots/", ignoreCase = true) && now - it.modifiedMs > SCREENSHOT_AGE_MS }
         val largeVideos = videos.sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
         val audio = files.list(FileCategory.AUDIO, showHidden = false).sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
+        val largeFiles = (files.list(FileCategory.DOCUMENTS, showHidden = false) + files.list(FileCategory.APK, showHidden = false))
+            .filter { it.sizeBytes >= LARGE_FILE_BYTES }.sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
+        val oldDownloads = files.list(FileCategory.DOWNLOAD, showHidden = false)
+            .filter { now - it.modifiedMs > DOWNLOAD_AGE_MS }.sortedByDescending { it.sizeBytes }.take(MAX_LISTED)
 
         val candidates = images
-            .filter { !it.path.contains("/Screenshots/", ignoreCase = true) }
+            .filter { it.path.contains("/DCIM/", ignoreCase = true) && !it.path.contains("/Screenshots/", ignoreCase = true) }
             .take(MAX_BLUR_CANDIDATES)
         val blurry = ArrayList<FileEntry>()
         var done = 0
@@ -71,7 +75,9 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
                 listOf(
                     AiGroup(AiKind.VIDEOS, largeVideos),
                     AiGroup(AiKind.AUDIO, audio),
+                    AiGroup(AiKind.LARGE_FILES, largeFiles),
                     AiGroup(AiKind.SCREENSHOTS, screenshots),
+                    AiGroup(AiKind.OLD_DOWNLOADS, oldDownloads),
                     AiGroup(AiKind.BLURRY, blurry)
                 ).filter { it.files.isNotEmpty() }
             )
@@ -102,6 +108,8 @@ class AiCleanupScanner(private val context: Context, private val files: FilesRep
 
     private companion object {
         const val SCREENSHOT_AGE_MS = 30L * 24 * 60 * 60 * 1000
+        const val DOWNLOAD_AGE_MS = 60L * 24 * 60 * 60 * 1000
+        const val LARGE_FILE_BYTES = 5L * 1024 * 1024
         const val MAX_LISTED = 60
         const val MAX_BLUR_CANDIDATES = 240
         const val BATCH = 8

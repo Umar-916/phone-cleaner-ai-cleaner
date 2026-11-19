@@ -67,13 +67,15 @@
     <string name="task_try">Try It</string>
     <string name="task_hooray">Hooray!</string>
     <string name="task_recommended">Recommended</string>
-    <string name="folder_title">Choose a folder</string>
-    <string name="folder_body">Pick the folder you want to scan, such as DCIM or Pictures. Only that folder becomes visible to the app.</string>
-    <string name="folder_body_wa">Pick your WhatsApp Media folder so its files can be found. Only that folder becomes visible to the app.</string>
-    <string name="folder_bullet_only">Only the folder you pick is used</string>
-    <string name="folder_bullet_local">Your files never leave this phone</string>
-    <string name="folder_choose">Choose folder</string>
     <string name="home_orb_title">Phone Boost</string>
     <string name="home_orb_action">Boost</string>
     <string name="junk_start_title">Scanning.</string>
+    <string name="empty_done">Done</string>
+    <string name="dup_none_title">Congratulations!</string>
+    <string name="dup_none_body">You have no duplicate files. All your photos and videos are unique.</string>
+    <string name="ai_none_title">Congratulations!</string>
+    <string name="ai_none_body">Your storage is already clean. There is nothing to clean right now.</string>
+    <string name="wa_none_title">Congratulations!</string>
+    <string name="wa_none_body">Your WhatsApp is already clean. There is no media to clean right now.</string>
+    <string name="wa_missing_toast">WhatsApp is not installed. Please install it first.</string>
 </resources>

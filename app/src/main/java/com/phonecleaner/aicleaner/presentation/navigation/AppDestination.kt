@@ -23,6 +23,9 @@ sealed class AppDestination : NavKey {
     data object FileSearch : AppDestination()
 
     @Serializable
+    data object StorageBrowser : AppDestination()
+
+    @Serializable
     data object JunkCleaner : AppDestination()
 
     @Serializable

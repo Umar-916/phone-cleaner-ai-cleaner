@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.files
 
+import com.phonecleaner.aicleaner.presentation.ui.components.OnResumeEffect
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapEvent
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Videocam
@@ -90,24 +92,32 @@ fun FileCategory.icon(): ImageVector = when (this) {
     FileCategory.IMAGES -> Icons.Rounded.Image
     FileCategory.VIDEO -> Icons.Rounded.Videocam
     FileCategory.AUDIO -> Icons.Rounded.MusicNote
+    FileCategory.DOCUMENTS -> Icons.Rounded.Description
+    FileCategory.APK -> Icons.Rounded.Android
+    FileCategory.DOWNLOAD -> Icons.Rounded.Download
 }
 
 fun FileCategory.tint(): Color = when (this) {
     FileCategory.IMAGES -> Color(0xFFD946EF)
     FileCategory.VIDEO -> Brand.Blue
     FileCategory.AUDIO -> Brand.Danger
+    FileCategory.DOCUMENTS -> Color(0xFF2563EB)
+    FileCategory.APK -> Brand.Good
+    FileCategory.DOWNLOAD -> Brand.Photo
 }
 
 @Composable
 fun FilesScreen(
     onOpenCategory: (FileCategory) -> Unit,
     onSearch: () -> Unit,
+    onBrowse: () -> Unit,
     onSettings: () -> Unit = {},
     viewModel: FilesViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
+    OnResumeEffect { granted = FolderAccess.mediaRoots(context).isNotEmpty() }
     var accessTick by remember { mutableStateOf(0) }
     var promptVisible by rememberSaveable { mutableStateOf(false) }
 
@@ -164,7 +174,7 @@ fun FilesScreen(
         }
 
         Spacer(Modifier.height(16.dp))
-        StorageCard(state.storage.usedFraction, state.storage.usedBytes, state.storage.totalBytes)
+        StorageCard(state.storage.usedFraction, state.storage.usedBytes, state.storage.totalBytes, guarded(onBrowse))
         Spacer(Modifier.height(16.dp))
 
         FileCategory.entries.chunked(3).forEach { row ->
@@ -193,13 +203,14 @@ fun FilesScreen(
 }
 
 @Composable
-private fun StorageCard(fraction: Float, used: Long, total: Long) {
+private fun StorageCard(fraction: Float, used: Long, total: Long, onClick: () -> Unit) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(Brand.Hero)
+            .tapClickable("storage_card_click", onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 16.dp, bottom = 16.dp, end = 12.dp),
@@ -241,6 +252,12 @@ private fun StorageCard(fraction: Float, used: Long, total: Long) {
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.size(width = 104.dp, height = 94.dp)
                 )
+                Box(
+                    modifier = Modifier.size(26.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.22f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
             }
         }
     }

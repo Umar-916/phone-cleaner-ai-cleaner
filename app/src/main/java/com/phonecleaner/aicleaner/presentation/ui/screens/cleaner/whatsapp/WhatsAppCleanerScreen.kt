@@ -1,5 +1,7 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.whatsapp
 
+import androidx.core.net.toUri
+import com.phonecleaner.aicleaner.presentation.ui.components.OnResumeEffect
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapClickable
@@ -33,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.EmojiEmotions
@@ -157,7 +160,8 @@ fun WhatsAppCleanerScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var granted by remember { mutableStateOf(FolderAccess.whatsAppRoot(context) != null) }
+    var granted by remember { mutableStateOf(FolderAccess.hasWhatsAppAccess(context)) }
+    OnResumeEffect { granted = FolderAccess.hasWhatsAppAccess(context) }
 
     LaunchedEffect(granted, state is WaUiState.Idle) {
         if (granted && state is WaUiState.Idle) {
@@ -190,7 +194,7 @@ fun WhatsAppCleanerScreen(
     )
 
     val loading = state is WaUiState.Scanning || state is WaUiState.Cleaning ||
-        (state is WaUiState.Result && !revealed) || (state is WaUiState.Done && !doneReady) || state is WaUiState.NotFound
+        (state is WaUiState.Result && !revealed) || (state is WaUiState.Done && !doneReady)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -224,7 +228,7 @@ fun WhatsAppCleanerScreen(
         Box(modifier = Modifier.fillMaxSize().padding(if (loading) PaddingValues(0.dp) else padding)) {
             when (val current = state) {
                 WaUiState.Idle -> if (!granted) {
-                    FolderAccessPrompt(onDismiss = onBack, onGranted = { granted = FolderAccess.whatsAppRoot(context) != null }, accent = Brand.WhatsApp, hint = FolderAccess.whatsAppHint(), body = stringResource(R.string.folder_body_wa))
+                    FolderAccessPrompt(onDismiss = onBack, onGranted = { granted = true }, accent = Brand.WhatsApp)
                 }
 
                 is WaUiState.Scanning -> com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(
@@ -233,7 +237,7 @@ fun WhatsAppCleanerScreen(
                     label = stringResource(R.string.wa_scanning),
                     p = scanAnim
                 )
-                WaUiState.NotFound -> com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(stringResource(R.string.congrats_text)) { viewModel.reset(); onTaskCompleted("") }
+                WaUiState.NotFound -> com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(Icons.Rounded.CheckCircle, WhatsAppGreen, stringResource(R.string.wa_none_title), stringResource(R.string.wa_none_body), stringResource(R.string.empty_done), onBack)
                 is WaUiState.Result -> if (!revealed) {
                     com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.wa_scanning), scanAnim) { revealed = true }
                 } else ResultView(current.data, viewModel) {
@@ -486,3 +490,4 @@ private fun WaThumb(file: WaFile, viewModel: WhatsAppViewModel, modifier: Modifi
 }
 
 private const val PREVIEW_COUNT = 8
+

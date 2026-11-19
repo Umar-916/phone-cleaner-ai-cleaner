@@ -25,12 +25,12 @@ import java.security.MessageDigest
 class WhatsAppScanner(private val context: Context) {
 
     fun scan(): Flow<WaScanEvent> = flow {
-        val root = FolderAccess.whatsAppRoot(context)
+        val roots = FolderAccess.whatsAppRoots(context)
         val files = ArrayList<WaFile>()
         var bytes = 0L
         var lastEmit = 0L
 
-        if (root != null) {
+        roots.forEach { root ->
             DocumentWalker.walk(context, root, showHidden = true) { doc ->
                 val category = doc.path.split('/').firstNotNullOfOrNull { categoryFor(it) } ?: return@walk
                 files += WaFile(doc.uri, doc.path, doc.name, doc.sizeBytes, doc.modifiedMs, category, false)
@@ -43,7 +43,7 @@ class WhatsAppScanner(private val context: Context) {
             }
         }
         emit(WaScanEvent.Progress(files.size, bytes))
-        emit(WaScanEvent.Finished(markDuplicates(files), root != null))
+        emit(WaScanEvent.Finished(markDuplicates(files), roots.isNotEmpty()))
     }.flowOn(Dispatchers.IO)
 
     suspend fun delete(files: List<WaFile>, onProgress: (Int) -> Unit): CleanResult = withContext(Dispatchers.IO) {

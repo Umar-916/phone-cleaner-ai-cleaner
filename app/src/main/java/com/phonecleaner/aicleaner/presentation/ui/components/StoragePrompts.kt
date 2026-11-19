@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.phonecleaner.aicleaner.R
+import com.phonecleaner.aicleaner.core.common.StoragePermission
+import com.phonecleaner.aicleaner.core.common.tryCatch
 import com.phonecleaner.aicleaner.data.storage.FolderAccess
 
 @Composable
@@ -18,29 +20,77 @@ fun FolderAccessPrompt(
     onDismiss: () -> Unit,
     onGranted: () -> Unit,
     accent: Color = MaterialTheme.colorScheme.primary,
-    hint: Uri? = FolderAccess.mediaHint(),
-    body: String = stringResource(R.string.folder_body)
+    @Suppress("UNUSED_PARAMETER") hint: Uri? = null,
+    body: String = stringResource(R.string.perm_storage_body)
 ) {
     val context = LocalContext.current
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) {
-            FolderAccess.persist(context, uri)
-            onGranted()
+    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (FolderAccess.hasAllFiles(context)) onGranted()
+    }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && FolderAccess.hasAllFiles(context)) onGranted()
         }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (FolderAccess.hasAllFiles(context)) onGranted()
     }
     PermissionPrompt(
         icon = Icons.Rounded.Folder,
-        title = stringResource(R.string.folder_title),
+        title = stringResource(R.string.perm_storage_title),
         body = body,
         bullets = listOf(
-            stringResource(R.string.folder_bullet_only),
-            stringResource(R.string.folder_bullet_local),
+            stringResource(R.string.perm_bullet_device),
+            stringResource(R.string.perm_bullet_confirm),
             stringResource(R.string.perm_bullet_revoke)
         ),
-        allowLabel = stringResource(R.string.folder_choose),
+        allowLabel = stringResource(R.string.perm_allow),
         notNowLabel = stringResource(R.string.perm_not_now),
-        onAllow = { picker.launch(hint) },
+        onAllow = {
+            if (StoragePermission.usesSettingsScreen) tryCatch { settingsLauncher.launch(StoragePermission.settingsIntent(context)) }
+            else legacyLauncher.launch(StoragePermission.LEGACY_PERMISSION)
+        },
         onDismiss = onDismiss,
         accent = accent
     )
+}
+
+@Composable
+fun StoragePermissionPrompt(
+    onDismiss: () -> Unit,
+    accent: Color = MaterialTheme.colorScheme.primary,
+    body: String = stringResource(R.string.perm_storage_body),
+    onAllow: () -> Unit
+) {
+    PermissionPrompt(
+        icon = Icons.Rounded.Folder,
+        title = stringResource(R.string.perm_storage_title),
+        body = body,
+        bullets = listOf(
+            stringResource(R.string.perm_bullet_device),
+            stringResource(R.string.perm_bullet_confirm),
+            stringResource(R.string.perm_bullet_revoke)
+        ),
+        allowLabel = stringResource(R.string.perm_allow),
+        notNowLabel = stringResource(R.string.perm_not_now),
+        onAllow = onAllow,
+        onDismiss = onDismiss,
+        accent = accent
+    )
+}
+
+@Composable
+fun OnResumeEffect(action: () -> Unit) {
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val current = androidx.compose.runtime.rememberUpdatedState(action)
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) current.value()
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
 }

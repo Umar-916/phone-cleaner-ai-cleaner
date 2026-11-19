@@ -42,8 +42,7 @@ sealed interface JunkUiState {
 
 class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
 
-    private companion object { const val INTRO_MS = 2000L
-        const val REPEAT_INTRO_MS = 600L
+    private companion object { const val INTRO_MS = 4000L
         const val MIN_SCAN_MS = 6500L
         const val MIN_CLEAN_MS = 6500L
         const val MIN_REVEAL_MS = 2500L
@@ -144,6 +143,3 @@ class JunkViewModel(private val scanner: JunkScanner) : ViewModel() {
     }
 }
 
-object JunkIntro {
-    @Volatile var radarPlayed = false
-}

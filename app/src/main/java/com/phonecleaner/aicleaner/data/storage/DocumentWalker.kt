@@ -2,9 +2,11 @@ package com.phonecleaner.aicleaner.data.storage
 
 import android.content.Context
 import android.net.Uri
-import android.provider.DocumentsContract
+import android.os.Environment
+import android.webkit.MimeTypeMap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import java.io.File
 
 data class DocEntry(
     val uri: Uri,
@@ -19,57 +21,48 @@ data class DocEntry(
 
 object DocumentWalker {
 
-    private val COLUMNS = arrayOf(
-        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-        DocumentsContract.Document.COLUMN_MIME_TYPE,
-        DocumentsContract.Document.COLUMN_SIZE,
-        DocumentsContract.Document.COLUMN_LAST_MODIFIED
-    )
-
     suspend fun walk(
         context: Context,
         tree: Uri,
         showHidden: Boolean = false,
         onFile: suspend (DocEntry) -> Unit
     ) {
-        val resolver = context.contentResolver
-        val rootId = DocumentsContract.getTreeDocumentId(tree)
-        val stack = ArrayDeque<String>()
-        stack.addLast(rootId)
+        walkFiles(File(tree.path.orEmpty()), showHidden, onFile)
+    }
+
+    private suspend fun walkFiles(root: File, showHidden: Boolean, onFile: suspend (DocEntry) -> Unit) {
+        val external = Environment.getExternalStorageDirectory().path
+        val stack = ArrayDeque<File>()
+        stack.addLast(root)
         while (stack.isNotEmpty()) {
             currentCoroutineContext().ensureActive()
-            val parentId = stack.removeLast()
-            val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, parentId)
-            runCatching {
-                resolver.query(children, COLUMNS, null, null, null)?.use { cursor ->
-                    while (cursor.moveToNext()) {
-                        val id = cursor.getString(0) ?: continue
-                        val name = cursor.getString(1).orEmpty()
-                        if (name == ".nomedia" || (!showHidden && name.startsWith("."))) continue
-                        val mime = cursor.getString(2).orEmpty()
-                        if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
-                            stack.addLast(id)
-                        } else {
-                            val size = cursor.getLong(3)
-                            if (size <= 0L) continue
-                            onFile(
-                                DocEntry(
-                                    uri = DocumentsContract.buildDocumentUriUsingTree(tree, id),
-                                    path = "/" + id.substringAfter(':'),
-                                    name = name,
-                                    sizeBytes = size,
-                                    modifiedMs = cursor.getLong(4),
-                                    mime = mime
-                                )
-                            )
-                        }
-                    }
+            val dir = stack.removeLast()
+            val children = dir.listFiles() ?: continue
+            for (child in children) {
+                val name = child.name
+                if (name == ".nomedia" || (!showHidden && name.startsWith("."))) continue
+                if (child.isDirectory) {
+                    val isAndroidRoot = root.path == external && child.parentFile?.path == external && name.equals("Android", ignoreCase = true)
+                    if (!isAndroidRoot) stack.addLast(child)
+                } else {
+                    val size = child.length()
+                    if (size <= 0L) continue
+                    val ext = name.substringAfterLast('.', "").lowercase()
+                    onFile(
+                        DocEntry(
+                            uri = Uri.fromFile(child),
+                            path = child.absolutePath.removePrefix(external),
+                            name = name,
+                            sizeBytes = size,
+                            modifiedMs = child.lastModified(),
+                            mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext).orEmpty()
+                        )
+                    )
                 }
             }
         }
     }
 
-    fun delete(context: Context, uri: Uri): Boolean =
-        runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }.getOrDefault(false)
+    fun delete(@Suppress("UNUSED_PARAMETER") context: Context, uri: Uri): Boolean =
+        runCatching { File(uri.path.orEmpty()).delete() }.getOrDefault(false)
 }

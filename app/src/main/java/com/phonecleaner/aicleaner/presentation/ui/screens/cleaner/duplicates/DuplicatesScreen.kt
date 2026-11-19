@@ -1,5 +1,6 @@
 package com.phonecleaner.aicleaner.presentation.ui.screens.cleaner.duplicates
 
+import com.phonecleaner.aicleaner.presentation.ui.components.OnResumeEffect
 import com.phonecleaner.aicleaner.presentation.ui.theme.AppFonts
 import com.phonecleaner.aicleaner.core.common.tapped
 import com.phonecleaner.aicleaner.core.common.tapEvent
@@ -125,6 +126,7 @@ fun DuplicatesScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
+    OnResumeEffect { granted = FolderAccess.mediaRoots(context).isNotEmpty() }
     var revealed by remember { mutableStateOf(false) }
     val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(state) { if (state is DuplicatesUiState.Idle) { revealed = false; scanAnim.snapTo(0f) } }
@@ -146,7 +148,7 @@ fun DuplicatesScreen(
     )
 
     val current0 = state
-    val loading = current0 is DuplicatesUiState.Scanning || (current0 is DuplicatesUiState.Result && (!revealed || (current0.data.photoGroups.isEmpty() && current0.data.videoGroups.isEmpty())))
+    val loading = current0 is DuplicatesUiState.Scanning || (current0 is DuplicatesUiState.Result && !revealed)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -179,7 +181,7 @@ fun DuplicatesScreen(
                     if (!revealed) {
                         com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.dup_phase_analyzing), scanAnim) { revealed = true }
                     } else if (data.photoGroups.isEmpty() && data.videoGroups.isEmpty()) {
-                        com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(stringResource(R.string.congrats_text)) { viewModel.reset(); onTaskCompleted("") }
+                        com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(androidx.compose.material.icons.Icons.Rounded.CheckCircle, Brand.Good, stringResource(R.string.dup_none_title), stringResource(R.string.dup_none_body), stringResource(R.string.empty_done), onBack)
                     } else {
                         ResultView(data, viewModel) {
                             context.postAnalytic("duplicates_delete_confirm")

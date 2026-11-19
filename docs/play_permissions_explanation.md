@@ -4,10 +4,11 @@ Use this text in Play Console (App content, Permissions declaration forms, or wh
 
 ## Summary
 
-The app requests no runtime permission except Notifications. It does NOT request `MANAGE_EXTERNAL_STORAGE`, `READ_MEDIA_*`, contacts, location, camera, microphone, SMS or call log. One special-access permission (Modify system settings) is used by the Battery Manager, and one normal permission by the Apps Manager. Each one is user-initiated, opened through the official Android Settings page, and can be revoked at any time.
+The app requests no runtime permission except Notifications. It does NOT request `READ_MEDIA_*`, contacts, location, camera, microphone, SMS or call log. Two special-access permissions (All files access and Modify system settings) are used, and each is user-initiated, opened through the official Android Settings page, and can be revoked at any time.
 
 | Permission | Feature | Type |
 |---|---|---|
+| `MANAGE_EXTERNAL_STORAGE` | Junk Cleaner, Duplicates, AI Cleanup, WhatsApp Cleaner, Files | Special app access ("All files access"), Play declaration form required |
 | `WRITE_SETTINGS` | Battery Manager | Special app access ("Modify system settings") |
 | `KILL_BACKGROUND_PROCESSES` | Process Manager | Normal permission |
 | `REQUEST_DELETE_PACKAGES` | Apps Manager | Normal permission, system confirms each uninstall |
@@ -47,12 +48,21 @@ The app requests no runtime permission except Notifications. It does NOT request
 
 **Core feature:** Apps Manager. The user selects apps they want to remove, and the app launches the system uninstall dialog for each. The user confirms every uninstall in the system dialog. The app never uninstalls silently.
 
-## 4. Storage access (no broad storage permission)
+## 4. MANAGE_EXTERNAL_STORAGE (All files access)
 
-- No `MANAGE_EXTERNAL_STORAGE` and no `READ_MEDIA_*` permissions.
-- Duplicates, AI Cleanup, WhatsApp Cleaner and Files use the Storage Access Framework (`ACTION_OPEN_DOCUMENT_TREE`). The user picks a folder, such as DCIM or the WhatsApp media folder. The app can access only that folder, and the user can revoke it.
-- `READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE` are declared with `maxSdkVersion="29"`. They apply only to Android 10 and lower and are inactive on Android 11 and newer.
-- Files never leave the device.
+**Core feature:** The app is a file cleaner and file manager. Its main purpose is to find and remove files across the whole device storage: Junk Cleaner (temp files, thumbnails, trash, obsolete APKs, large files), Duplicates, AI Cleanup (old screenshots, large videos, old downloads), WhatsApp Cleaner (WhatsApp media) and the Files manager (browse, open, share, delete, create folders).
+
+**Why it is required:** These features need to read and delete files created by many other apps in shared storage, including documents, APKs and downloads that the media-only permissions and the Storage Access Framework cannot cover. A single folder grant is not enough because junk and duplicates are spread across the storage.
+
+**User control and transparency:**
+- It is requested only when the user opens one of these features, after an in-app explanation.
+- The user grants it on the system "All files access" page (`ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION`) and can revoke it there at any time.
+- Files are processed only on the device and are never uploaded. Nothing is deleted without the user selecting and confirming it.
+
+**Short text for the declaration form:**
+> Phone Cleaner is a storage cleaning and file management app. Its core functionality is to scan the device storage and let the user review and delete junk files, duplicate photos and videos, large and obsolete files, WhatsApp media, and to browse and manage files. This requires All files access because the files belong to many other apps and are spread across shared storage, so media permissions or a single folder grant are not enough. The permission is requested only when the user opens these features, after an in-app explanation. All processing happens on the device, files are never uploaded, and nothing is deleted without the user's selection and confirmation.
+
+`READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE` are declared with `maxSdkVersion="29"` and apply only to Android 10 and lower, where All files access does not exist. The app does not use `READ_MEDIA_*` permissions.
 
 ## 5. POST_NOTIFICATIONS
 
