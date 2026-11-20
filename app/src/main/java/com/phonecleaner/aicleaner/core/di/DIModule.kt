@@ -29,6 +29,7 @@ import com.phonecleaner.aicleaner.domain.AiCleanupViewModel
 import com.phonecleaner.aicleaner.domain.FileCategoryViewModel
 import com.phonecleaner.aicleaner.domain.FilesViewModel
 import com.phonecleaner.aicleaner.domain.SettingViewModel
+import com.phonecleaner.aicleaner.domain.StorageBrowserViewModel
 import com.phonecleaner.aicleaner.domain.viewmodel.BannerAdViewModel
 import com.phonecleaner.aicleaner.domain.viewmodel.LanguageAdsViewModel
 import com.phonecleaner.aicleaner.domain.viewmodel.PremiumViewModel
@@ -70,6 +71,7 @@ val viewModelModule = module {
     viewModel { PhotoCompressorViewModel(get()) }
     viewModel { FilesViewModel(get(), get()) }
     viewModel { FileCategoryViewModel(get(), get()) }
+    viewModel { StorageBrowserViewModel(get(), get()) }
     viewModel { JunkViewModel(get()) }
     viewModel { AiCleanupViewModel(get()) }
     viewModel { AiCategoryViewModel(get()) }

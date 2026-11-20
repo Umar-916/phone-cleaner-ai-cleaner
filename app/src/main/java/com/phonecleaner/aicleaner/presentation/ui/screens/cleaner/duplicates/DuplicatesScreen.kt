@@ -127,7 +127,7 @@ fun DuplicatesScreen(
     val state by viewModel.state.collectAsState()
     var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
     OnResumeEffect { granted = FolderAccess.mediaRoots(context).isNotEmpty() }
-    var revealed by remember { mutableStateOf(false) }
+    var revealed by viewModel::revealed
     val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(state) { if (state is DuplicatesUiState.Idle) { revealed = false; scanAnim.snapTo(0f) } }
 

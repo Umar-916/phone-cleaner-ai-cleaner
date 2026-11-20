@@ -1,5 +1,7 @@
 package com.phonecleaner.aicleaner.domain
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.phonecleaner.aicleaner.data.whatsapp.WhatsAppScanner
@@ -54,6 +56,9 @@ sealed interface WaUiState {
 }
 
 class WhatsAppViewModel(private val scanner: WhatsAppScanner) : ViewModel() {
+
+    /** Survives navigation: true once the scan reveal animation has played, so returning to the screen does not replay it. */
+    var revealed by androidx.compose.runtime.mutableStateOf(false)
 
     private val _state = MutableStateFlow<WaUiState>(WaUiState.Idle)
     val state: StateFlow<WaUiState> = _state.asStateFlow()

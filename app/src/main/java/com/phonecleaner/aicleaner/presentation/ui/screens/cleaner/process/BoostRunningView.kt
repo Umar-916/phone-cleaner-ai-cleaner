@@ -113,7 +113,7 @@ private fun BoostRunningContent(percent: Int, label: String, @DrawableRes badge:
                 }
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(44.dp))
         AnimatedContent(
             targetState = label,
             transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },

@@ -170,7 +170,7 @@ fun WhatsAppCleanerScreen(
         }
     }
 
-    var revealed by remember { mutableStateOf(false) }
+    var revealed by viewModel::revealed
     var doneReady by remember { mutableStateOf(false) }
     val scanAnim = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(state) {

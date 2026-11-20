@@ -102,7 +102,7 @@ fun AiCleanupScreen(
     val groups by AiResultStore.groups.collectAsState()
     var granted by remember { mutableStateOf(FolderAccess.mediaRoots(context).isNotEmpty()) }
     OnResumeEffect { granted = FolderAccess.mediaRoots(context).isNotEmpty() }
-    var revealed by remember { mutableStateOf(false) }
+    var revealed by viewModel::revealed
     var stopSheet by remember { mutableStateOf(false) }
     val scanAnim = remember { Animatable(0f) }
 

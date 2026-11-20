@@ -70,9 +70,15 @@ class BatteryRepository(private val context: Context, private val processes: Pro
 
     fun setBrightness(value: Int): Boolean {
         if (!canWriteSettings()) return false
+        val level = value.coerceIn(0, 255)
         return runCatching {
             Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
-            Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, value.coerceIn(0, 255))
+            // Android 10+ devices read the float key; write it too so the change actually applies.
+            runCatching { Settings.System.putFloat(resolver, "screen_brightness_float", level / 255f) }
+            val ok = Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, level)
+            // Nudge observers so the system re-applies the new brightness immediately.
+            runCatching { resolver.notifyChange(Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS), null) }
+            ok
         }.getOrDefault(false)
     }
 
@@ -115,7 +121,7 @@ class BatteryRepository(private val context: Context, private val processes: Pro
                 }
                 true
             }
-            SaverStep.BRIGHTNESS -> setBrightness(0) && setAutoRotate(false)
+            SaverStep.BRIGHTNESS -> setBrightness(10).also { setAutoRotate(false) }
             SaverStep.TIMEOUT -> setScreenTimeout(5_000)
             SaverStep.VIBRATION -> canWriteSettings() && Settings.System.putInt(resolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) && Settings.System.putInt(resolver, "vibrate_when_ringing", 0)
             SaverStep.BACKGROUND -> processes.killBackground() >= 0

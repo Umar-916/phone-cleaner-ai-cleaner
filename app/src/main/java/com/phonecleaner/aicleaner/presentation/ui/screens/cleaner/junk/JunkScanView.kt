@@ -250,6 +250,7 @@ fun JunkScanView(
                 androidx.compose.animation.Crossfade(targetState = start, modifier = Modifier.fillMaxWidth().height(100.dp), animationSpec = tween(450), label = "junkStart") { isStart ->
                 Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (isStart) {
+                    Spacer(Modifier.height(22.dp))
                     Text("${(fraction * 100).toInt().coerceAtLeast(1)}%", color = onHeader, style = TextStyle(fontSize = 18.sp, fontFamily = bold, fontWeight = FontWeight.Bold))
                     Spacer(Modifier.height(6.dp))
                     Text(

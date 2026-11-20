@@ -1,5 +1,7 @@
 package com.phonecleaner.aicleaner.domain
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.phonecleaner.aicleaner.data.ai.AiCleanupScanner
@@ -19,6 +21,9 @@ sealed interface AiUiState {
 }
 
 class AiCleanupViewModel(private val scanner: AiCleanupScanner) : ViewModel() {
+
+    /** Survives navigation: true once the scan reveal animation has played, so returning to the screen does not replay it. */
+    var revealed by androidx.compose.runtime.mutableStateOf(false)
 
     private val _state = MutableStateFlow<AiUiState>(AiUiState.Idle)
     val state: StateFlow<AiUiState> = _state.asStateFlow()
