@@ -20,6 +20,14 @@
         </intent>
     </queries>
 
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+
     <application
         android:name=".application.MyApplication"
         android:allowBackup="true"
@@ -53,6 +61,7 @@
 
         <property android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY" android:value="true" />
 
+
         <activity
             android:name=".presentation.ui.screens.activities.MainActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|density|fontScale|smallestScreenSize"
@@ -62,6 +71,7 @@
             android:windowSoftInputMode="adjustResize"
             android:resizeableActivity="false"
             android:screenOrientation="portrait">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
