@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">明るさを調整中</string>
     <string name="bm_run_vibration">バイブレーションをオフにしています</string>
     <string name="bm_done_summary">バッテリー設定を最適化しました</string>
+    <string name="bm_changed_timeout">画面の消灯時間を5秒に設定しました</string>
+    <string name="bm_changed_sound">通知音、システム音、キー操作音をミュートしました</string>
+    <string name="bm_changed_brightness">明るさを下げ、自動回転をオフにしました</string>
+    <string name="bm_changed_vibration">タッチ振動と着信振動をオフにしました</string>
+    <string name="bm_changed_apps">バックグラウンドアプリを停止しました</string>
     <string name="done_text">完了</string>
     <string name="wa_tab_received">受信</string>
     <string name="wa_tab_sent">送信</string>

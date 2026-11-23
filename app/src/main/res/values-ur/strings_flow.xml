@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">چمک ایڈجسٹ ہو رہی ہے</string>
     <string name="bm_run_vibration">وائبریشن بند ہو رہی ہے</string>
     <string name="bm_done_summary">بیٹری کی سیٹنگز بہتر بنا دی گئیں</string>
+    <string name="bm_changed_timeout">اسکرین ٹائم آؤٹ 5 سیکنڈ پر سیٹ کیا گیا</string>
+    <string name="bm_changed_sound">نوٹیفکیشن، سسٹم اور کی کی آوازیں خاموش کر دی گئیں</string>
+    <string name="bm_changed_brightness">برائٹنس کم کر دی گئی اور آٹو روٹیٹ بند کر دیا گیا</string>
+    <string name="bm_changed_vibration">ٹچ اور رنگ وائبریشن بند کر دی گئی</string>
+    <string name="bm_changed_apps">بیک گراؤنڈ ایپس بند کر دی گئیں</string>
     <string name="done_text">مکمل</string>
     <string name="wa_tab_received">موصول شدہ</string>
     <string name="wa_tab_sent">بھیجی گئی</string>

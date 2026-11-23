@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">正在调整亮度</string>
     <string name="bm_run_vibration">正在关闭振动</string>
     <string name="bm_done_summary">电池设置已优化</string>
+    <string name="bm_changed_timeout">屏幕超时已设为 5 秒</string>
+    <string name="bm_changed_sound">已将通知、系统和按键音静音</string>
+    <string name="bm_changed_brightness">已降低亮度并关闭自动旋转</string>
+    <string name="bm_changed_vibration">已关闭触摸和来电振动</string>
+    <string name="bm_changed_apps">已停止后台应用</string>
     <string name="done_text">完成</string>
     <string name="wa_tab_received">已接收</string>
     <string name="wa_tab_sent">已发送</string>

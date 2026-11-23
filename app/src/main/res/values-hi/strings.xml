@@ -445,6 +445,7 @@
     <string name="dup_phase_analyzing">मिलती-जुलती फ़ोटो खोजी जा रही हैं</string>
     <string name="dup_tab_photos">फ़ोटो (%1$d)</string>
     <string name="dup_tab_videos">वीडियो (%1$d)</string>
+    <string name="dup_tab_files">फ़ाइलें (%1$d)</string>
     <string name="dup_original_hint">स्टार वाली कॉपी रखी जाती है। दूसरी रखने के लिए \"मूल बनाएँ\" पर टैप करें।</string>
     <string name="dup_select_all_but_one">एक को छोड़कर सभी चुनें</string>
     <string name="dup_none_in_tab">यहाँ कोई डुप्लिकेट नहीं है</string>

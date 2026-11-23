@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Melaraskan kecerahan</string>
     <string name="bm_run_vibration">Mematikan getaran</string>
     <string name="bm_done_summary">Tetapan bateri dioptimumkan</string>
+    <string name="bm_changed_timeout">Tamat masa skrin ditetapkan kepada 5 saat</string>
+    <string name="bm_changed_sound">Bunyi pemberitahuan, sistem dan kekunci dibisukan</string>
+    <string name="bm_changed_brightness">Kecerahan dikurangkan dan putaran automatik dimatikan</string>
+    <string name="bm_changed_vibration">Getaran sentuhan dan deringan dimatikan</string>
+    <string name="bm_changed_apps">Apl latar belakang dihentikan</string>
     <string name="done_text">Selesai</string>
     <string name="wa_tab_received">DITERIMA</string>
     <string name="wa_tab_sent">DIHANTAR</string>

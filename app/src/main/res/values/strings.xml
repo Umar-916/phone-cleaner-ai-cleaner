@@ -446,6 +446,7 @@ GO PREMIUM</string>
     <string name="dup_phase_analyzing">Finding similar photos</string>
     <string name="dup_tab_photos">Photos (%1$d)</string>
     <string name="dup_tab_videos">Videos (%1$d)</string>
+    <string name="dup_tab_files">Files (%1$d)</string>
     <string name="dup_original_hint">The starred copy is kept. Tap Make original to keep another one.</string>
     <string name="dup_select_all_but_one">Select all but one</string>
     <string name="dup_none_in_tab">No duplicates here</string>

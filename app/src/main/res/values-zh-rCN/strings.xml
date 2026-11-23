@@ -446,6 +446,7 @@
     <string name="dup_phase_analyzing">正在查找相似照片</string>
     <string name="dup_tab_photos">照片（%1$d）</string>
     <string name="dup_tab_videos">视频（%1$d）</string>
+    <string name="dup_tab_files">文件 (%1$d)</string>
     <string name="dup_original_hint">带星标的副本将被保留。点按“设为原件”可改为保留其他副本。</string>
     <string name="dup_select_all_but_one">保留一个，其余全选</string>
     <string name="dup_none_in_tab">这里没有重复项</string>

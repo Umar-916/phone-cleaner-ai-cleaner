@@ -446,6 +446,7 @@ PASSA A PREMIUM</string>
     <string name="dup_phase_analyzing">Ricerca di foto simili</string>
     <string name="dup_tab_photos">Foto (%1$d)</string>
     <string name="dup_tab_videos">Video (%1$d)</string>
+    <string name="dup_tab_files">File (%1$d)</string>
     <string name="dup_original_hint">La copia con la stella viene mantenuta. Tocca Imposta come originale per mantenerne un\'altra.</string>
     <string name="dup_select_all_but_one">Seleziona tutti tranne uno</string>
     <string name="dup_none_in_tab">Nessun duplicato qui</string>

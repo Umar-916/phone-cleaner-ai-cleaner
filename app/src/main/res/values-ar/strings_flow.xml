@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">جارٍ ضبط السطوع</string>
     <string name="bm_run_vibration">جارٍ إيقاف الاهتزاز</string>
     <string name="bm_done_summary">تم تحسين إعدادات البطارية</string>
+    <string name="bm_changed_timeout">تم ضبط مهلة الشاشة على 5 ثوانٍ</string>
+    <string name="bm_changed_sound">تم كتم أصوات الإشعارات والنظام ولوحة المفاتيح</string>
+    <string name="bm_changed_brightness">تم خفض السطوع وإيقاف التدوير التلقائي</string>
+    <string name="bm_changed_vibration">تم إيقاف اهتزاز اللمس والرنين</string>
+    <string name="bm_changed_apps">تم إيقاف التطبيقات في الخلفية</string>
     <string name="done_text">تم</string>
     <string name="wa_tab_received">المستلمة</string>
     <string name="wa_tab_sent">المرسلة</string>

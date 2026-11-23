@@ -446,6 +446,7 @@
     <string name="dup_phase_analyzing">Εύρεση παρόμοιων φωτογραφιών</string>
     <string name="dup_tab_photos">Φωτογραφίες (%1$d)</string>
     <string name="dup_tab_videos">Βίντεο (%1$d)</string>
+    <string name="dup_tab_files">Αρχεία (%1$d)</string>
     <string name="dup_original_hint">Το αντίγραφο με αστέρι διατηρείται. Πατήστε Ορισμός ως πρωτότυπο για να κρατήσετε άλλο.</string>
     <string name="dup_select_all_but_one">Επιλογή όλων εκτός από ένα</string>
     <string name="dup_none_in_tab">Δεν υπάρχουν διπλότυπα εδώ</string>

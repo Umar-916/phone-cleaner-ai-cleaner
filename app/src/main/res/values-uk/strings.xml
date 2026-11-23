@@ -446,6 +446,7 @@
     <string name="dup_phase_analyzing">Пошук схожих фото</string>
     <string name="dup_tab_photos">Фото (%1$d)</string>
     <string name="dup_tab_videos">Відео (%1$d)</string>
+    <string name="dup_tab_files">Файли (%1$d)</string>
     <string name="dup_original_hint">Копія із зірочкою зберігається. Торкніться «Зробити оригіналом», щоб залишити іншу.</string>
     <string name="dup_select_all_but_one">Вибрати всі, крім одного</string>
     <string name="dup_none_in_tab">Дублікатів немає</string>

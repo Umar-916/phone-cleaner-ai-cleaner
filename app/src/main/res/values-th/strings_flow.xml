@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">กำลังปรับความสว่าง</string>
     <string name="bm_run_vibration">กำลังปิดการสั่น</string>
     <string name="bm_done_summary">ปรับการตั้งค่าแบตเตอรี่เรียบร้อยแล้ว</string>
+    <string name="bm_changed_timeout">ตั้งเวลาปิดหน้าจอเป็น 5 วินาที</string>
+    <string name="bm_changed_sound">ปิดเสียงการแจ้งเตือน ระบบ และแป้นพิมพ์แล้ว</string>
+    <string name="bm_changed_brightness">ลดความสว่างและปิดการหมุนอัตโนมัติแล้ว</string>
+    <string name="bm_changed_vibration">ปิดการสั่นเมื่อสัมผัสและเมื่อมีสายเรียกเข้าแล้ว</string>
+    <string name="bm_changed_apps">หยุดแอปที่ทำงานเบื้องหลังแล้ว</string>
     <string name="done_text">เสร็จสิ้น</string>
     <string name="wa_tab_received">ได้รับ</string>
     <string name="wa_tab_sent">ส่งแล้ว</string>

@@ -430,6 +430,7 @@
     <string name="dup_phase_analyzing">در حال یافتن عکس‌های مشابه</string>
     <string name="dup_tab_photos">عکس‌ها (%1$d)</string>
     <string name="dup_tab_videos">ویدیوها (%1$d)</string>
+    <string name="dup_tab_files">فایل‌ها (%1$d)</string>
     <string name="dup_original_hint">نسخه ستاره‌دار حفظ می‌شود. برای نگه داشتن نسخه دیگر، «اصلی کردن» را بزنید.</string>
     <string name="dup_select_all_but_one">انتخاب همه به جز یکی</string>
     <string name="dup_none_in_tab">موردی تکراری اینجا نیست</string>

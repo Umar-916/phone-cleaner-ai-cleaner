@@ -41,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.AlertDialog
@@ -180,7 +181,7 @@ fun DuplicatesScreen(
                     val data = current.data
                     if (!revealed) {
                         com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.dup_phase_analyzing), scanAnim) { revealed = true }
-                    } else if (data.photoGroups.isEmpty() && data.videoGroups.isEmpty()) {
+                    } else if (data.isEmpty) {
                         com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(androidx.compose.material.icons.Icons.Rounded.CheckCircle, Brand.Good, stringResource(R.string.dup_none_title), stringResource(R.string.dup_none_body), stringResource(R.string.empty_done), onBack)
                     } else {
                         ResultView(data, viewModel) {
@@ -238,9 +239,13 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
 
     Column(modifier = Modifier.fillMaxSize()) {
         SegmentedTabs(
-            options = listOf(stringResource(R.string.dup_tab_photos, data.photoGroups.size), stringResource(R.string.dup_tab_videos, data.videoGroups.size)),
-            selectedIndex = if (data.tab == DuplicateTab.PHOTOS) 0 else 1,
-            onSelect = { viewModel.setTab(if (it == 0) DuplicateTab.PHOTOS else DuplicateTab.VIDEOS) },
+            options = listOf(
+                stringResource(R.string.dup_tab_photos, data.photoGroups.size),
+                stringResource(R.string.dup_tab_videos, data.videoGroups.size),
+                stringResource(R.string.dup_tab_files, data.fileGroups.size)
+            ),
+            selectedIndex = data.tab.ordinal,
+            onSelect = { viewModel.setTab(DuplicateTab.entries[it]) },
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
@@ -337,6 +342,36 @@ private fun GroupSection(group: DuplicateGroup, data: DuplicatesData, viewModel:
 }
 
 @Composable
+private fun FileTile(file: MediaFile) {
+    val ext = file.name.substringAfterLast('.', "").uppercase().take(4)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(Icons.Rounded.InsertDriveFile, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(34.dp))
+        if (ext.isNotEmpty()) {
+            Text(
+                ext,
+                color = MaterialTheme.colorScheme.primary,
+                style = TextStyle(fontSize = 11.sp, fontFamily = semiBold, fontWeight = FontWeight.SemiBold)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            file.name,
+            maxLines = 2,
+            overflow = TextOverflow.MiddleEllipsis,
+            color = MaterialTheme.colorScheme.tertiary,
+            style = TextStyle(fontSize = 10.sp, lineHeight = 12.sp, fontFamily = medium)
+        )
+    }
+}
+
+@Composable
 private fun MediaCell(
     file: MediaFile,
     isKeeper: Boolean,
@@ -350,9 +385,11 @@ private fun MediaCell(
             modifier = Modifier
                 .size(104.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .tapClickable("duplicates_open_item") { openUri(context, file.uri, if (file.isVideo) "video/*" else "image/*") }
+                .tapClickable("duplicates_open_item") {
+                    openUri(context, file.uri, if (file.isFile) file.mime.ifBlank { "*/*" } else if (file.isVideo) "video/*" else "image/*")
+                }
         ) {
-            MediaThumbnail(file, Modifier.fillMaxSize())
+            if (file.isFile) FileTile(file) else MediaThumbnail(file, Modifier.fillMaxSize())
             if (file.isVideo) {
                 Icon(
                     Icons.Rounded.PlayCircle, null, tint = Color.White,

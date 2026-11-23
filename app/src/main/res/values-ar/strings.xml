@@ -446,6 +446,7 @@
     <string name="dup_phase_analyzing">جارٍ البحث عن صور متشابهة</string>
     <string name="dup_tab_photos">الصور (%1$d)</string>
     <string name="dup_tab_videos">الفيديوهات (%1$d)</string>
+    <string name="dup_tab_files">الملفات (%1$d)</string>
     <string name="dup_original_hint">يتم الاحتفاظ بالنسخة المميزة بنجمة. اضغط على «جعلها الأصلية» للاحتفاظ بنسخة أخرى.</string>
     <string name="dup_select_all_but_one">تحديد الكل عدا واحد</string>
     <string name="dup_none_in_tab">لا توجد مكررات هنا</string>

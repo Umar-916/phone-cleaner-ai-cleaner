@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Parlaklık ayarlanıyor</string>
     <string name="bm_run_vibration">Titreşim kapatılıyor</string>
     <string name="bm_done_summary">Pil ayarları optimize edildi</string>
+    <string name="bm_changed_timeout">Ekran zaman aşımı 5 saniyeye ayarlandı</string>
+    <string name="bm_changed_sound">Bildirim, sistem ve tuş sesleri kapatıldı</string>
+    <string name="bm_changed_brightness">Parlaklık düşürüldü ve otomatik döndürme kapatıldı</string>
+    <string name="bm_changed_vibration">Dokunma ve zil titreşimi kapatıldı</string>
+    <string name="bm_changed_apps">Arka plan uygulamaları durduruldu</string>
     <string name="done_text">Bitti</string>
     <string name="wa_tab_received">ALINAN</string>
     <string name="wa_tab_sent">GÖNDERİLEN</string>

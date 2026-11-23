@@ -446,6 +446,7 @@ PREMIUM HOLEN</string>
     <string name="dup_phase_analyzing">Ähnliche Fotos werden gesucht</string>
     <string name="dup_tab_photos">Fotos (%1$d)</string>
     <string name="dup_tab_videos">Videos (%1$d)</string>
+    <string name="dup_tab_files">Dateien (%1$d)</string>
     <string name="dup_original_hint">Die Kopie mit Stern wird behalten. Tippe auf Als Original festlegen, um eine andere zu behalten.</string>
     <string name="dup_select_all_but_one">Alle außer einer auswählen</string>
     <string name="dup_none_in_tab">Hier keine Duplikate</string>

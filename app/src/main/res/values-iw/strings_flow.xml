@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">מתאים את הבהירות</string>
     <string name="bm_run_vibration">מכבה את הרטט</string>
     <string name="bm_done_summary">הגדרות הסוללה שופרו</string>
+    <string name="bm_changed_timeout">זמן כיבוי המסך הוגדר ל-5 שניות</string>
+    <string name="bm_changed_sound">צלילי התראות, מערכת ומקשים הושתקו</string>
+    <string name="bm_changed_brightness">הבהירות הופחתה והסיבוב האוטומטי כובה</string>
+    <string name="bm_changed_vibration">רטט מגע וצלצול כובה</string>
+    <string name="bm_changed_apps">אפליקציות הרקע נעצרו</string>
     <string name="done_text">סיום</string>
     <string name="wa_tab_received">התקבלו</string>
     <string name="wa_tab_sent">נשלחו</string>

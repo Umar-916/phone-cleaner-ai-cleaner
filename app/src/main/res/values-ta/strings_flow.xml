@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">பிரகாசத்தை சரிசெய்கிறது</string>
     <string name="bm_run_vibration">அதிர்வை அணைக்கிறது</string>
     <string name="bm_done_summary">பேட்டரி அமைப்புகள் மேம்படுத்தப்பட்டன</string>
+    <string name="bm_changed_timeout">திரை நேரமுடிவு 5 வினாடிகளாக அமைக்கப்பட்டது</string>
+    <string name="bm_changed_sound">அறிவிப்பு, கணினி மற்றும் விசை ஒலிகள் முடக்கப்பட்டன</string>
+    <string name="bm_changed_brightness">ஒளிர்வு குறைக்கப்பட்டு தானியங்கி சுழற்சி அணைக்கப்பட்டது</string>
+    <string name="bm_changed_vibration">தொடு மற்றும் ரிங் அதிர்வு அணைக்கப்பட்டது</string>
+    <string name="bm_changed_apps">பின்னணி பயன்பாடுகள் நிறுத்தப்பட்டன</string>
     <string name="done_text">முடிந்தது</string>
     <string name="wa_tab_received">பெறப்பட்டவை</string>
     <string name="wa_tab_sent">அனுப்பியவை</string>

@@ -445,6 +445,7 @@
     <string name="dup_phase_analyzing">Buscando fotos semelhantes</string>
     <string name="dup_tab_photos">Fotos (%1$d)</string>
     <string name="dup_tab_videos">Vídeos (%1$d)</string>
+    <string name="dup_tab_files">Arquivos (%1$d)</string>
     <string name="dup_original_hint">A cópia com estrela é mantida. Toque em Tornar original para manter outra.</string>
     <string name="dup_select_all_but_one">Selecionar todos menos um</string>
     <string name="dup_none_in_tab">Nenhum duplicado aqui</string>

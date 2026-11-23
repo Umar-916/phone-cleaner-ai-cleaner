@@ -138,9 +138,24 @@ fun BatteryOptimizeScreen(
     var needsPermission by remember { mutableStateOf(false) }
     var pendingStart by remember { mutableStateOf(false) }
     var stopSheet by remember { mutableStateOf(false) }
-    val summary = stringResource(R.string.bm_done_summary)
+    var applied by remember { mutableStateOf(emptyList<BatteryRepository.SaverStep>()) }
+    val changedLines = applied.map {
+        stringResource(
+            when (it) {
+                BatteryRepository.SaverStep.TIMEOUT -> R.string.bm_changed_timeout
+                BatteryRepository.SaverStep.SOUND -> R.string.bm_changed_sound
+                BatteryRepository.SaverStep.BRIGHTNESS -> R.string.bm_changed_brightness
+                BatteryRepository.SaverStep.VIBRATION -> R.string.bm_changed_vibration
+                BatteryRepository.SaverStep.BACKGROUND -> R.string.bm_changed_apps
+            }
+        )
+    }
+    val baseSummary = stringResource(R.string.bm_done_summary)
+    // Tell the user exactly what was changed on their phone (only steps that really succeeded).
+    val summary = if (changedLines.isEmpty()) baseSummary else baseSummary + "\n" + changedLines.joinToString("\n") { "• $it" }
 
     fun start() {
+        applied = emptyList()
         if (!repository.canWriteSettings()) {
             needsPermission = true
             return
@@ -151,7 +166,8 @@ fun BatteryOptimizeScreen(
                 val before = index * 100 / items.size
                 phase = Phase.Running(index, before)
                 delay(1800)
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repository.applySaver(item.step) }
+                val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { repository.applySaver(item.step) }
+                if (ok) applied = applied + item.step
                 phase = Phase.Running(index, (index + 1) * 100 / items.size)
                 delay(500)
             }
@@ -202,7 +218,7 @@ fun BatteryOptimizeScreen(
             val item = items[p.index]
             BoostRunningView(percent = p.percent, label = stringResource(item.running), badge = item.icon, valueText = p.value)
         }
-        Phase.Done -> TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(main = com.phonecleaner.aicleaner.domain.MainTask.BATTERY)) { onFinished(summary) }
+        Phase.Done -> TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(main = com.phonecleaner.aicleaner.domain.MainTask.BATTERY), caption = summary) { onFinished(summary) }
         Phase.Idle -> com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,

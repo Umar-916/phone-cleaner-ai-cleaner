@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">밝기 조정 중</string>
     <string name="bm_run_vibration">진동 끄는 중</string>
     <string name="bm_done_summary">배터리 설정이 최적화되었습니다</string>
+    <string name="bm_changed_timeout">화면 꺼짐 시간을 5초로 설정했습니다</string>
+    <string name="bm_changed_sound">알림음, 시스템음, 키 소리를 음소거했습니다</string>
+    <string name="bm_changed_brightness">밝기를 낮추고 자동 회전을 껐습니다</string>
+    <string name="bm_changed_vibration">터치 및 벨소리 진동을 껐습니다</string>
+    <string name="bm_changed_apps">백그라운드 앱을 중지했습니다</string>
     <string name="done_text">완료</string>
     <string name="wa_tab_received">받음</string>
     <string name="wa_tab_sent">보냄</string>

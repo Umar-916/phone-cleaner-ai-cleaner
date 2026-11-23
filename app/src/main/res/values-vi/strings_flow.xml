@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Đang điều chỉnh độ sáng</string>
     <string name="bm_run_vibration">Đang tắt rung</string>
     <string name="bm_done_summary">Đã tối ưu cài đặt pin</string>
+    <string name="bm_changed_timeout">Đã đặt thời gian tắt màn hình là 5 giây</string>
+    <string name="bm_changed_sound">Đã tắt âm thông báo, hệ thống và bàn phím</string>
+    <string name="bm_changed_brightness">Đã giảm độ sáng và tắt tự động xoay</string>
+    <string name="bm_changed_vibration">Đã tắt rung khi chạm và khi có cuộc gọi</string>
+    <string name="bm_changed_apps">Đã dừng các ứng dụng chạy nền</string>
     <string name="done_text">Xong</string>
     <string name="wa_tab_received">ĐÃ NHẬN</string>
     <string name="wa_tab_sent">ĐÃ GỬI</string>

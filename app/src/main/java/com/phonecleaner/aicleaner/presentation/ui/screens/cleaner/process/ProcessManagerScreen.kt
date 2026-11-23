@@ -145,7 +145,7 @@ fun ProcessManagerScreen(
             }
         }
         BoostState.Idle -> if (info) {
-            InfoContent(onInfo = { info = false }, onBack = { info = false })
+            InfoContent(onBack = { info = false })
         } else {
             RamContent(
                 memory = state.memory,
@@ -248,18 +248,13 @@ private fun TaskKillerButton(onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun InfoContent(onInfo: () -> Unit, onBack: () -> Unit) {
+private fun InfoContent(onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             AppTopBar(
                 title = { AppTopBarTitle(stringResource(R.string.info_center_title)) },
-                onBack = onBack,
-                actions = {
-                    Box(Modifier.padding(end = 12.dp).size(40.dp).clip(CircleShape).tapClickable("process_info_icon_close", onClick = onInfo), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Info, stringResource(R.string.device_info_title), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
-                    }
-                }
+                onBack = onBack
             )
         }
     ) { padding ->

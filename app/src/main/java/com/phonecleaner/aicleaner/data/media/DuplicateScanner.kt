@@ -26,8 +26,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import java.io.FileInputStream
-import java.security.MessageDigest
 
 class DuplicateScanner(private val context: Context, private val filesRepository: FilesRepository) {
 
@@ -41,16 +39,20 @@ class DuplicateScanner(private val context: Context, private val filesRepository
         send(DuplicateScanEvent.Progress(DuplicateProgress(DuplicatePhase.READING, 0, 0)))
         val images = queryMedia(isVideo = false)
         val videos = queryMedia(isVideo = true)
+        val others = queryOtherFiles()
+        val total = images.size + videos.size + others.size
 
-        val exactImages = findExact(images, this, offset = 0, total = images.size + videos.size)
-        val exactVideos = findExact(videos, this, offset = images.size, total = images.size + videos.size)
+        val exactImages = findExact(images, this, offset = 0, total = total)
+        val exactVideos = findExact(videos, this, offset = images.size, total = total)
+        val exactFiles = findExact(others, this, offset = images.size + videos.size, total = total)
         val similar = findSimilar(images, exactImages, this)
 
         send(
             DuplicateScanEvent.Finished(
                 DuplicateScanResult(
                     photoGroups = (exactImages + similar).sortedByDescending { it.recoverableBytes() },
-                    videoGroups = exactVideos.sortedByDescending { it.recoverableBytes() }
+                    videoGroups = exactVideos.sortedByDescending { it.recoverableBytes() },
+                    fileGroups = exactFiles.sortedByDescending { it.recoverableBytes() }
                 )
             )
         )
@@ -64,6 +66,11 @@ class DuplicateScanner(private val context: Context, private val filesRepository
         filesRepository.list(if (isVideo) FileCategory.VIDEO else FileCategory.IMAGES, showHidden = false).map {
             MediaFile(it.id, it.uri, it.name, it.sizeBytes, it.modifiedMs, isVideo, 0, 0, 0L)
         }
+
+    private suspend fun queryOtherFiles(): List<MediaFile> =
+        filesRepository.listNonMedia(showHidden = false)
+            .filter { it.sizeBytes > 0 }
+            .map { MediaFile(it.id, it.uri, it.name, it.sizeBytes, it.modifiedMs, false, 0, 0, 0L, isFile = true, mime = it.mime) }
 
     private suspend fun findExact(
         files: List<MediaFile>,
@@ -91,6 +98,7 @@ class DuplicateScanner(private val context: Context, private val filesRepository
                     id = "exact:$key",
                     kind = DuplicateKind.EXACT,
                     isVideo = group.first().isVideo,
+                    isFile = group.first().isFile,
                     files = group.sortedBy { it.addedAtMs }
                 )
             }
@@ -114,8 +122,10 @@ class DuplicateScanner(private val context: Context, private val filesRepository
                 batch.map { index ->
                     async(scanDispatcher) {
                         MediaThumbs.load(context, pool[index], HASH_THUMB_SIZE)?.let {
-                            hashes[index] = differenceHash(it)
-                            valid[index] = true
+                            val hash = differenceHash(it)
+                            hashes[index] = hash
+                            // Near-flat images (solid colour, blank screenshots) all hash alike and are not real duplicates.
+                            valid[index] = java.lang.Long.bitCount(hash) in MIN_HASH_BITS..(64 - MIN_HASH_BITS)
                         }
                     }
                 }.awaitAll()
@@ -126,60 +136,29 @@ class DuplicateScanner(private val context: Context, private val filesRepository
             )
         }
 
-        val parent = IntArray(pool.size) { it }
-        fun find(x: Int): Int {
-            var root = x
-            while (parent[root] != root) root = parent[root]
-            var node = x
-            while (parent[node] != root) {
-                val next = parent[node]
-                parent[node] = root
-                node = next
-            }
-            return root
-        }
+        // Each image joins at most one group and must be close to that group's first image. Chaining A~B~C (union-find)
+        // could merge unrelated photos into one group that is then pre-selected for deletion.
+        val assigned = BooleanArray(pool.size)
+        val result = ArrayList<DuplicateGroup>()
         for (i in pool.indices) {
-            if (!valid[i]) continue
+            if (!valid[i] || assigned[i]) continue
             if (i % COMPARE_YIELD == 0) scope.coroutineContext.ensureActive()
+            val members = arrayListOf(i)
             for (j in i + 1 until pool.size) {
-                if (valid[j] && java.lang.Long.bitCount(hashes[i] xor hashes[j]) <= SIMILAR_DISTANCE) {
-                    parent[find(i)] = find(j)
+                if (valid[j] && !assigned[j] && java.lang.Long.bitCount(hashes[i] xor hashes[j]) <= SIMILAR_DISTANCE) {
+                    members += j
                 }
             }
-        }
-
-        return pool.indices
-            .filter { valid[it] }
-            .groupBy { find(it) }
-            .values
-            .filter { it.size > 1 }
-            .map { members ->
+            if (members.size > 1) {
+                members.forEach { assigned[it] = true }
                 val files = members.map { pool[it] }.sortedBy { it.addedAtMs }
-                DuplicateGroup("similar:${files.first().id}", DuplicateKind.SIMILAR, false, files)
+                result += DuplicateGroup("similar:${files.first().id}", DuplicateKind.SIMILAR, false, files)
             }
+        }
+        return result
     }
 
-    private fun hash(file: MediaFile): String? = runCatching {
-        val digest = MessageDigest.getInstance("SHA-256")
-        resolver.openFileDescriptor(file.uri, "r")?.use { pfd ->
-            FileInputStream(pfd.fileDescriptor).use { stream ->
-                val channel = stream.channel
-                val buffer = java.nio.ByteBuffer.allocate(CHUNK)
-                val offsets = if (file.sizeBytes <= FULL_HASH_LIMIT) {
-                    generateSequence(0L) { it + CHUNK }.takeWhile { it < file.sizeBytes }.toList()
-                } else {
-                    listOf(0L, file.sizeBytes / 2, file.sizeBytes - CHUNK)
-                }
-                offsets.forEach { offset ->
-                    buffer.clear()
-                    channel.position(offset)
-                    val read = channel.read(buffer)
-                    if (read > 0) digest.update(buffer.array(), 0, read)
-                }
-            }
-        } ?: return null
-        digest.digest().joinToString("") { "%02x".format(it) }
-    }.getOrNull()
+    private fun hash(file: MediaFile): String? = FileHasher.sha256(resolver, file.uri, file.sizeBytes)
 
     private fun differenceHash(source: Bitmap): Long {
         val small = Bitmap.createScaledBitmap(source, 9, 8, true)
@@ -197,12 +176,11 @@ class DuplicateScanner(private val context: Context, private val filesRepository
         (Color.red(pixel) * 299 + Color.green(pixel) * 587 + Color.blue(pixel) * 114) / 1000
 
     private companion object {
-        const val CHUNK = 1024 * 1024
-        const val FULL_HASH_LIMIT = 32L * 1024 * 1024
         const val PROGRESS_STEP = 5
         const val HASH_BATCH = 12
         const val HASH_THUMB_SIZE = 72
         const val SIMILAR_DISTANCE = 5
+        const val MIN_HASH_BITS = 8
         const val COMPARE_YIELD = 256
     }
 }

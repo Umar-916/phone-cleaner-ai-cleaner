@@ -400,6 +400,7 @@
     <string name="dup_phase_analyzing">กำลังค้นหารูปภาพที่คล้ายกัน</string>
     <string name="dup_tab_photos">รูปภาพ (%1$d)</string>
     <string name="dup_tab_videos">วิดีโอ (%1$d)</string>
+    <string name="dup_tab_files">ไฟล์ (%1$d)</string>
     <string name="dup_original_hint">ไฟล์ที่ติดดาวจะถูกเก็บไว้ แตะ ตั้งเป็นต้นฉบับ เพื่อเก็บไฟล์อื่นแทน</string>
     <string name="dup_select_all_but_one">เลือกทั้งหมดยกเว้นหนึ่งไฟล์</string>
     <string name="dup_none_in_tab">ไม่มีไฟล์ซ้ำที่นี่</string>

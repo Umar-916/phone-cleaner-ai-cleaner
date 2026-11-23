@@ -18,20 +18,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class DuplicateTab { PHOTOS, VIDEOS }
+enum class DuplicateTab { PHOTOS, VIDEOS, FILES }
 
 data class DuplicatesData(
     val photoGroups: List<DuplicateGroup>,
     val videoGroups: List<DuplicateGroup>,
+    val fileGroups: List<DuplicateGroup>,
     val selected: Set<Long>,
     val keepers: Map<String, Long>,
     val tab: DuplicateTab = DuplicateTab.PHOTOS
 ) {
     val activeGroups: List<DuplicateGroup>
-        get() = if (tab == DuplicateTab.PHOTOS) photoGroups else videoGroups
+        get() = when (tab) {
+            DuplicateTab.PHOTOS -> photoGroups
+            DuplicateTab.VIDEOS -> videoGroups
+            DuplicateTab.FILES -> fileGroups
+        }
+
+    val isEmpty: Boolean get() = photoGroups.isEmpty() && videoGroups.isEmpty() && fileGroups.isEmpty()
 
     private val allFiles: Map<Long, MediaFile> by lazy {
-        (photoGroups + videoGroups).flatMap { it.files }.associateBy { it.id }
+        (photoGroups + videoGroups + fileGroups).flatMap { it.files }.associateBy { it.id }
     }
 
     val selectedFiles: List<MediaFile> get() = selected.mapNotNull { allFiles[it] }
@@ -88,7 +95,7 @@ class DuplicatesViewModel(private val scanner: DuplicateScanner) : ViewModel() {
     }
 
     fun selectAllButKeepers() = updateData { data ->
-        val all = (data.photoGroups + data.videoGroups).flatMap { group ->
+        val all = (data.photoGroups + data.videoGroups + data.fileGroups).flatMap { group ->
             val keeper = data.keeperOf(group)
             group.files.map { it.id }.filter { it != keeper }
         }
@@ -119,9 +126,14 @@ class DuplicatesViewModel(private val scanner: DuplicateScanner) : ViewModel() {
     }
 
     private fun initialData(result: DuplicateScanResult): DuplicatesData {
-        val groups = result.photoGroups + result.videoGroups
+        val groups = result.photoGroups + result.videoGroups + result.fileGroups
         val selected = groups.flatMap { g -> g.files.drop(1).map { it.id } }.toSet()
-        return DuplicatesData(result.photoGroups, result.videoGroups, selected, emptyMap())
+        val firstTab = when {
+            result.photoGroups.isNotEmpty() -> DuplicateTab.PHOTOS
+            result.videoGroups.isNotEmpty() -> DuplicateTab.VIDEOS
+            else -> DuplicateTab.FILES
+        }
+        return DuplicatesData(result.photoGroups, result.videoGroups, result.fileGroups, selected, emptyMap(), firstTab)
     }
 
     private fun updateData(transform: (DuplicatesData) -> DuplicatesData) {

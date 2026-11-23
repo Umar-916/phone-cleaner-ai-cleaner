@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Налаштування яскравості</string>
     <string name="bm_run_vibration">Вимкнення вібрації</string>
     <string name="bm_done_summary">Налаштування батареї оптимізовано</string>
+    <string name="bm_changed_timeout">Тайм-аут екрана встановлено на 5 секунд</string>
+    <string name="bm_changed_sound">Звуки сповіщень, системи та клавіш вимкнено</string>
+    <string name="bm_changed_brightness">Яскравість знижено, автоповорот вимкнено</string>
+    <string name="bm_changed_vibration">Вібрацію дотику та дзвінка вимкнено</string>
+    <string name="bm_changed_apps">Фонові програми зупинено</string>
     <string name="done_text">Готово</string>
     <string name="wa_tab_received">ОТРИМАНІ</string>
     <string name="wa_tab_sent">НАДІСЛАНІ</string>

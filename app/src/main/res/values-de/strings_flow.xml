@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Helligkeit wird angepasst</string>
     <string name="bm_run_vibration">Vibration wird ausgeschaltet</string>
     <string name="bm_done_summary">Akkueinstellungen optimiert</string>
+    <string name="bm_changed_timeout">Bildschirm-Timeout auf 5 Sekunden gesetzt</string>
+    <string name="bm_changed_sound">Benachrichtigungs-, System- und Tastentöne stummgeschaltet</string>
+    <string name="bm_changed_brightness">Helligkeit verringert und automatische Drehung deaktiviert</string>
+    <string name="bm_changed_vibration">Touch- und Klingelvibration deaktiviert</string>
+    <string name="bm_changed_apps">Hintergrund-Apps beendet</string>
     <string name="done_text">Fertig</string>
     <string name="wa_tab_received">ERHALTEN</string>
     <string name="wa_tab_sent">GESENDET</string>

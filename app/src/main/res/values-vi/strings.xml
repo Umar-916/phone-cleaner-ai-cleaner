@@ -447,6 +447,7 @@ LÊN PREMIUM</string>
     <string name="dup_phase_analyzing">Đang tìm ảnh tương tự</string>
     <string name="dup_tab_photos">Ảnh (%1$d)</string>
     <string name="dup_tab_videos">Video (%1$d)</string>
+    <string name="dup_tab_files">Tệp (%1$d)</string>
     <string name="dup_original_hint">Bản có gắn sao sẽ được giữ lại. Chạm Đặt làm bản gốc để giữ bản khác.</string>
     <string name="dup_select_all_but_one">Chọn tất cả trừ một</string>
     <string name="dup_none_in_tab">Không có tệp trùng lặp</string>

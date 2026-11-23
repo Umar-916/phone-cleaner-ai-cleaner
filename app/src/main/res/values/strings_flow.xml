@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Adjusting brightness</string>
     <string name="bm_run_vibration">Turning off vibration</string>
     <string name="bm_done_summary">Battery settings optimised</string>
+    <string name="bm_changed_timeout">Screen timeout set to 5 seconds</string>
+    <string name="bm_changed_sound">Notification, system and key sounds muted</string>
+    <string name="bm_changed_brightness">Brightness lowered and auto-rotate turned off</string>
+    <string name="bm_changed_vibration">Touch and ring vibration turned off</string>
+    <string name="bm_changed_apps">Background apps stopped</string>
     <string name="done_text">Done</string>
     <string name="wa_tab_received">RECEIVED</string>
     <string name="wa_tab_sent">SENT</string>

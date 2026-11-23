@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Προσαρμογή φωτεινότητας</string>
     <string name="bm_run_vibration">Απενεργοποίηση δόνησης</string>
     <string name="bm_done_summary">Οι ρυθμίσεις μπαταρίας βελτιστοποιήθηκαν</string>
+    <string name="bm_changed_timeout">Το χρονικό όριο οθόνης ορίστηκε στα 5 δευτερόλεπτα</string>
+    <string name="bm_changed_sound">Οι ήχοι ειδοποιήσεων, συστήματος και πλήκτρων τέθηκαν σε σίγαση</string>
+    <string name="bm_changed_brightness">Η φωτεινότητα μειώθηκε και η αυτόματη περιστροφή απενεργοποιήθηκε</string>
+    <string name="bm_changed_vibration">Η δόνηση αφής και κουδουνίσματος απενεργοποιήθηκε</string>
+    <string name="bm_changed_apps">Οι εφαρμογές παρασκηνίου τερματίστηκαν</string>
     <string name="done_text">Τέλος</string>
     <string name="wa_tab_received">ΛΗΦΘΕΝΤΑ</string>
     <string name="wa_tab_sent">ΕΣΤΑΛΜΕΝΑ</string>

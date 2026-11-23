@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">正在調整亮度</string>
     <string name="bm_run_vibration">正在關閉震動</string>
     <string name="bm_done_summary">電池設定已最佳化</string>
+    <string name="bm_changed_timeout">螢幕逾時已設為 5 秒</string>
+    <string name="bm_changed_sound">已將通知、系統和按鍵音靜音</string>
+    <string name="bm_changed_brightness">已降低亮度並關閉自動旋轉</string>
+    <string name="bm_changed_vibration">已關閉觸控和來電震動</string>
+    <string name="bm_changed_apps">已停止背景應用程式</string>
     <string name="done_text">完成</string>
     <string name="wa_tab_received">已接收</string>
     <string name="wa_tab_sent">已傳送</string>

@@ -446,6 +446,7 @@ PREMIUM\'A GEÇ</string>
     <string name="dup_phase_analyzing">Benzer fotoğraflar bulunuyor</string>
     <string name="dup_tab_photos">Fotoğraflar (%1$d)</string>
     <string name="dup_tab_videos">Videolar (%1$d)</string>
+    <string name="dup_tab_files">Dosyalar (%1$d)</string>
     <string name="dup_original_hint">Yıldızlı kopya korunur. Başka birini tutmak için Orijinal yap\'a dokunun.</string>
     <string name="dup_select_all_but_one">Biri hariç tümünü seç</string>
     <string name="dup_none_in_tab">Burada kopya yok</string>

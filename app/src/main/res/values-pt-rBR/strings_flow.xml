@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Ajustando o brilho</string>
     <string name="bm_run_vibration">Desativando a vibração</string>
     <string name="bm_done_summary">Configurações de bateria otimizadas</string>
+    <string name="bm_changed_timeout">Tempo limite da tela definido para 5 segundos</string>
+    <string name="bm_changed_sound">Sons de notificações, sistema e teclas silenciados</string>
+    <string name="bm_changed_brightness">Brilho reduzido e rotação automática desativada</string>
+    <string name="bm_changed_vibration">Vibração de toque e de chamada desativada</string>
+    <string name="bm_changed_apps">Aplicativos em segundo plano encerrados</string>
     <string name="done_text">Concluído</string>
     <string name="wa_tab_received">RECEBIDOS</string>
     <string name="wa_tab_sent">ENVIADOS</string>

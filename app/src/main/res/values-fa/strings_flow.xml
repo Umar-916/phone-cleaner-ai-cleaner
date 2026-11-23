@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">در حال تنظیم روشنایی</string>
     <string name="bm_run_vibration">در حال خاموش کردن لرزش</string>
     <string name="bm_done_summary">تنظیمات باتری بهینه شد</string>
+    <string name="bm_changed_timeout">زمان خاموشی صفحه روی ۵ ثانیه تنظیم شد</string>
+    <string name="bm_changed_sound">صداهای اعلان، سیستم و کلید بی‌صدا شدند</string>
+    <string name="bm_changed_brightness">روشنایی کاهش یافت و چرخش خودکار خاموش شد</string>
+    <string name="bm_changed_vibration">لرزش لمسی و زنگ خاموش شد</string>
+    <string name="bm_changed_apps">برنامه‌های پس‌زمینه متوقف شدند</string>
     <string name="done_text">انجام شد</string>
     <string name="wa_tab_received">دریافتی</string>
     <string name="wa_tab_sent">ارسالی</string>

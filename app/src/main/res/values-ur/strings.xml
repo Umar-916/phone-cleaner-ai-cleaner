@@ -430,6 +430,7 @@
     <string name="dup_phase_analyzing">ملتی جلتی تصاویر تلاش ہو رہی ہیں</string>
     <string name="dup_tab_photos">تصاویر (%1$d)</string>
     <string name="dup_tab_videos">ویڈیوز (%1$d)</string>
+    <string name="dup_tab_files">فائلیں (%1$d)</string>
     <string name="dup_original_hint">ستارے والی کاپی رکھی جاتی ہے۔ دوسری کاپی رکھنے کے لیے \"اصل بنائیں\" پر ٹیپ کریں۔</string>
     <string name="dup_select_all_but_one">ایک کے سوا سب منتخب کریں</string>
     <string name="dup_none_in_tab">یہاں کوئی ڈپلیکیٹ نہیں</string>

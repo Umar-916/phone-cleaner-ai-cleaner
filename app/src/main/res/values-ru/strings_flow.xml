@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Настройка яркости</string>
     <string name="bm_run_vibration">Отключение вибрации</string>
     <string name="bm_done_summary">Настройки батареи оптимизированы</string>
+    <string name="bm_changed_timeout">Время до отключения экрана: 5 секунд</string>
+    <string name="bm_changed_sound">Звуки уведомлений, системы и клавиш отключены</string>
+    <string name="bm_changed_brightness">Яркость снижена, автоповорот отключён</string>
+    <string name="bm_changed_vibration">Вибрация при касании и звонке отключена</string>
+    <string name="bm_changed_apps">Фоновые приложения остановлены</string>
     <string name="done_text">Готово</string>
     <string name="wa_tab_received">ПОЛУЧЕННЫЕ</string>
     <string name="wa_tab_sent">ОТПРАВЛЕННЫЕ</string>

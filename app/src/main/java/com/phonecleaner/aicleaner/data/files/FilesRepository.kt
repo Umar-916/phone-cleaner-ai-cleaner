@@ -28,6 +28,15 @@ class FilesRepository(private val context: Context) {
     suspend fun list(category: FileCategory, showHidden: Boolean): List<FileEntry> =
         all(showHidden).filter { matches(category, it) }.map { it.toEntry(category) }.sortedByDescending { it.modifiedMs }
 
+    /** Every non-image, non-video file (documents, audio, APKs, archives, anything else). */
+    suspend fun listNonMedia(showHidden: Boolean): List<FileEntry> =
+        all(showHidden)
+            .filter { !it.mime.startsWith("image/") && !it.mime.startsWith("video/") }
+            .map { doc ->
+                val category = FileCategory.entries.firstOrNull { it != FileCategory.DOWNLOAD && matches(it, doc) } ?: FileCategory.DOWNLOAD
+                doc.toEntry(category)
+            }
+
     suspend fun summaries(showHidden: Boolean): Map<FileCategory, CategorySummary> {
         val docs = all(showHidden)
         return FileCategory.entries.associateWith { category ->
@@ -66,8 +75,15 @@ class FilesRepository(private val context: Context) {
     }
 
     suspend fun deletePaths(paths: List<String>): Int = withContext(Dispatchers.IO) {
+        val root = Environment.getExternalStorageDirectory().canonicalFile
         val removed = paths.filter { path ->
-            runCatching { File(path).let { if (it.isDirectory) it.deleteRecursively() else it.delete() } }.getOrDefault(false)
+            runCatching {
+                val file = File(path).canonicalFile
+                // Never delete the storage root, anything outside it, or the system-managed top-level Android folder.
+                val protected = file == root || !file.path.startsWith(root.path + File.separator) ||
+                    (file.parentFile == root && file.name.equals("Android", ignoreCase = true))
+                !protected && file.let { if (it.isDirectory) it.deleteRecursively() else it.delete() }
+            }.getOrDefault(false)
         }
         if (removed.isNotEmpty()) {
             cache = null

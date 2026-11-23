@@ -447,6 +447,7 @@ JADI PREMIUM</string>
     <string name="dup_phase_analyzing">Mencari foto serupa</string>
     <string name="dup_tab_photos">Foto (%1$d)</string>
     <string name="dup_tab_videos">Video (%1$d)</string>
+    <string name="dup_tab_files">Fail (%1$d)</string>
     <string name="dup_original_hint">Salinan bertanda bintang dikekalkan. Ketik Jadikan asal untuk mengekalkan yang lain.</string>
     <string name="dup_select_all_but_one">Pilih semua kecuali satu</string>
     <string name="dup_none_in_tab">Tiada pendua di sini</string>

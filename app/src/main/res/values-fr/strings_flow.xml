@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">Réglage de la luminosité</string>
     <string name="bm_run_vibration">Désactivation des vibrations</string>
     <string name="bm_done_summary">Paramètres de batterie optimisés</string>
+    <string name="bm_changed_timeout">Délai de mise en veille réglé sur 5 secondes</string>
+    <string name="bm_changed_sound">Sons des notifications, du système et des touches coupés</string>
+    <string name="bm_changed_brightness">Luminosité réduite et rotation automatique désactivée</string>
+    <string name="bm_changed_vibration">Vibrations tactiles et de sonnerie désactivées</string>
+    <string name="bm_changed_apps">Applications en arrière-plan arrêtées</string>
     <string name="done_text">Terminé</string>
     <string name="wa_tab_received">REÇUS</string>
     <string name="wa_tab_sent">ENVOYÉS</string>

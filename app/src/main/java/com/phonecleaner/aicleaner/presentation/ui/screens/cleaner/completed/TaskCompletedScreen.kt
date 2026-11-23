@@ -75,6 +75,12 @@ private val bold = AppFonts.Bold
 
 enum class OtherFeature { AI, WHATSAPP, DUPLICATES }
 
+private fun OtherFeature.toExtra(): com.phonecleaner.aicleaner.domain.ExtraTask = when (this) {
+    OtherFeature.AI -> com.phonecleaner.aicleaner.domain.ExtraTask.AI
+    OtherFeature.WHATSAPP -> com.phonecleaner.aicleaner.domain.ExtraTask.WHATSAPP
+    OtherFeature.DUPLICATES -> com.phonecleaner.aicleaner.domain.ExtraTask.DUPLICATES
+}
+
 private class Other(
     val feature: OtherFeature,
     val title: Int,
@@ -115,7 +121,9 @@ fun TaskCompletedScreen(
     onOpenOther: (OtherFeature) -> Unit = {}
 ) {
     val done by TaskTracker.done.collectAsState()
+    val doneExtras by TaskTracker.extras.collectAsState()
     val hooray = MainTask.PROCESS in done && MainTask.BATTERY in done
+    val remainingOthers = others.filter { it.feature.toExtra() !in doneExtras }
     val remaining = if (hooray) emptyList() else suggestions.filter { it.task !in done }
     var shown by remember { mutableStateOf(false) }
     val checkScale by animateFloatAsState(
@@ -171,7 +179,7 @@ fun TaskCompletedScreen(
             }
 
             if (hooray) {
-                others.forEach { o ->
+                remainingOthers.forEach { o ->
                     TaskCard(
                         icon = o.icon, tint = o.tint, title = stringResource(o.title), body = stringResource(o.body),
                         badge = if (o.recommended) stringResource(R.string.task_recommended) else null,

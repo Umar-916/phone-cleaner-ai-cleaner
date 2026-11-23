@@ -446,6 +446,7 @@
     <string name="dup_phase_analyzing">מחפש תמונות דומות</string>
     <string name="dup_tab_photos">תמונות (%1$d)</string>
     <string name="dup_tab_videos">סרטונים (%1$d)</string>
+    <string name="dup_tab_files">קבצים (%1$d)</string>
     <string name="dup_original_hint">העותק המסומן בכוכב נשמר. הקש על ״הפוך למקור״ כדי לשמור עותק אחר.</string>
     <string name="dup_select_all_but_one">בחר הכול מלבד אחד</string>
     <string name="dup_none_in_tab">אין כאן כפילויות</string>

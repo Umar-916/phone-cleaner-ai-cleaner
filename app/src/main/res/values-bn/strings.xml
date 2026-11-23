@@ -445,6 +445,7 @@
     <string name="dup_phase_analyzing">একই রকম ছবি খোঁজা হচ্ছে</string>
     <string name="dup_tab_photos">ছবি (%1$d)</string>
     <string name="dup_tab_videos">ভিডিও (%1$d)</string>
+    <string name="dup_tab_files">ফাইল (%1$d)</string>
     <string name="dup_original_hint">তারকা চিহ্নিত কপিটি রাখা হয়। অন্যটি রাখতে \"মূল করুন\"-এ ট্যাপ করুন।</string>
     <string name="dup_select_all_but_one">একটি বাদে সব নির্বাচন করুন</string>
     <string name="dup_none_in_tab">এখানে কোনো ডুপ্লিকেট নেই</string>

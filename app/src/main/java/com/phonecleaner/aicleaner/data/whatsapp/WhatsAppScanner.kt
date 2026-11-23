@@ -19,8 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import java.io.FileInputStream
-import java.security.MessageDigest
+import com.phonecleaner.aicleaner.data.media.FileHasher
 
 class WhatsAppScanner(private val context: Context) {
 
@@ -98,30 +97,9 @@ class WhatsAppScanner(private val context: Context) {
         return files.map { if (it.path in duplicatePaths) it.copy(isDuplicate = true) else it }
     }
 
-    private fun hash(file: WaFile): String? = runCatching {
-        val digest = MessageDigest.getInstance("SHA-256")
-        context.contentResolver.openFileDescriptor(file.uri, "r")?.use { pfd ->
-            FileInputStream(pfd.fileDescriptor).channel.use { channel ->
-                val buffer = java.nio.ByteBuffer.allocate(CHUNK)
-                val offsets = if (file.sizeBytes <= FULL_HASH_LIMIT) {
-                    generateSequence(0L) { it + CHUNK }.takeWhile { it < file.sizeBytes }.toList()
-                } else {
-                    listOf(0L, file.sizeBytes / 2, file.sizeBytes - CHUNK)
-                }
-                offsets.forEach { offset ->
-                    buffer.clear()
-                    channel.position(offset)
-                    val read = channel.read(buffer)
-                    if (read > 0) digest.update(buffer.array(), 0, read)
-                }
-            }
-        } ?: return null
-        digest.digest().joinToString("") { "%02x".format(it) }
-    }.getOrNull()
+    private fun hash(file: WaFile): String? = FileHasher.sha256(context.contentResolver, file.uri, file.sizeBytes)
 
     private companion object {
         const val EMIT_INTERVAL_MS = 120L
-        const val CHUNK = 1024 * 1024
-        const val FULL_HASH_LIMIT = 32L * 1024 * 1024
     }
 }

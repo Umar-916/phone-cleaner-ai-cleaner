@@ -446,6 +446,7 @@
     <string name="dup_phase_analyzing">正在尋找相似相片</string>
     <string name="dup_tab_photos">相片（%1$d）</string>
     <string name="dup_tab_videos">影片（%1$d）</string>
+    <string name="dup_tab_files">檔案 (%1$d)</string>
     <string name="dup_original_hint">標有星號的副本將被保留。點一下「設為原始檔」可改為保留其他副本。</string>
     <string name="dup_select_all_but_one">保留一個，其餘全選</string>
     <string name="dup_none_in_tab">這裡沒有重複項目</string>

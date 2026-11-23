@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">चमक समायोजित हो रही है</string>
     <string name="bm_run_vibration">कंपन बंद हो रहा है</string>
     <string name="bm_done_summary">बैटरी सेटिंग ऑप्टिमाइज़ हो गईं</string>
+    <string name="bm_changed_timeout">स्क्रीन टाइमआउट 5 सेकंड पर सेट किया गया</string>
+    <string name="bm_changed_sound">नोटिफिकेशन, सिस्टम और कीबोर्ड की आवाज़ें म्यूट की गईं</string>
+    <string name="bm_changed_brightness">ब्राइटनेस कम की गई और ऑटो-रोटेट बंद किया गया</string>
+    <string name="bm_changed_vibration">टच और रिंग वाइब्रेशन बंद किया गया</string>
+    <string name="bm_changed_apps">बैकग्राउंड ऐप्स बंद किए गए</string>
     <string name="done_text">हो गया</string>
     <string name="wa_tab_received">प्राप्त</string>
     <string name="wa_tab_sent">भेजे गए</string>

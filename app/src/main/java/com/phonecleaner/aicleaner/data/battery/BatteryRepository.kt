@@ -113,7 +113,8 @@ class BatteryRepository(private val context: Context, private val processes: Pro
     fun applySaver(step: SaverStep): Boolean = runCatching {
         when (step) {
             SaverStep.SOUND -> {
-                listOf(AudioManager.STREAM_MUSIC, AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
+                // Media volume is left alone: muting the user's music/video volume unasked is surprising.
+                listOf(AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
                     .forEach { stream -> runCatching { audioManager.setStreamVolume(stream, 0, 0) } }
                 if (canWriteSettings()) {
                     listOf(Settings.System.SOUND_EFFECTS_ENABLED, "lockscreen_sounds_enabled", Settings.System.DTMF_TONE_WHEN_DIALING)

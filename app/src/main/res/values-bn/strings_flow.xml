@@ -14,6 +14,11 @@
     <string name="bm_run_brightness">উজ্জ্বলতা সামঞ্জস্য হচ্ছে</string>
     <string name="bm_run_vibration">কম্পন বন্ধ করা হচ্ছে</string>
     <string name="bm_done_summary">ব্যাটারি সেটিংস অপটিমাইজ হয়েছে</string>
+    <string name="bm_changed_timeout">স্ক্রিন টাইমআউট ৫ সেকেন্ডে সেট করা হয়েছে</string>
+    <string name="bm_changed_sound">বিজ্ঞপ্তি, সিস্টেম ও কী শব্দ নিঃশব্দ করা হয়েছে</string>
+    <string name="bm_changed_brightness">উজ্জ্বলতা কমানো হয়েছে এবং অটো-রোটেট বন্ধ করা হয়েছে</string>
+    <string name="bm_changed_vibration">টাচ ও রিং ভাইব্রেশন বন্ধ করা হয়েছে</string>
+    <string name="bm_changed_apps">ব্যাকগ্রাউন্ড অ্যাপ বন্ধ করা হয়েছে</string>
     <string name="done_text">সম্পন্ন</string>
     <string name="wa_tab_received">প্রাপ্ত</string>
     <string name="wa_tab_sent">প্রেরিত</string>

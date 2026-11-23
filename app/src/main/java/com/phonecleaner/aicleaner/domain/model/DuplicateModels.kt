@@ -11,7 +11,10 @@ data class MediaFile(
     val isVideo: Boolean,
     val width: Int,
     val height: Int,
-    val durationMs: Long
+    val durationMs: Long,
+    /** True for non-media files (documents, audio, APKs, archives...) which have no thumbnail. */
+    val isFile: Boolean = false,
+    val mime: String = ""
 )
 
 enum class DuplicateKind { EXACT, SIMILAR }
@@ -20,12 +23,14 @@ data class DuplicateGroup(
     val id: String,
     val kind: DuplicateKind,
     val isVideo: Boolean,
-    val files: List<MediaFile>
+    val files: List<MediaFile>,
+    val isFile: Boolean = false
 )
 
 data class DuplicateScanResult(
     val photoGroups: List<DuplicateGroup>,
-    val videoGroups: List<DuplicateGroup>
+    val videoGroups: List<DuplicateGroup>,
+    val fileGroups: List<DuplicateGroup> = emptyList()
 )
 
 enum class DuplicatePhase { READING, COMPARING, ANALYZING }
