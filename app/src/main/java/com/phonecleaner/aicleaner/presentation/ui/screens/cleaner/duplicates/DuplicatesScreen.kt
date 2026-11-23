@@ -182,6 +182,8 @@ fun DuplicatesScreen(
                     if (!revealed) {
                         com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.dup_phase_analyzing), scanAnim) { revealed = true }
                     } else if (data.isEmpty) {
+                        // Nothing to clean: stop offering this feature on the task-completed screen.
+                        LaunchedEffect(Unit) { com.phonecleaner.aicleaner.domain.TaskTracker.markExtra(com.phonecleaner.aicleaner.domain.ExtraTask.DUPLICATES) }
                         com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(androidx.compose.material.icons.Icons.Rounded.CheckCircle, Brand.Good, stringResource(R.string.dup_none_title), stringResource(R.string.dup_none_body), stringResource(R.string.empty_done), onBack)
                     } else {
                         ResultView(data, viewModel) {
@@ -192,10 +194,16 @@ fun DuplicatesScreen(
                 }
 
                 is DuplicatesUiState.Done -> {
-                    val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, current.freedBytes), current.removedCount)
-                    com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(extra = com.phonecleaner.aicleaner.domain.ExtraTask.DUPLICATES)) {
-                        viewModel.reset()
-                        onTaskCompleted(summary)
+                    val remaining = current.remaining
+                    if (remaining != null) {
+                        // More duplicates left in another tab: plain "Done", then back to the list on the next tab.
+                        com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck { viewModel.continueWith(remaining) }
+                    } else {
+                        val summary = stringResource(R.string.junk_done_body, Formatter.formatFileSize(context, viewModel.sessionFreedBytes), viewModel.sessionRemovedCount)
+                        com.phonecleaner.aicleaner.presentation.ui.components.TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(extra = com.phonecleaner.aicleaner.domain.ExtraTask.DUPLICATES)) {
+                            viewModel.reset()
+                            onTaskCompleted(summary)
+                        }
                     }
                 }
             }
@@ -249,7 +257,7 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        val bestShots = data.selected.isNotEmpty()
+        val bestShots = data.tabSelected.isNotEmpty()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -295,12 +303,12 @@ private fun ResultView(data: DuplicatesData, viewModel: DuplicatesViewModel, onD
                 .navigationBarsPadding()
                 .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp + getBannerOverlayHeight())
         ) {
-            val label = if (data.selected.isEmpty()) {
+            val label = if (data.tabSelected.isEmpty()) {
                 stringResource(R.string.dup_nothing_selected)
             } else {
-                stringResource(R.string.dup_delete_selected, data.selected.size, Formatter.formatFileSize(context, data.selectedBytes))
+                stringResource(R.string.dup_delete_selected, data.tabSelected.size, Formatter.formatFileSize(context, data.tabSelectedBytes))
             }
-            PrimaryButton(label, onClick = { tapEvent("duplicates_delete"); if (data.selected.isNotEmpty()) onDelete() })
+            PrimaryButton(label, onClick = { tapEvent("duplicates_delete"); if (data.tabSelected.isNotEmpty()) onDelete() })
         }
     }
 }

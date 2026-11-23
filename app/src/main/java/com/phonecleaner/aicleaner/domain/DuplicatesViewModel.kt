@@ -42,7 +42,13 @@ data class DuplicatesData(
     }
 
     val selectedFiles: List<MediaFile> get() = selected.mapNotNull { allFiles[it] }
-    val selectedBytes: Long get() = selectedFiles.sumOf { it.sizeBytes }
+
+    private val activeIds: Set<Long> get() = activeGroups.flatMap { g -> g.files.map { it.id } }.toSet()
+
+    /** Selection restricted to the tab on screen: each tab is cleaned on its own. */
+    val tabSelected: Set<Long> get() = selected.intersect(activeIds)
+    val tabSelectedFiles: List<MediaFile> get() = tabSelected.mapNotNull { allFiles[it] }
+    val tabSelectedBytes: Long get() = tabSelectedFiles.sumOf { it.sizeBytes }
 
     fun keeperOf(group: DuplicateGroup): Long = keepers[group.id] ?: group.files.first().id
 }
@@ -51,7 +57,8 @@ sealed interface DuplicatesUiState {
     data object Idle : DuplicatesUiState
     data class Scanning(val progress: DuplicateProgress) : DuplicatesUiState
     data class Result(val data: DuplicatesData) : DuplicatesUiState
-    data class Done(val freedBytes: Long, val removedCount: Int) : DuplicatesUiState
+    /** [remaining] is what is left in the other tabs, or null when nothing is left to clean. */
+    data class Done(val freedBytes: Long, val removedCount: Int, val remaining: DuplicatesData?) : DuplicatesUiState
 }
 
 class DuplicatesViewModel(private val scanner: DuplicateScanner) : ViewModel() {
@@ -95,33 +102,70 @@ class DuplicatesViewModel(private val scanner: DuplicateScanner) : ViewModel() {
     }
 
     fun selectAllButKeepers() = updateData { data ->
-        val all = (data.photoGroups + data.videoGroups + data.fileGroups).flatMap { group ->
+        val tabIds = data.activeGroups.flatMap { group ->
             val keeper = data.keeperOf(group)
             group.files.map { it.id }.filter { it != keeper }
         }
-        data.copy(selected = all.toSet())
+        data.copy(selected = data.selected + tabIds)
     }
 
-    fun deselectAll() = updateData { it.copy(selected = emptySet()) }
+    fun deselectAll() = updateData { data ->
+        val ids = data.activeGroups.flatMap { g -> g.files.map { it.id } }.toSet()
+        data.copy(selected = data.selected - ids)
+    }
 
+    private var totalFreed = 0L
+    private var totalRemoved = 0
+
+    /** Running totals across every tab cleaned in this session, used for the final summary. */
+    val sessionFreedBytes: Long get() = totalFreed
+    val sessionRemovedCount: Int get() = totalRemoved
+
+    /** Deletes only what is selected in the tab on screen; the other tabs are cleaned separately. */
     fun deleteSelected() {
         val data = (_state.value as? DuplicatesUiState.Result)?.data ?: return
-        val targets = data.selectedFiles
+        val targets = data.tabSelectedFiles
         viewModelScope.launch {
-            val removed = scanner.delete(targets)
-            onDeleted(removed.toSet())
+            val removed = scanner.delete(targets).toSet()
+            onDeleted(data, targets, removed)
         }
     }
 
-    fun onDeleted(removedIds: Set<Long>? = null) {
-        val data = (_state.value as? DuplicatesUiState.Result)?.data ?: return
-        val removed = removedIds ?: data.selected
-        val freed = data.selectedFiles.filter { it.id in removed }.sumOf { it.sizeBytes }
-        _state.value = DuplicatesUiState.Done(freed, removed.size)
+    private fun onDeleted(data: DuplicatesData, targets: List<MediaFile>, removed: Set<Long>) {
+        val freed = targets.filter { it.id in removed }.sumOf { it.sizeBytes }
+        totalFreed += freed
+        totalRemoved += removed.size
+
+        fun List<DuplicateGroup>.without(): List<DuplicateGroup> =
+            mapNotNull { g ->
+                val left = g.files.filter { it.id !in removed }
+                if (left.size > 1) g.copy(files = left) else null
+            }
+
+        val photos = data.photoGroups.without()
+        val videos = data.videoGroups.without()
+        val files = data.fileGroups.without()
+        val nextTab = when {
+            (if (data.tab == DuplicateTab.PHOTOS) photos else if (data.tab == DuplicateTab.VIDEOS) videos else files).isNotEmpty() -> data.tab
+            photos.isNotEmpty() -> DuplicateTab.PHOTOS
+            videos.isNotEmpty() -> DuplicateTab.VIDEOS
+            files.isNotEmpty() -> DuplicateTab.FILES
+            else -> data.tab
+        }
+        val remaining = if (photos.isEmpty() && videos.isEmpty() && files.isEmpty()) null
+        else data.copy(photoGroups = photos, videoGroups = videos, fileGroups = files, selected = data.selected - removed, tab = nextTab)
+        _state.value = DuplicatesUiState.Done(freed, removed.size, remaining)
+    }
+
+    /** After the Done check: go back to the list (next tab that still has duplicates). */
+    fun continueWith(data: DuplicatesData) {
+        _state.value = DuplicatesUiState.Result(data)
     }
 
     fun reset() {
         job?.cancel()
+        totalFreed = 0L
+        totalRemoved = 0
         _state.value = DuplicatesUiState.Idle
     }
 

@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import com.phonecleaner.aicleaner.data.files.FilesRepository
 import com.phonecleaner.aicleaner.data.storage.DocumentWalker
+import com.phonecleaner.aicleaner.data.storage.FolderAccess
 import com.phonecleaner.aicleaner.domain.model.FileCategory
 import android.provider.MediaStore
 import com.phonecleaner.aicleaner.domain.model.DuplicateGroup
@@ -37,9 +38,10 @@ class DuplicateScanner(private val context: Context, private val filesRepository
     fun scan(): Flow<DuplicateScanEvent> = channelFlow {
         filesRepository.refresh()
         send(DuplicateScanEvent.Progress(DuplicateProgress(DuplicatePhase.READING, 0, 0)))
-        val images = queryMedia(isVideo = false)
-        val videos = queryMedia(isVideo = true)
-        val others = queryOtherFiles()
+        val extra = queryWhatsAppFiles()
+        val images = (queryMedia(isVideo = false) + extra.filter { it.mime.startsWith("image/") }).distinctBy { it.uri }
+        val videos = (queryMedia(isVideo = true) + extra.filter { it.mime.startsWith("video/") }).distinctBy { it.uri }
+        val others = (queryOtherFiles() + extra.filter { !it.mime.startsWith("image/") && !it.mime.startsWith("video/") }).distinctBy { it.uri }
         val total = images.size + videos.size + others.size
 
         val exactImages = findExact(images, this, offset = 0, total = total)
@@ -66,6 +68,19 @@ class DuplicateScanner(private val context: Context, private val filesRepository
         filesRepository.list(if (isVideo) FileCategory.VIDEO else FileCategory.IMAGES, showHidden = false).map {
             MediaFile(it.id, it.uri, it.name, it.sizeBytes, it.modifiedMs, isVideo, 0, 0, 0L)
         }
+
+    /** WhatsApp backups/media live under Android/media and hidden folders that the general walk skips. */
+    private suspend fun queryWhatsAppFiles(): List<MediaFile> {
+        val found = ArrayList<MediaFile>()
+        FolderAccess.whatsAppFullRoots(context).forEach { root ->
+            DocumentWalker.walk(context, root, showHidden = true) { d ->
+                val isImage = d.mime.startsWith("image/")
+                val isVideo = d.mime.startsWith("video/")
+                found += MediaFile(d.id, d.uri, d.name, d.sizeBytes, d.modifiedMs, isVideo, 0, 0, 0L, isFile = !isImage && !isVideo, mime = d.mime)
+            }
+        }
+        return found
+    }
 
     private suspend fun queryOtherFiles(): List<MediaFile> =
         filesRepository.listNonMedia(showHidden = false)

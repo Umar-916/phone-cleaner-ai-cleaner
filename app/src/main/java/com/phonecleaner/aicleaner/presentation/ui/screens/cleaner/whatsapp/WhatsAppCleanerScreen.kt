@@ -237,7 +237,10 @@ fun WhatsAppCleanerScreen(
                     label = stringResource(R.string.wa_scanning),
                     p = scanAnim
                 )
-                WaUiState.NotFound -> com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(Icons.Rounded.CheckCircle, WhatsAppGreen, stringResource(R.string.wa_none_title), stringResource(R.string.wa_none_body), stringResource(R.string.empty_done), onBack)
+                WaUiState.NotFound -> {
+                    androidx.compose.runtime.LaunchedEffect(Unit) { com.phonecleaner.aicleaner.domain.TaskTracker.markExtra(com.phonecleaner.aicleaner.domain.ExtraTask.WHATSAPP) }
+                    com.phonecleaner.aicleaner.presentation.ui.components.ResultEmptyState(Icons.Rounded.CheckCircle, WhatsAppGreen, stringResource(R.string.wa_none_title), stringResource(R.string.wa_none_body), stringResource(R.string.empty_done), onBack)
+                }
                 is WaUiState.Result -> if (!revealed) {
                     com.phonecleaner.aicleaner.presentation.ui.components.ScanLoadingView(null, true, stringResource(R.string.wa_scanning), scanAnim) { revealed = true }
                 } else ResultView(current.data, viewModel) {

@@ -24,6 +24,18 @@ object FolderAccess {
         ).map { File(external, it) }.filter { it.isDirectory }.map { Uri.fromFile(it) }
     }
 
+    /** Whole WhatsApp folders (backups, databases, media) — the general walk skips the top-level Android folder and hidden dirs. */
+    fun whatsAppFullRoots(context: Context): List<Uri> {
+        if (!hasAllFiles(context)) return emptyList()
+        val external = Environment.getExternalStorageDirectory()
+        return listOf(
+            "Android/media/com.whatsapp",
+            "WhatsApp",
+            "Android/media/com.whatsapp.w4b",
+            "WhatsApp Business"
+        ).map { File(external, it) }.filter { it.isDirectory }.map { Uri.fromFile(it) }
+    }
+
     fun hasWhatsAppAccess(context: Context): Boolean = hasAllFiles(context)
 
     fun isWhatsAppInstalled(context: Context): Boolean =

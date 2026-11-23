@@ -113,9 +113,19 @@ class BatteryRepository(private val context: Context, private val processes: Pro
     fun applySaver(step: SaverStep): Boolean = runCatching {
         when (step) {
             SaverStep.SOUND -> {
+                val previousRinger = audioManager.ringerMode
                 // Media volume is left alone: muting the user's music/video volume unasked is surprising.
                 listOf(AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM)
                     .forEach { stream -> runCatching { audioManager.setStreamVolume(stream, 0, 0) } }
+                // Zeroing the notification volume makes many phones fall into vibrate mode; force true silent instead.
+                // Silent needs Do Not Disturb access, so it is only applied when the user already granted it.
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+                if (nm?.isNotificationPolicyAccessGranted == true) {
+                    runCatching { audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT }
+                } else if (audioManager.ringerMode == AudioManager.RINGER_MODE_VIBRATE && previousRinger != AudioManager.RINGER_MODE_VIBRATE) {
+                    // Never leave the phone in vibrate because of us.
+                    runCatching { audioManager.ringerMode = previousRinger }
+                }
                 if (canWriteSettings()) {
                     listOf(Settings.System.SOUND_EFFECTS_ENABLED, "lockscreen_sounds_enabled", Settings.System.DTMF_TONE_WHEN_DIALING)
                         .forEach { key -> runCatching { Settings.System.putInt(resolver, key, 0) } }

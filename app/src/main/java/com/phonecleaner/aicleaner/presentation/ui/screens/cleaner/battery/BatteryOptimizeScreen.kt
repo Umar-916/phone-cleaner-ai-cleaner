@@ -218,7 +218,7 @@ fun BatteryOptimizeScreen(
             val item = items[p.index]
             BoostRunningView(percent = p.percent, label = stringResource(item.running), badge = item.icon, valueText = p.value)
         }
-        Phase.Done -> TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(main = com.phonecleaner.aicleaner.domain.MainTask.BATTERY), caption = summary) { onFinished(summary) }
+        Phase.Done -> TaskDoneCheck(label = com.phonecleaner.aicleaner.presentation.ui.components.doneLabelFor(main = com.phonecleaner.aicleaner.domain.MainTask.BATTERY)) { onFinished(summary) }
         Phase.Idle -> com.phonecleaner.aicleaner.presentation.ui.theme.ForceLightTheme {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
